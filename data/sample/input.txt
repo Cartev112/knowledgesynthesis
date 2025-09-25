@@ -1,0 +1,5 @@
+The RAF gene family encodes protein kinases that regulate the MAPK/ERK pathway.
+Vemurafenib targets the BRAF V600E mutation in melanoma, improving patient outcomes.
+MEK inhibitors can be synergistic with BRAF inhibitors in certain cancers.
+
+
