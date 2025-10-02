@@ -12,12 +12,14 @@ HTML = """
     <title>Cytoscape Graph Viewer</title>
     <style>
       html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-      #topbar { display: flex; align-items: center; gap: 8px; padding: 10px; border-bottom: 1px solid #ddd; }
-      #layout { display: grid; grid-template-columns: 3fr 1fr; height: calc(100% - 52px); }
+      #topbar { display: flex; align-items: center; gap: 8px; padding: 10px; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+      #layout { display: grid; grid-template-columns: 3fr 1fr; height: calc(100% - 90px); }
       #cy { width: 100%; height: 100%; }
       #details { border-left: 1px solid #ddd; padding: 12px; overflow: auto; }
       #details h4 { margin: 0 0 8px 0; }
       #details pre { background: #f8fafc; padding: 8px; border: 1px solid #e5e7eb; }
+      #search-box { flex: 1; min-width: 200px; padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 4px; }
+      .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
     </style>
     <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
     <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
@@ -29,7 +31,13 @@ HTML = """
       <button id="process">Ingest PDF</button>
       <select id="doc-select" multiple size="4" style="min-width: 240px;"></select>
       <button id="apply">Apply Selection</button>
-      <label style="margin-left:12px;"><input type="checkbox" id="show-negative" checked /> Show negative edges</label>
+      <input type="text" id="search-box" placeholder="Search concept..." />
+      <button id="search-btn">Search</button>
+      <label style="margin-left:12px;"><input type="checkbox" id="show-negative" checked /> Show negative</label>
+      <label><input type="checkbox" id="verified-only" /> Verified only</label>
+      <a href="/review-ui" target="_blank" style="margin-left: 8px;">
+        <button>Review Queue</button>
+      </a>
       <span id="status" style="margin-left:auto"></span>
     </div>
     <div id="layout">
@@ -50,6 +58,9 @@ HTML = """
       const pdfInput = document.getElementById('pdf-upload');
       const details = document.getElementById('details-content');
       const showNegative = document.getElementById('show-negative');
+      const verifiedOnly = document.getElementById('verified-only');
+      const searchBox = document.getElementById('search-box');
+      const searchBtn = document.getElementById('search-btn');
 
       let cy = cytoscape({
         container: el,
@@ -80,6 +91,18 @@ HTML = """
               'line-style': 'dotted'
             }
           },
+          { selector: 'edge[status = "verified"]', style: {
+              'line-color': '#059669',
+              'target-arrow-color': '#059669',
+              'width': 2
+            }
+          },
+          { selector: 'edge[status = "incorrect"]', style: {
+              'line-color': '#dc2626',
+              'target-arrow-color': '#dc2626',
+              'line-style': 'dashed'
+            }
+          },
           { selector: '.faded', style: { 'opacity': 0.15 } },
           { selector: '.highlight', style: { 'background-color': '#1d4ed8', 'line-color': '#1d4ed8', 'target-arrow-color': '#1d4ed8' } }
         ]
@@ -96,7 +119,15 @@ HTML = """
           elements.push({ data: { id: n.id, label: n.label, strength: n.strength ?? 0, type: n.type || 'concept' } });
         }
         for (const e of graph.edges || graph.relationships || []) {
-          elements.push({ data: { id: e.id || `${e.source}__${e.relation}__${e.target}`, source: e.source, target: e.target, relation: e.relation, polarity: e.polarity || 'positive', confidence: e.confidence ?? 0 } });
+          elements.push({ data: { 
+            id: e.id || `${e.source}__${e.relation}__${e.target}`, 
+            source: e.source, 
+            target: e.target, 
+            relation: e.relation, 
+            polarity: e.polarity || 'positive', 
+            confidence: e.confidence ?? 0,
+            status: e.status || 'unverified'
+          } });
         }
         return elements;
       }
@@ -116,8 +147,16 @@ HTML = """
       }
 
       async function fetchGraphForDocs(ids) {
-        const res = await fetch('/query/graph_by_docs?doc_ids=' + encodeURIComponent(ids.join(',')));
+        const verifiedParam = verifiedOnly.checked ? '&verified_only=true' : '';
+        const res = await fetch('/query/graph_by_docs?doc_ids=' + encodeURIComponent(ids.join(',')) + verifiedParam);
         if (!res.ok) throw new Error('Failed to fetch graph');
+        return await res.json();
+      }
+      
+      async function searchConcept(name) {
+        const verifiedParam = verifiedOnly.checked ? '&verified_only=true' : '';
+        const res = await fetch('/query/search/concept?name=' + encodeURIComponent(name) + verifiedParam);
+        if (!res.ok) throw new Error('Failed to search concept');
         return await res.json();
       }
 
@@ -142,13 +181,15 @@ HTML = """
             <div>Type: ${data.type || ''}</div>
             <div>Strength: ${data.strength ?? 0}</div>`;
         } else {
+          const statusColor = data.status === 'verified' ? '#059669' : data.status === 'incorrect' ? '#dc2626' : '#d97706';
           details.innerHTML = `<div><strong>Edge</strong></div>
             <div>ID: ${data.id}</div>
             <div>Source: ${data.source}</div>
             <div>Target: ${data.target}</div>
             <div>Relation: ${data.relation || ''}</div>
             <div>Polarity: ${data.polarity || ''}</div>
-            <div>Confidence: ${data.confidence ?? 0}</div>`;
+            <div>Confidence: ${data.confidence ?? 0}</div>
+            <div>Status: <span class="status-badge" style="background: ${statusColor}; color: white;">${data.status || 'unverified'}</span></div>`;
         }
       }
 
@@ -186,7 +227,14 @@ HTML = """
           cy.add(toCytoscapeElements(graph));
           runLayout();
           wireInteractions();
-          status.textContent = 'Done';
+          const n = (graph.nodes || []).length;
+          const m = (graph.relationships || []).length;
+          status.textContent = `Done (${n} nodes, ${m} edges)`;
+          if (n === 0 && m === 0) {
+            console.warn('Ingest returned zero elements. Raw extraction preview:', info.graph);
+            details.innerHTML = `<div><strong>Ingested</strong> ${info.title}</div>
+              <div>No graph elements found. Check extractor output.</div>`;
+          }
         } catch (e) {
           status.textContent = 'Error: ' + e.message;
         }
@@ -213,6 +261,26 @@ HTML = """
         cy.batch(() => {
           cy.edges('[polarity = "negative"]').style('display', hide ? 'none' : 'element');
         });
+      });
+      
+      searchBtn.addEventListener('click', async () => {
+        const query = searchBox.value.trim();
+        if (!query) { status.textContent = 'Enter a search term'; return; }
+        status.textContent = 'Searching...';
+        try {
+          const graph = await searchConcept(query);
+          cy.elements().remove();
+          cy.add(toCytoscapeElements({ nodes: graph.nodes, edges: graph.relationships }));
+          runLayout();
+          wireInteractions();
+          status.textContent = `Found ${graph.nodes.length} nodes, ${graph.relationships.length} edges`;
+        } catch (e) {
+          status.textContent = 'Error: ' + e.message;
+        }
+      });
+      
+      searchBox.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchBtn.click();
       });
 
       // Initial load

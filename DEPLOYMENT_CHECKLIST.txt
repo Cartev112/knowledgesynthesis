@@ -1,0 +1,83 @@
+RENDER DEPLOYMENT CHECKLIST
+=============================
+
+PRE-DEPLOYMENT
+--------------
+[ ] Neo4j Aura account created
+[ ] Neo4j database instance running
+[ ] Neo4j credentials saved (URI, username, password)
+[ ] OpenAI API key obtained
+[ ] Code pushed to GitHub repository
+[ ] requirements.txt verified
+[ ] Environment variables prepared
+
+DEPLOYMENT STEPS
+----------------
+[ ] 1. Create Python FastAPI service on Render
+    - Root directory: backend/python_worker
+    - Build: pip install -r ../../requirements.txt
+    - Start: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    
+[ ] 2. Add Python service environment variables:
+    - NEO4J_URI
+    - NEO4J_USERNAME
+    - NEO4J_PASSWORD
+    - OPENAI_API_KEY
+    - OPENAI_MODEL
+    - SESSION_SECRET
+    
+[ ] 3. Create Node.js service on Render
+    - Root directory: node-server
+    - Build: npm install
+    - Start: node server.js
+    
+[ ] 4. Add Node service environment variables:
+    - FASTAPI_BASE (Python service URL)
+    - SESSION_SECRET (same as Python)
+    - LOGIN_USER
+    - LOGIN_PASS
+    
+[ ] 5. Update Python service with NODE_SERVER URL
+[ ] 6. Wait for both services to deploy
+[ ] 7. Test health endpoint
+[ ] 8. Create admin account via /signup
+[ ] 9. Upload test document
+
+POST-DEPLOYMENT VERIFICATION
+-----------------------------
+[ ] Health check responds: /health
+[ ] Neo4j connection works: /db/status
+[ ] API docs accessible: /docs
+[ ] Login page works: /login
+[ ] Signup page works: /signup
+[ ] Main app loads: /app
+[ ] Can upload PDF successfully
+[ ] Graph viewer displays data
+[ ] Review queue accessible: /review-ui
+[ ] User authentication persists
+
+SECURITY
+--------
+[ ] SESSION_SECRET is strong and random
+[ ] LOGIN_PASS changed from default
+[ ] Neo4j password is strong
+[ ] OpenAI API key secured
+[ ] HTTPS enabled (automatic on Render)
+
+MONITORING
+----------
+[ ] Check Render logs for errors
+[ ] Monitor Neo4j Aura metrics
+[ ] Track OpenAI API usage
+[ ] Set up uptime monitoring (optional)
+
+TROUBLESHOOTING
+---------------
+If deployment fails:
+1. Check Render build logs
+2. Verify all environment variables
+3. Test Neo4j connection string
+4. Ensure requirements.txt has all dependencies
+5. Check Python version compatibility
+6. Verify file paths in build/start commands
+

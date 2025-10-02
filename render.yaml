@@ -1,0 +1,62 @@
+# Render Blueprint for Knowledge Synthesis Platform
+# This file allows one-click deployment to Render
+
+services:
+  # Python FastAPI Backend
+  - type: web
+    name: knowledge-synthesis-api
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend/python_worker
+    buildCommand: pip install -r ../../requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USERNAME
+        value: neo4j
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: NEO4J_DATABASE
+        value: neo4j
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_DRY_RUN
+        value: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NODE_SERVER
+        fromService:
+          type: web
+          name: knowledge-synthesis-node
+          property: host
+
+  # Node.js Authentication Server
+  - type: web
+    name: knowledge-synthesis-node
+    runtime: node
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: node-server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_PORT
+        value: 10000
+      - key: FASTAPI_BASE
+        fromService:
+          type: web
+          name: knowledge-synthesis-api
+          property: host
+      - key: SESSION_SECRET
+        sync: false
+      - key: LOGIN_USER
+        value: admin
+      - key: LOGIN_PASS
+        sync: false
+

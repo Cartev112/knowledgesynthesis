@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "username": "cartev",
+      "password_hash": "$2a$10$2PLkre7L0r.JKLXd4t803uOuyPK2uphaRKyK2pFjMZ9eR4cl5yZiy",
+      "roles": [
+        "user"
+      ]
+    },
+    {
+      "first_name": "Carter",
+      "last_name": "Whitworth",
+      "email": "cwhit1129@gmail.com",
+      "password_hash": "$2a$10$aa.AJrr2UlrINENkcelwhu3PnuuNdt4SMtrtnHn.5FIOz8j96t2Ya",
+      "roles": [
+        "user"
+      ]
+    }
+  ]
+}

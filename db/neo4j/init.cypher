@@ -22,3 +22,6 @@ CREATE FULLTEXT INDEX entity_search IF NOT EXISTS
 FOR (n:Entity|Document)
 ON EACH [n.name, n.title];
 
+// Relationship uniqueness at the semantic level is enforced by writing a single relationship type
+// with arrays of source document ids and provenance. No constraint here; handled in write logic.
+

@@ -6,7 +6,7 @@ import axios from 'axios'
 import dotenv from 'dotenv'
 import session from 'express-session'
 import { fileURLToPath } from 'url'
-import { ensureAdminFromEnv, createUser, verifyUser } from './users.js'
+import { ensureAdminFromEnv, createUser, verifyUser, getUserByEmail } from './users.js'
 
 dotenv.config()
 
@@ -75,11 +75,19 @@ app.get('/signup', (req, res) => {
 })
 
 app.post('/signup', (req, res) => {
-  const { username, password } = req.body || {}
+  const { first_name, last_name, email, password, username } = req.body || {}
   try {
-    if (!username || !password) throw new Error('Missing fields')
-    createUser(username, password)
-    res.redirect('/login')
+    // Support both old (username) and new (email) formats
+    if (email && first_name && last_name && password) {
+      createUser(first_name, last_name, email, password)
+      res.redirect('/login')
+    } else if (username && password) {
+      // Legacy support
+      createUser('User', 'Name', username, password)
+      res.redirect('/login')
+    } else {
+      throw new Error('Missing required fields')
+    }
   } catch (e) {
     res.status(400).type('html').send(`<p>${e.message}. <a href="/signup">Try again</a></p>`)
   }
@@ -87,6 +95,36 @@ app.post('/signup', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session?.destroy(() => res.redirect('/login'))
+})
+
+// API endpoints for Python backend integration
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body || {}
+  const user = verifyUser(email, password)
+  if (user) {
+    req.session.user = user
+    return res.json({ success: true, user })
+  }
+  res.status(401).json({ error: 'Invalid credentials' })
+})
+
+app.post('/api/signup', (req, res) => {
+  const { first_name, last_name, email, password } = req.body || {}
+  try {
+    if (!first_name || !last_name || !email || !password) throw new Error('Missing required fields')
+    createUser(first_name, last_name, email, password)
+    res.status(201).json({ success: true, message: 'Account created' })
+  } catch (e) {
+    res.status(400).json({ error: e.message })
+  }
+})
+
+app.get('/api/me', requireAuth, (req, res) => {
+  res.json({ user: req.session.user })
+})
+
+app.post('/api/logout', (req, res) => {
+  req.session?.destroy(() => res.json({ success: true }))
 })
 
 app.get('/', requireAuth, (req, res) => {

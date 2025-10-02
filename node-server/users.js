@@ -21,27 +21,59 @@ export function ensureAdminFromEnv() {
   const password = process.env.LOGIN_PASS
   if (!username || !password) return
   const store = readStore()
-  if (store.users.find(u => u.username === username)) return
+  // Support legacy username-based admin or email-based
+  const email = username.includes('@') ? username : `${username}@admin.local`
+  if (store.users.find(u => u.email === email || u.username === username)) return
   const hash = bcrypt.hashSync(password, 10)
-  store.users.push({ username, password_hash: hash, roles: ['admin'] })
+  store.users.push({ 
+    email,
+    first_name: 'Admin',
+    last_name: 'User',
+    password_hash: hash,
+    roles: ['admin']
+  })
   writeStore(store)
 }
 
-export function createUser(username, password) {
+export function createUser(first_name, last_name, email, password) {
   const store = readStore()
-  if (store.users.find(u => u.username === username)) throw new Error('User exists')
+  if (store.users.find(u => u.email === email)) throw new Error('User with this email already exists')
   const hash = bcrypt.hashSync(password, 10)
-  store.users.push({ username, password_hash: hash, roles: ['user'] })
+  store.users.push({ 
+    first_name,
+    last_name,
+    email,
+    password_hash: hash,
+    roles: ['user']
+  })
   writeStore(store)
 }
 
-export function verifyUser(username, password) {
+export function verifyUser(email, password) {
   const store = readStore()
-  const user = store.users.find(u => u.username === username)
+  const user = store.users.find(u => u.email === email)
   if (!user) return null
   const ok = bcrypt.compareSync(password, user.password_hash)
-  return ok ? { username: user.username, roles: user.roles } : null
+  return ok ? { 
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    roles: user.roles
+  } : null
 }
+
+export function getUserByEmail(email) {
+  const store = readStore()
+  const user = store.users.find(u => u.email === email)
+  if (!user) return null
+  return {
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    roles: user.roles
+  }
+}
+
 
 
 
