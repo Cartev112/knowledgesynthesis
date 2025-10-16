@@ -60,6 +60,12 @@ OPENAI_DRY_RUN=false
 NODE_PORT=3000
 NODE_SERVER=https://your-node-server.onrender.com
 SESSION_SECRET=your-random-secret-here-change-this
+EMAIL_ENABLED=true
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=SG.xxxxx
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_FROM_NAME=Knowledge Synthesis
+APP_URL=https://your-app.onrender.com
 ```
 
 **Important**: 
@@ -67,6 +73,7 @@ SESSION_SECRET=your-random-secret-here-change-this
 - Replace `OPENAI_API_KEY` with your OpenAI key
 - Replace `SESSION_SECRET` with a random string (use `openssl rand -hex 32`)
 - `NODE_SERVER` URL will be added after Step 4
+- **Email is optional**: Set `EMAIL_ENABLED=false` to skip email setup (see `EMAIL_SETUP_GUIDE.md`)
 
 ### 3.3 Deploy
 
