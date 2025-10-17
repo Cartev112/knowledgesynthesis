@@ -26,8 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # RabbitMQ settings
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
-RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+
 RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "guest")
 RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "guest")
 RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
