@@ -1,0 +1,13 @@
+# Railway Multi-Service Configuration
+# This file defines two services: Python backend and Node frontend
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+# This is for the Python backend service
+startCommand = "cd backendAndUI/python_worker && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

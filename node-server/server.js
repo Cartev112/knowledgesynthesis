@@ -299,16 +299,10 @@ app.post('/api/logout', (req, res) => {
 // Serve static files from public directory
 app.use('/static', express.static(path.join(__dirname, 'public')))
 
-// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout)
-app.use('/api', (req, res, next) => {
-  // Skip proxy for Node-handled endpoints
-  if (req.path === '/me' || req.path === '/login' || req.path === '/logout') {
-    return next()
-  }
-  
-  // Proxy to Python backend
-  const url = `${fastapiBase}${req.url}`
-  console.log(`Proxying ${req.method} ${req.url} to ${url}`)
+// Proxy /query requests to Python backend (no /api prefix)
+app.use('/query', (req, res, next) => {
+  const url = `${fastapiBase}/query${req.url}`
+  console.log(`Proxying ${req.method} /query${req.url} to ${url}`)
   
   axios({
     method: req.method,
@@ -322,7 +316,37 @@ app.use('/api', (req, res, next) => {
     res.status(response.status).json(response.data)
   })
   .catch(err => {
-    console.error(`Proxy error for ${req.url}:`, err.message)
+    console.error(`Proxy error for /query${req.url}:`, err.message)
+    const status = err.response?.status || 500
+    const data = err.response?.data || { detail: err.message }
+    res.status(status).json(data)
+  })
+})
+
+// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout)
+app.use('/api', (req, res, next) => {
+  // Skip proxy for Node-handled endpoints
+  if (req.path === '/me' || req.path === '/login' || req.path === '/logout') {
+    return next()
+  }
+  
+  // Proxy to Python backend - keep /api prefix in the URL
+  const url = `${fastapiBase}/api${req.url}`
+  console.log(`Proxying ${req.method} /api${req.url} to ${url}`)
+  
+  axios({
+    method: req.method,
+    url,
+    data: req.body,
+    headers: {
+      'Content-Type': req.headers['content-type'] || 'application/json'
+    }
+  })
+  .then(response => {
+    res.status(response.status).json(response.data)
+  })
+  .catch(err => {
+    console.error(`Proxy error for /api${req.url}:`, err.message)
     const status = err.response?.status || 500
     const data = err.response?.data || { detail: err.message }
     res.status(status).json(data)
