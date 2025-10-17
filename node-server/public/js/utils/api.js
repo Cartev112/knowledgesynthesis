@@ -54,20 +54,20 @@ export class API {
   }
   
   static async getDocuments() {
-    return this.get('/api/query/documents');
+    return this.get('/query/documents');
   }
   
   static async getAllGraph() {
     const timestamp = new Date().getTime();
-    return this.get(`/api/query/all?t=${timestamp}`);
+    return this.get(`/query/all?t=${timestamp}`);
   }
   
   static async searchConcept(name, verifiedOnly = false) {
-    return this.get(`/api/query/search/concept?name=${encodeURIComponent(name)}&verified_only=${verifiedOnly}`);
+    return this.get(`/query/search/concept?name=${encodeURIComponent(name)}&verified_only=${verifiedOnly}`);
   }
   
   static async getSubgraph(nodeIds) {
-    return this.post('/api/query/subgraph', { node_ids: nodeIds });
+    return this.post('/query/subgraph', { node_ids: nodeIds });
   }
   
   static async ingestPDF(formData) {
