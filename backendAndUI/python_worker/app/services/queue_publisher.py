@@ -35,19 +35,16 @@ class QueuePublisher:
             # Check if we're in production (Railway sets RAILWAY_ENVIRONMENT)
             if os.getenv("RAILWAY_ENVIRONMENT"):
                 # Production: use SSL for Railway managed services
-                import ssl
-                ssl_options = pika.SSLOptions(ssl.create_default_context())
-                parameters = pika.ConnectionParameters(
-                    host=RABBITMQ_HOST,
-                    port=RABBITMQ_PORT,
-                    virtual_host=RABBITMQ_VHOST,
-                    credentials=credentials,
-                    ssl_options=ssl_options,
-                    heartbeat=600,
-                    blocked_connection_timeout=300
-                )
+                # Production: use the full URL provided by Railway
+                rabbitmq_url = os.getenv("RABBITMQ_URL")
+                if not rabbitmq_url:
+                    raise ValueError("RABBITMQ_URL environment variable not set in Railway environment")
+                
+                parameters = pika.URLParameters(rabbitmq_url)
+                logger.info("Publisher connecting to RabbitMQ via URL")
             else:
                 # Development: no SSL
+                credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
                 parameters = pika.ConnectionParameters(
                     host=RABBITMQ_HOST,
                     port=RABBITMQ_PORT,

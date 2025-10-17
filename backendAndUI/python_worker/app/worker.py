@@ -49,20 +49,16 @@ class IngestionWorker:
         
         # Check if we're in production (Railway sets RAILWAY_ENVIRONMENT)
         if os.getenv("RAILWAY_ENVIRONMENT"):
-            # Production: use SSL for Railway managed services
-            import ssl
-            ssl_options = pika.SSLOptions(ssl.create_default_context())
-            parameters = pika.ConnectionParameters(
-                host=RABBITMQ_HOST,
-                port=RABBITMQ_PORT,
-                virtual_host=RABBITMQ_VHOST,
-                credentials=credentials,
-                ssl_options=ssl_options,
-                heartbeat=600,
-                blocked_connection_timeout=300
-            )
+            # Production: use the full URL provided by Railway, which includes SSL config
+            rabbitmq_url = os.getenv("RABBITMQ_URL")
+            if not rabbitmq_url:
+                raise ValueError("RABBITMQ_URL environment variable not set in Railway environment")
+            
+            parameters = pika.URLParameters(rabbitmq_url)
+            logger.info(f"Worker connecting to RabbitMQ via URL")
         else:
             # Development: no SSL
+            credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
             parameters = pika.ConnectionParameters(
                 host=RABBITMQ_HOST,
                 port=RABBITMQ_PORT,
@@ -71,6 +67,7 @@ class IngestionWorker:
                 heartbeat=600,
                 blocked_connection_timeout=300
             )
+            logger.info(f"Worker connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
         
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
@@ -81,7 +78,7 @@ class IngestionWorker:
         # Fair dispatch - don't give more than 1 job to a worker at a time
         self.channel.basic_qos(prefetch_count=1)
         
-        logger.info(f"Worker connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
+        
     
     def _process_pdf_job(self, job_data: dict) -> dict:
         """Process a PDF ingestion job."""
