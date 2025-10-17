@@ -93,8 +93,8 @@ NEO4J_PASSWORD=your-password
 # RabbitMQ Configuration (from Railway managed service)
 RABBITMQ_HOST=${{RabbitMQ.RABBITMQ_HOST}}
 RABBITMQ_PORT=${{RabbitMQ.RABBITMQ_PORT}}
-RABBITMQ_USER=${{RabbitMQ.RABBITMQ_USER}}
-RABBITMQ_PASS=${{RabbitMQ.RABBITMQ_PASSWORD}}
+RABBITMQ_DEFAULT_USER=${{RabbitMQ.RABBITMQ_DEFAULT_USER}}
+RABBITMQ_DEFAULT_PASS=${{RabbitMQ.RABBITMQ_DEFAULT_PASSWORD}}
 RABBITMQ_VHOST=${{RabbitMQ.RABBITMQ_VHOST}}
 
 # Redis Configuration (from Railway managed service)
@@ -136,8 +136,8 @@ Add the same environment variables as the FastAPI service:
 # RabbitMQ Configuration
 RABBITMQ_HOST=${{RabbitMQ.RABBITMQ_HOST}}
 RABBITMQ_PORT=${{RabbitMQ.RABBITMQ_PORT}}
-RABBITMQ_USER=${{RabbitMQ.RABBITMQ_USER}}
-RABBITMQ_PASS=${{RabbitMQ.RABBITMQ_PASSWORD}}
+RABBITMQ_DEFAULT_USER=${{RabbitMQ.RABBITMQ_DEFAULT_USER}}
+RABBITMQ_DEFAULT_PASS=${{RabbitMQ.RABBITMQ_DEFAULT_PASSWORD}}
 RABBITMQ_VHOST=${{RabbitMQ.RABBITMQ_VHOST}}
 
 # Redis Configuration
@@ -202,7 +202,7 @@ Modify `backendAndUI/python_worker/app/services/queue_publisher.py`:
 def _connect(self):
     """Establish connection to RabbitMQ."""
     try:
-        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+        credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
         
         # Check if we're in production (Railway sets RAILWAY_ENVIRONMENT)
         if os.getenv("RAILWAY_ENVIRONMENT"):

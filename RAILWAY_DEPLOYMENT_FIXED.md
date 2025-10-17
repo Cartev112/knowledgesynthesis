@@ -36,8 +36,8 @@ Set these in Railway for **both** FastAPI and Worker services:
 # CloudAMQP RabbitMQ
 RABBITMQ_HOST=your-instance.cloudamqp.com
 RABBITMQ_PORT=5672
-RABBITMQ_USER=your-username
-RABBITMQ_PASS=your-password
+RABBITMQ_DEFAULT_USER=your-username
+RABBITMQ_DEFAULT_PASS=your-password
 RABBITMQ_VHOST=your-vhost
 
 # Railway Redis
@@ -326,8 +326,8 @@ EXPOSE 5672 15672
 # Custom RabbitMQ
 RABBITMQ_HOST=${{RabbitMQ.RAILWAY_PRIVATE_DOMAIN}}
 RABBITMQ_PORT=5672
-RABBITMQ_USER=admin
-RABBITMQ_PASS=password
+RABBITMQ_DEFAULT_USER=admin
+RABBITMQ_DEFAULT_PASS=password
 RABBITMQ_VHOST=/
 
 # Railway Redis

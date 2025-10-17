@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 # RabbitMQ settings
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
-RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
-RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
+RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "guest")
+RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "guest")
 RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
 INGEST_QUEUE = "ingestion_jobs"
 
@@ -45,7 +45,7 @@ class IngestionWorker:
     
     def _setup_connection(self):
         """Set up RabbitMQ connection and channel."""
-        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+        credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
         
         # Check if we're in production (Railway sets RAILWAY_ENVIRONMENT)
         if os.getenv("RAILWAY_ENVIRONMENT"):
