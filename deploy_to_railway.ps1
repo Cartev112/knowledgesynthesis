@@ -49,9 +49,14 @@ if ($choice -eq "1") {
 Write-Host ""
 Write-Host "🔧 Setting up services..." -ForegroundColor Cyan
 
-# Add RabbitMQ service
-Write-Host "Adding RabbitMQ service..." -ForegroundColor Yellow
-railway add rabbitmq
+# Note: Railway doesn't have RabbitMQ as a managed service
+Write-Host "Note: Railway doesn't offer RabbitMQ as a managed service." -ForegroundColor Yellow
+Write-Host "Options:" -ForegroundColor Yellow
+Write-Host "1. Use CloudAMQP (free tier) - Recommended" -ForegroundColor White
+Write-Host "2. Use Redis pub/sub instead of RabbitMQ" -ForegroundColor White
+Write-Host "3. Deploy custom RabbitMQ service" -ForegroundColor White
+Write-Host ""
+Write-Host "See RAILWAY_DEPLOYMENT_FIXED.md for details" -ForegroundColor Cyan
 
 # Add Redis service  
 Write-Host "Adding Redis service..." -ForegroundColor Yellow

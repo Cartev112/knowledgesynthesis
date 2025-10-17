@@ -49,9 +49,14 @@ fi
 echo ""
 echo "🔧 Setting up services..."
 
-# Add RabbitMQ service
-echo "Adding RabbitMQ service..."
-railway add rabbitmq
+# Note: Railway doesn't have RabbitMQ as a managed service
+echo "Note: Railway doesn't offer RabbitMQ as a managed service."
+echo "Options:"
+echo "1. Use CloudAMQP (free tier) - Recommended"
+echo "2. Use Redis pub/sub instead of RabbitMQ"
+echo "3. Deploy custom RabbitMQ service"
+echo ""
+echo "See RAILWAY_DEPLOYMENT_FIXED.md for details"
 
 # Add Redis service  
 echo "Adding Redis service..."
