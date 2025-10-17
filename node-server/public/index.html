@@ -1,0 +1,330 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Knowledge Synthesis Platform</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/ingestion.css">
+  <link rel="stylesheet" href="/static/css/viewing.css">
+  <link rel="stylesheet" href="/static/css/query-builder.css">
+  <link rel="stylesheet" href="/static/css/modals.css">
+  
+  <!-- External Dependencies -->
+  <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+</head>
+<body>
+  <!-- === HEADER === -->
+  <div id="header">
+    <h1>Knowledge Synthesis Platform</h1>
+    <div id="user-info">
+      <span>👤 <span id="username">Guest</span></span>
+      <button onclick="window.authManager.logout()">Logout</button>
+    </div>
+  </div>
+  
+  <!-- === TAB NAVIGATION === -->
+  <div id="tabs">
+    <div class="tab active" onclick="window.appManager.switchTab('ingestion')">📤 Ingestion</div>
+    <div class="tab" onclick="window.appManager.switchTab('viewing')">🔍 Viewing</div>
+    <div class="tab" onclick="window.appManager.switchTab('query-builder')">🔎 Query Builder</div>
+    <div class="tab" onclick="window.open('/review-ui', '_blank')">✅ Review Queue</div>
+  </div>
+  
+  <!-- INGESTION TAB -->
+  <div id="ingestion-tab" class="tab-content active">
+    <div id="ingestion-panel">
+      <div class="card">
+        <h2>📤 Document Ingestion & Knowledge Extraction</h2>
+        
+        <div class="ingestion-grid">
+          <!-- Left Column: Document Upload -->
+          <div>
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #374151; font-weight: 600;">Document Source</h3>
+            
+            <div class="form-group">
+              <label>Upload PDF File(s)</label>
+              <label for="pdf-file" class="custom-file-upload">
+                📄 Choose PDF Files
+              </label>
+              <input type="file" id="pdf-file" accept=".pdf" multiple onchange="window.ingestionManager.displayFileName()" />
+              <div id="file-name" class="file-name-display">No files selected</div>
+            </div>
+            
+            <div class="form-group">
+              <label>Or Paste Text Directly</label>
+              <textarea id="text-input" placeholder="Paste your document text here..." style="min-height: 90px;"></textarea>
+              <div class="help-text">You can paste raw text instead of uploading a file</div>
+            </div>
+            
+            <div class="form-group">
+              <label>Extraction Context (Optional)</label>
+              <textarea id="extraction-context" placeholder="e.g., I'm interested in proteins and their functional relationships, drug-target interactions, or disease mechanisms..." style="min-height: 80px;"></textarea>
+              <div class="help-text">Guide the AI: describe what types of relationships you're most interested in</div>
+            </div>
+          </div>
+          
+          <!-- Right Column: Extraction Parameters -->
+          <div>
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #374151; font-weight: 600;">Extraction Settings</h3>
+            
+            <div class="form-group">
+              <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                <input type="checkbox" id="use-graph-context" style="width: auto; margin-right: 10px; cursor: pointer;" onchange="window.ingestionManager.toggleGraphContext()" />
+                <span style="font-weight: 600;">Use Selected Graph as Context</span>
+              </label>
+              <div class="help-text" id="graph-context-help" style="color: #9ca3af;">
+                Select nodes in the Viewer (Shift+Click), then check this box to find relationships that agree with, disagree with, or add to the existing knowledge
+              </div>
+              <div id="graph-context-status" style="display: none; margin-top: 8px; padding: 10px; background: #dbeafe; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; color: #1e40af;">
+                <strong>Context Ready:</strong> <span id="graph-context-count">0</span> nodes selected
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Max Concepts</label>
+              <input type="number" id="max-concepts" value="100" min="10" max="500" />
+              <div class="help-text">Maximum number of entities to extract (10-500)</div>
+            </div>
+            
+            <div class="form-group">
+              <label>Max Relationships</label>
+              <input type="number" id="max-relationships" value="50" min="10" max="200" />
+              <div class="help-text">Maximum number of triplets to extract (10-200)</div>
+            </div>
+            
+            <div class="form-group">
+              <label>Extraction Model</label>
+              <select id="model-select">
+                <option value="gpt-4o-mini">GPT-4o Mini (Fast, Cost-effective)</option>
+                <option value="gpt-4o">GPT-4o (Higher Quality)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </select>
+              <div class="help-text">AI model for knowledge extraction</div>
+            </div>
+            
+            <div id="ingest-btn-container">
+              <button class="primary" id="ingest-btn" onclick="window.ingestionManager.ingestDocument()">
+                🚀 Extract Knowledge
+              </button>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div id="progress-container" class="progress-container">
+              <div class="progress-header">
+                <span id="progress-text">Processing...</span>
+                <span id="progress-count">0 / 0</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;">
+                  <span id="progress-percentage">0%</span>
+                </div>
+              </div>
+              <div id="current-file-status" class="current-file-status"></div>
+              <div id="file-list-status" class="file-list-status"></div>
+            </div>
+            
+            <div id="ingest-status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- VIEWING TAB (Graph Visualization) -->
+  <div id="viewing-tab" class="tab-content">
+    <div id="viewing-panel">
+      <div id="cy-container">
+        <div id="cy"></div>
+        
+        <!-- Edge Hover Tooltip -->
+        <div id="edge-tooltip">
+          <div class="tooltip-header">
+            <span id="tooltip-source"></span>
+            <span class="tooltip-relation" id="tooltip-relation"></span>
+            <span id="tooltip-target"></span>
+          </div>
+          <div class="tooltip-info" id="tooltip-confidence"></div>
+          <div class="tooltip-info" id="tooltip-significance"></div>
+          <button class="tooltip-btn" id="tooltip-read-more">📖 Read More</button>
+        </div>
+        
+        <!-- Node Hover Tooltip -->
+        <div id="node-tooltip">
+          <div class="tooltip-header" id="node-tooltip-label"></div>
+          <div class="tooltip-info" id="node-tooltip-type"></div>
+          <div class="tooltip-info" id="node-tooltip-significance"></div>
+          <button class="tooltip-btn" id="node-tooltip-read-more">📖 Read More</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Index Panel -->
+    <div id="index-panel" class="hidden">
+      <div class="index-header">
+        <h3 class="index-title">📋 Graph Index</h3>
+        <div class="index-count" id="index-count">0 concepts, 0 relationships, 0 documents</div>
+      </div>
+      
+      <!-- Index Filters -->
+      <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
+        <select id="index-view-filter" onchange="filterIndex()" style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px;">
+          <option value="all">All Items</option>
+          <option value="documents">Documents Only</option>
+          <option value="concepts">Concepts Only</option>
+          <option value="relationships">Relationships Only</option>
+        </select>
+        <select id="index-type-filter" onchange="filterIndex()" style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+          <option value="">All Types</option>
+        </select>
+      </div>
+      
+      <div class="index-section" id="documents-section">
+        <div class="index-section-title">
+          📄 Documents (<span id="documents-count">0</span>)
+        </div>
+        <div id="documents-list"></div>
+      </div>
+      
+      <div class="index-section" id="concepts-section">
+        <div class="index-section-title">
+          🔵 Concepts (<span id="concepts-count">0</span>)
+        </div>
+        <ul class="index-list" id="concepts-list"></ul>
+      </div>
+      
+      <div class="index-section" id="relationships-section">
+        <div class="index-section-title">
+          🔗 Relationships (<span id="relationships-count">0</span>)
+        </div>
+        <div id="relationships-list"></div>
+      </div>
+    </div>
+
+    <!-- Index Toggle Button -->
+    <button id="index-toggle-btn" onclick="toggleIndex()" title="Toggle Index">📋</button>
+    
+    <!-- Legend Toggle Button -->
+    <button id="legend-toggle-btn" onclick="toggleLegend()" title="Visual Guide">📊</button>
+  </div>
+
+  <!-- Edge Details Modal -->
+  <div id="edge-modal-overlay">
+    <div id="edge-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Relationship Details</h2>
+        <button class="modal-close" onclick="closeEdgeModal()">×</button>
+      </div>
+      <div class="modal-body" id="edge-modal-content"></div>
+    </div>
+  </div>
+  
+  <!-- Node Details Modal -->
+  <div id="node-modal-overlay">
+    <div id="node-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Node Details</h2>
+        <button class="modal-close" onclick="closeNodeModal()">×</button>
+      </div>
+      <div class="modal-body" id="node-modal-content"></div>
+    </div>
+  </div>
+  
+  <!-- Document Details Modal -->
+  <div id="document-modal-overlay">
+    <div id="document-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Document Details</h2>
+        <button class="modal-close" onclick="closeDocumentModal()">×</button>
+      </div>
+      <div class="modal-body" id="document-modal-content"></div>
+    </div>
+  </div>
+  
+  <!-- Visual Legend Modal -->
+  <div id="legend-modal-overlay">
+    <div id="legend-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">📊 Visual Guide</h2>
+        <button class="modal-close" onclick="closeLegendModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="legend-section">
+          <div class="modal-section-title">Node Colors</div>
+          <div class="modal-section-content">
+            <div class="legend-item">
+              <div class="legend-color" style="background: #667eea;"></div>
+              <span>Default Entity</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: #dc2626;"></div>
+              <span>Searched/Highlighted</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: #f59e0b;"></div>
+              <span>Neighbor</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background: #8b5cf6;"></div>
+              <span>Multi-Selected</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="legend-section">
+          <div class="modal-section-title">Node Size</div>
+          <div class="modal-section-content">
+            <div class="legend-item">
+              <span style="font-size: 10px;">●</span>
+              <span>Low significance (1-2)</span>
+            </div>
+            <div class="legend-item">
+              <span style="font-size: 14px;">●</span>
+              <span>Medium significance (3)</span>
+            </div>
+            <div class="legend-item">
+              <span style="font-size: 18px;">●</span>
+              <span>High significance (4-5)</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="legend-section">
+          <div class="modal-section-title">Edge Styles</div>
+          <div class="modal-section-content">
+            <div class="legend-item">
+              <div class="legend-line" style="background: #94a3b8;"></div>
+              <span>Unverified</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: #059669;"></div>
+              <span>Verified</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: #dc2626; border-style: dashed;"></div>
+              <span>Incorrect</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: #94a3b8; border-style: dotted;"></div>
+              <span>Negative Polarity</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- QUERY BUILDER TAB -->
+  <div id="query-builder-tab" class="tab-content">
+    <div id="query-builder-content">
+      <!-- Content will be populated by query-builder.js -->
+    </div>
+  </div>
+  
+  <!-- JavaScript Modules (ES6 Modules) -->
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

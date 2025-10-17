@@ -1,0 +1,204 @@
+/* ==========================================
+   INGESTION TAB STYLES
+   ========================================== */
+#ingestion-panel {
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 0 24px;
+  height: calc(100vh - 180px);
+  display: flex;
+  align-items: center;
+}
+
+.ingestion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.custom-file-upload {
+  display: inline-block;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff !important;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: center;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+}
+
+.custom-file-upload:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+.custom-file-upload:active {
+  transform: translateY(0);
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.file-name-display {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* Status Bar Styles - replaces button when active */
+#ingest-btn-container {
+  margin-top: 16px;
+  width: 100%;
+}
+
+#ingest-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+}
+
+#ingest-btn.as-status-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+#ingest-btn.as-status-bar .status-icon {
+  animation: spin 1s linear infinite;
+}
+
+#ingest-status {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  display: none;
+  font-size: 13px;
+}
+
+#ingest-status.success {
+  display: block;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+#ingest-status.error {
+  display: block;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+#ingest-status.processing {
+  display: block;
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+/* Progress Bar Styles - now appears below status bar */
+.progress-container {
+  margin-top: 8px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: none;
+}
+
+.progress-container.active {
+  display: block;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.current-file-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.file-list-status {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.file-status-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-status-item.pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.file-status-item.processing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.file-status-item.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.file-status-item.error {
+  background: #fee2e2;
+  color: #991b1b;
+}

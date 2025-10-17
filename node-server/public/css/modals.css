@@ -1,0 +1,259 @@
+/* ==========================================
+   MODAL AND TOOLTIP STYLES
+   ========================================== */
+
+/* Edge & Node Tooltips */
+#edge-tooltip, #node-tooltip {
+  position: fixed;
+  background: white;
+  border: 2px solid #8b5cf6;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  pointer-events: auto;
+  display: none;
+  max-width: 300px;
+  font-size: 13px;
+}
+
+#edge-tooltip.visible, #node-tooltip.visible {
+  display: block;
+}
+
+#edge-tooltip .tooltip-header, #node-tooltip .tooltip-header {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+#edge-tooltip .tooltip-relation {
+  color: #8b5cf6;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  display: block;
+  margin: 4px 0;
+}
+
+#edge-tooltip .tooltip-info, #node-tooltip .tooltip-info {
+  margin: 6px 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+#edge-tooltip .tooltip-btn, #node-tooltip .tooltip-btn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  width: 100%;
+}
+
+#edge-tooltip .tooltip-btn:hover, #node-tooltip .tooltip-btn:hover {
+  background: #7c3aed;
+}
+
+/* Edge & Node Details Modals */
+#edge-modal-overlay, #node-modal-overlay, #document-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#edge-modal-overlay.visible, #node-modal-overlay.visible, #document-modal-overlay.visible {
+  display: flex;
+}
+
+#edge-modal, #node-modal, #document-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+#edge-modal .modal-header, #node-modal .modal-header, #document-modal .modal-header, #legend-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 2px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+#edge-modal .modal-title, #node-modal .modal-title, #document-modal .modal-title, #legend-modal .modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+#edge-modal .modal-close, #node-modal .modal-close, #document-modal .modal-close, #legend-modal .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6b7280;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+#edge-modal .modal-close:hover, #node-modal .modal-close:hover, #document-modal .modal-close:hover, #legend-modal .modal-close:hover {
+  color: #111827;
+}
+
+#edge-modal .modal-body, #node-modal .modal-body, #document-modal .modal-body, #legend-modal .modal-body {
+  padding: 24px;
+}
+
+#edge-modal .modal-section, #node-modal .modal-section, #document-modal .modal-section, #legend-modal .modal-section {
+  margin-bottom: 20px;
+}
+
+#edge-modal .modal-section-title, #node-modal .modal-section-title, #document-modal .modal-section-title, #legend-modal .modal-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+#edge-modal .modal-section-content, #node-modal .modal-section-content, #document-modal .modal-section-content, #legend-modal .modal-section-content {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+#edge-modal .modal-relation {
+  display: inline-block;
+  background: #ede9fe;
+  color: #7c3aed;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#edge-modal .modal-badge, #node-modal .modal-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+#edge-modal .badge-verified, #node-modal .badge-verified {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+#edge-modal .badge-unverified, #node-modal .badge-unverified {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+#edge-modal .badge-negative {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+#edge-modal .original-text-box {
+  background: #f9fafb;
+  border-left: 4px solid #8b5cf6;
+  padding: 16px;
+  border-radius: 6px;
+  font-style: italic;
+  color: #374151;
+  line-height: 1.7;
+}
+
+/* Legend Modal Overlay */
+#legend-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+#legend-modal-overlay.visible {
+  display: flex;
+}
+
+#legend-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.legend-section {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.legend-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.legend-title {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  color: #6b7280;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+}
+
+.legend-line {
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+}

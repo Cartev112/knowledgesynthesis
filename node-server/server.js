@@ -45,33 +45,202 @@ function requireAuth(req, res, next) {
 
 app.get('/login', (req, res) => {
   res.type('html').send(`<!doctype html>
-  <meta charset="utf-8" />
-  <title>Login</title>
-  <style>body{font-family:system-ui;margin:40px;}input{padding:8px;margin:6px 0;width:260px;}button{padding:8px 12px;}</style>
-  <form method="post" action="/login">
-    <div><input name="username" placeholder="Username" /></div>
-    <div><input name="password" type="password" placeholder="Password" /></div>
-    <button type="submit">Login</button>
-  </form>`)
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Login - Knowledge Synthesis Platform</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .login-container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 400px;
+      }
+      h1 {
+        margin: 0 0 30px 0;
+        color: #1f2937;
+        font-size: 28px;
+        text-align: center;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      input {
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.2s;
+      }
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+      button {
+        padding: 12px 16px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover { background: #5568d3; }
+      .link {
+        margin-top: 20px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+      }
+      .link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .link a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h1>Knowledge Synthesis</h1>
+      <form method="post" action="/login" autocomplete="on">
+        <input name="email" type="email" placeholder="Email" required autocomplete="email" />
+        <input name="password" type="password" placeholder="Password" required autocomplete="current-password" />
+        <button type="submit">Login</button>
+      </form>
+      <div class="link">Don't have an account? <a href="/signup">Sign up</a></div>
+    </div>
+  </body>
+  </html>`)
 })
 
 app.post('/login', (req, res) => {
-  const { username, password } = req.body || {}
-  const user = verifyUser(username, password) || (username === defaultUser && password === defaultPass ? { username } : null)
-  if (user) { req.session.user = user; return res.redirect('/') }
-  res.status(401).type('html').send('<p>Invalid credentials. <a href="/login">Try again</a></p>')
+  const { email, password } = req.body || {}
+  let user = verifyUser(email, password)
+  
+  // Fallback to default credentials (support both email and legacy username)
+  if (!user && (email === defaultUser || email === `${defaultUser}@admin.local`) && password === defaultPass) {
+    user = {
+      user_id: 'admin',
+      email: email.includes('@') ? email : `${email}@admin.local`,
+      first_name: 'Admin',
+      last_name: 'User',
+      roles: ['admin']
+    }
+  }
+  
+  if (user) {
+    req.session.user = user
+    return res.redirect('/')
+  }
+  
+  res.status(401).type('html').send(`<!doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Login Failed</title>
+      <style>
+        body { font-family: system-ui; margin: 40px; text-align: center; }
+        a { color: #667eea; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+      </style>
+    </head>
+    <body>
+      <h2>❌ Invalid credentials</h2>
+      <p><a href="/login">← Try again</a></p>
+    </body>
+    </html>`)
 })
 
 app.get('/signup', (req, res) => {
   res.type('html').send(`<!doctype html>
-  <meta charset="utf-8" />
-  <title>Sign Up</title>
-  <style>body{font-family:system-ui;margin:40px;}input{padding:8px;margin:6px 0;width:260px;}button{padding:8px 12px;}</style>
-  <form method="post" action="/signup">
-    <div><input name="username" placeholder="Choose username" /></div>
-    <div><input name="password" type="password" placeholder="Choose password" /></div>
-    <button type="submit">Create account</button>
-  </form>`)
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sign Up - Knowledge Synthesis Platform</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .signup-container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%;
+        max-width: 400px;
+      }
+      h1 {
+        margin: 0 0 24px 0;
+        font-size: 24px;
+        color: #111827;
+        text-align: center;
+      }
+      input {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover { opacity: 0.9; }
+      .link { text-align: center; margin-top: 16px; font-size: 14px; }
+      .link a { color: #667eea; text-decoration: none; }
+      .link a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="signup-container">
+      <h1>🔬 Create Account</h1>
+      <form method="post" action="/signup" autocomplete="on">
+        <input name="first_name" placeholder="First Name" required autocomplete="given-name" />
+        <input name="last_name" placeholder="Last Name" required autocomplete="family-name" />
+        <input name="email" type="email" placeholder="Email" required autocomplete="email" />
+        <input name="password" type="password" placeholder="Password" required autocomplete="new-password" />
+        <button type="submit">Create Account</button>
+      </form>
+      <div class="link">Already have an account? <a href="/login">Login</a></div>
+    </div>
+  </body>
+  </html>`)
 })
 
 app.post('/signup', (req, res) => {
@@ -127,16 +296,46 @@ app.post('/api/logout', (req, res) => {
   req.session?.destroy(() => res.json({ success: true }))
 })
 
+// Serve static files from public directory
+app.use('/static', express.static(path.join(__dirname, 'public')))
+
+// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout)
+app.use('/api', (req, res, next) => {
+  // Skip proxy for Node-handled endpoints
+  if (req.path === '/me' || req.path === '/login' || req.path === '/logout') {
+    return next()
+  }
+  
+  // Proxy to Python backend
+  const url = `${fastapiBase}${req.url}`
+  console.log(`Proxying ${req.method} ${req.url} to ${url}`)
+  
+  axios({
+    method: req.method,
+    url,
+    data: req.body,
+    headers: {
+      'Content-Type': req.headers['content-type'] || 'application/json'
+    }
+  })
+  .then(response => {
+    res.status(response.status).json(response.data)
+  })
+  .catch(err => {
+    console.error(`Proxy error for ${req.url}:`, err.message)
+    const status = err.response?.status || 500
+    const data = err.response?.data || { detail: err.message }
+    res.status(status).json(data)
+  })
+})
+
+// Main app route - serve index.html
 app.get('/', requireAuth, (req, res) => {
-  res.type('html').send(`<!doctype html>
-  <meta charset="utf-8" />
-  <title>Upload Text</title>
-  <form action="/upload" method="post" enctype="multipart/form-data">
-    <div><input type="file" name="file" accept=".txt" /></div>
-    <div><textarea name="text" rows="8" cols="80" placeholder="or paste text here..."></textarea></div>
-    <button type="submit">Submit</button>
-  </form>
-  <form action="/logout" method="post" style="margin-top:10px"><button type="submit">Logout</button></form>`)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
+
+app.get('/app', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
 app.post('/upload', requireAuth, upload.single('file'), async (req, res) => {

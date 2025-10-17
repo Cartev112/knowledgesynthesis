@@ -1,0 +1,304 @@
+/**
+ * Graph Viewer - Main coordinator for graph visualization
+ * Extracted from main_ui.py
+ */
+import { state } from '../state.js';
+import { API } from '../utils/api.js';
+import { cytoscapeConfig, cytoscapeStyles, getLayoutConfig } from './cytoscape-config.js';
+import { ModalManager } from './modals.js';
+import { IndexPanelManager } from './index-panel.js';
+
+export class GraphViewer {
+  constructor() {
+    this.viewportMode = false;
+    this.isLoading = false;
+    this.loadedNodes = new Set();
+    this.isOverEdge = false;
+    this.isOverNode = false;
+    this.isOverTooltip = false;
+    this.hideTooltipTimeout = null;
+    this.hideNodeTooltipTimeout = null;
+    this.modalManager = new ModalManager();
+    this.indexManager = new IndexPanelManager(this.modalManager);
+  }
+
+  async init() {
+    console.log('Initializing Cytoscape graph viewer...');
+    
+    // Register dagre extension
+    if (window.cytoscape && window.cytoscapeDagre) {
+      window.cytoscape.use(window.cytoscapeDagre);
+    }
+    
+    // Initialize Cytoscape
+    state.cy = window.cytoscape({
+      container: document.getElementById('cy'),
+      elements: [],
+      ...cytoscapeConfig,
+      style: cytoscapeStyles
+    });
+    
+    // Wire up event handlers
+    this.setupEventHandlers();
+    
+    console.log('Cytoscape initialized successfully');
+  }
+  
+  setupEventHandlers() {
+    const cy = state.cy;
+    
+    // Node click handler with multi-select support
+    cy.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      const nodeId = node.id();
+      const nodeLabel = node.data('label');
+      
+      if (evt.originalEvent && evt.originalEvent.shiftKey) {
+        // Toggle multi-selection
+        if (state.selectedNodes.has(nodeId)) {
+          state.selectedNodes.delete(nodeId);
+          node.removeClass('multi-selected');
+        } else {
+          state.selectedNodes.add(nodeId);
+          node.addClass('multi-selected');
+        }
+      } else {
+        // Regular click - show details
+        this.showNodeModal(node.data());
+      }
+    });
+    
+    // Edge click handler
+    cy.on('tap', 'edge', (evt) => {
+      this.hideEdgeTooltip();
+      this.showEdgeModal(evt.target.data());
+    });
+    
+    // Tooltip handlers
+    cy.on('mouseover', 'node', (evt) => {
+      this.isOverNode = true;
+      if (this.hideNodeTooltipTimeout) {
+        clearTimeout(this.hideNodeTooltipTimeout);
+      }
+      this.showNodeTooltip(evt.target, evt);
+    });
+    
+    cy.on('mouseout', 'node', () => {
+      this.isOverNode = false;
+      this.scheduleHideNodeTooltip();
+    });
+    
+    cy.on('mouseover', 'edge', (evt) => {
+      this.isOverEdge = true;
+      if (this.hideTooltipTimeout) {
+        clearTimeout(this.hideTooltipTimeout);
+      }
+      this.showEdgeTooltip(evt.target, evt);
+    });
+    
+    cy.on('mouseout', 'edge', () => {
+      this.isOverEdge = false;
+      this.scheduleHideTooltip();
+    });
+    
+    // Background click
+    cy.on('tap', (evt) => {
+      if (evt.target === cy) {
+        this.clearAllHighlights();
+      }
+    });
+  }
+  
+  async loadAllData() {
+    try {
+      const data = await API.getAllGraph();
+      
+      const nodeCount = (data.nodes || []).length;
+      const edgeCount = (data.relationships || []).length;
+      
+      if (nodeCount === 0 && edgeCount === 0) {
+        alert('No data in the knowledge graph yet. Upload a document in the Ingestion tab to get started!');
+        return;
+      }
+      
+      if (nodeCount > 200) {
+        console.log('Large graph detected, enabling viewport-based loading');
+        this.viewportMode = true;
+        // For now, just render everything - viewport loading can be added later
+      }
+      
+      this.renderGraph(data);
+    } catch (e) {
+      console.error('Failed to load all data:', e);
+      alert('Failed to load graph data: ' + e.message);
+    }
+  }
+  
+  renderGraph(data) {
+    const elements = [];
+    
+    (data.nodes || []).forEach(n => {
+      elements.push({
+        data: {
+          id: n.id,
+          label: n.label || n.id,
+          type: n.type,
+          sources: n.sources,
+          significance: n.significance
+        }
+      });
+    });
+    
+    (data.relationships || []).forEach(r => {
+      elements.push({
+        data: {
+          id: r.id,
+          source: r.source,
+          target: r.target,
+          relation: r.relation,
+          status: r.status || 'unverified',
+          polarity: r.polarity || 'positive',
+          confidence: r.confidence,
+          significance: r.significance,
+          sources: r.sources,
+          page_number: r.page_number,
+          original_text: r.original_text,
+          reviewed_by_first_name: r.reviewed_by_first_name,
+          reviewed_by_last_name: r.reviewed_by_last_name,
+          reviewed_at: r.reviewed_at
+        }
+      });
+    });
+    
+    state.cy.elements().remove();
+    
+    if (elements.length === 0) {
+      return;
+    }
+    
+    state.cy.add(elements);
+    
+    // Apply layout
+    const nodeCount = (data.nodes || []).length;
+    const layoutConfig = getLayoutConfig(nodeCount);
+    
+    state.cy.resize();
+    const layout = state.cy.layout(layoutConfig);
+    layout.run();
+    
+    layout.on('layoutstop', () => {
+      setTimeout(async () => {
+        state.cy.fit(undefined, 30);
+        // Populate index after graph is rendered
+        await this.indexManager.populateIndex();
+      }, 50);
+    });
+  }
+  
+  showNodeTooltip(node, evt) {
+    const tooltip = document.getElementById('node-tooltip');
+    if (!tooltip) return;
+    
+    const data = node.data();
+    document.getElementById('node-tooltip-label').textContent = data.label || data.id;
+    document.getElementById('node-tooltip-type').textContent = `Type: ${data.type || 'N/A'}`;
+    document.getElementById('node-tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';
+    
+    tooltip.style.left = evt.renderedPosition.x + 20 + 'px';
+    tooltip.style.top = evt.renderedPosition.y + 20 + 'px';
+    tooltip.classList.add('visible');
+  }
+  
+  scheduleHideNodeTooltip() {
+    this.hideNodeTooltipTimeout = setTimeout(() => {
+      if (!this.isOverNode) {
+        this.hideNodeTooltip();
+      }
+    }, 200);
+  }
+  
+  hideNodeTooltip() {
+    const tooltip = document.getElementById('node-tooltip');
+    if (tooltip) {
+      tooltip.classList.remove('visible');
+    }
+  }
+  
+  showEdgeTooltip(edge, evt) {
+    const tooltip = document.getElementById('edge-tooltip');
+    if (!tooltip) return;
+    
+    const data = edge.data();
+    const sourceNode = state.cy.getElementById(data.source);
+    const targetNode = state.cy.getElementById(data.target);
+    
+    document.getElementById('tooltip-source').textContent = sourceNode.data('label') || data.source;
+    document.getElementById('tooltip-relation').textContent = data.relation;
+    document.getElementById('tooltip-target').textContent = targetNode.data('label') || data.target;
+    document.getElementById('tooltip-confidence').textContent = data.confidence ? `Confidence: ${(data.confidence * 100).toFixed(0)}%` : '';
+    document.getElementById('tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';
+    
+    tooltip.style.left = evt.renderedPosition.x + 20 + 'px';
+    tooltip.style.top = evt.renderedPosition.y + 20 + 'px';
+    tooltip.classList.add('visible');
+  }
+  
+  scheduleHideTooltip() {
+    this.hideTooltipTimeout = setTimeout(() => {
+      if (!this.isOverEdge && !this.isOverTooltip) {
+        this.hideEdgeTooltip();
+      }
+    }, 200);
+  }
+  
+  hideEdgeTooltip() {
+    const tooltip = document.getElementById('edge-tooltip');
+    if (tooltip) {
+      tooltip.classList.remove('visible');
+    }
+  }
+  
+  showNodeModal(data) {
+    this.modalManager.showNodeModal(data);
+  }
+  
+  showEdgeModal(data) {
+    this.modalManager.showEdgeModal(data);
+  }
+  
+  toggleIndex() {
+    state.indexVisible = !state.indexVisible;
+    const panel = document.getElementById('index-panel');
+    const btn = document.getElementById('index-toggle-btn');
+    
+    if (panel) {
+      if (state.indexVisible) {
+        panel.classList.remove('hidden');
+        if (btn) btn.classList.add('index-visible');
+      } else {
+        panel.classList.add('hidden');
+        if (btn) btn.classList.remove('index-visible');
+      }
+    }
+  }
+  
+  toggleLegend() {
+    const modal = document.getElementById('legend-modal-overlay');
+    if (modal) {
+      modal.classList.toggle('visible');
+    }
+  }
+  
+  clearSelection() {
+    state.selectedNodes.clear();
+    if (state.cy) {
+      state.cy.nodes().removeClass('multi-selected');
+    }
+  }
+  
+  clearAllHighlights() {
+    if (state.cy) {
+      state.cy.nodes().removeClass('highlighted neighbor');
+    }
+  }
+}

@@ -2,25 +2,31 @@
 Main Unified UI - Knowledge Synthesis Platform
 ==============================================
 
-This file contains the main user interface for the Knowledge Synthesis Platform.
-It includes both the Ingestion and Viewing tabs in a single-page application.
+MIGRATED TO NODE.JS SERVER
+This route now redirects to the Node.js server which serves the frontend.
+The UI has been migrated to:
+- node-server/public/index.html
+- node-server/public/css/*.css
+- node-server/public/js/**/*.js
 
-Structure:
-- Python Route Handler (lines 1-15)
-- HTML Template (lines 16+)
-  - CSS Styles (lines 20-560)
-  - HTML Structure (lines 563-875)
-  - JavaScript Logic (lines 876-2345)
-
-TODO: Consider moving to separate HTML/CSS/JS files for better maintainability
+The Node.js server proxies API requests to this FastAPI backend.
 """
-from fastapi import APIRouter, Response
+from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 
 
 router = APIRouter()
 
 
-HTML = """
+# Redirect to Node.js server for UI
+@router.get("")
+def serve_main_ui():
+    """Redirect to Node.js server which now serves the frontend"""
+    return RedirectResponse(url="http://127.0.0.1:3000/app")
+
+
+# Keep the old HTML for reference (can be removed later)
+_OLD_HTML = """
 <!doctype html>
 <html>
   <head>

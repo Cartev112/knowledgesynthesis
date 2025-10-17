@@ -49,16 +49,17 @@ export function createUser(first_name, last_name, email, password) {
   writeStore(store)
 }
 
-export function verifyUser(email, password) {
+export function verifyUser(emailOrUsername, password) {
   const store = readStore()
-  const user = store.users.find(u => u.email === email)
+  // Support both email and legacy username fields
+  const user = store.users.find(u => u.email === emailOrUsername || u.username === emailOrUsername)
   if (!user) return null
   const ok = bcrypt.compareSync(password, user.password_hash)
   return ok ? { 
-    email: user.email,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    roles: user.roles
+    email: user.email || `${user.username}@legacy.local`,
+    first_name: user.first_name || 'User',
+    last_name: user.last_name || 'Name',
+    roles: user.roles || ['user']
   } : null
 }
 
