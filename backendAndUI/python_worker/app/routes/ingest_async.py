@@ -119,6 +119,14 @@ async def ingest_pdf_async(
         # Read PDF bytes
         pdf_bytes = await file.read()
         
+        # Check file size (limit to 50MB to avoid RabbitMQ message size issues)
+        max_size_mb = 50
+        if len(pdf_bytes) > max_size_mb * 1024 * 1024:
+            raise HTTPException(
+                status_code=400,
+                detail=f"PDF file too large. Maximum size is {max_size_mb}MB."
+            )
+        
         # Generate job ID
         job_id = str(uuid.uuid4())
         

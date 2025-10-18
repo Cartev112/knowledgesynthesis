@@ -80,11 +80,17 @@ class QueuePublisher:
             if self.connection is None or self.connection.is_closed:
                 self._connect()
             
+            # Serialize job data
+            message_body = json.dumps(job_data)
+            message_size_mb = len(message_body) / (1024 * 1024)
+            
+            logger.info(f"Publishing job {job_id} (message size: {message_size_mb:.2f}MB)")
+            
             # Publish message
             self.channel.basic_publish(
                 exchange='',
                 routing_key=INGEST_QUEUE,
-                body=json.dumps(job_data),
+                body=message_body,
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # Make message persistent
                     content_type='application/json',
@@ -96,7 +102,7 @@ class QueuePublisher:
             return True
             
         except Exception as e:
-            logger.error(f"Failed to publish job {job_id}: {e}")
+            logger.error(f"Failed to publish job {job_id}: {e}", exc_info=True)
             return False
     
     def close(self):
