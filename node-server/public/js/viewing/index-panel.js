@@ -248,19 +248,22 @@ export class IndexPanelManager {
   }
   
   highlightAndZoomToEdge(edgeId) {
-    if (!state.cy) return;
+    if (!state.cy || !edgeId) return;
     
     let edge = state.cy.getElementById(edgeId);
     
     // If not found by ID, try to find by source-target pattern
-    if (edge.length === 0 && edgeId.includes('-')) {
+    if (edge.length === 0 && typeof edgeId === 'string' && edgeId.includes('-')) {
       const [sourceId, targetId] = edgeId.split('-');
       edge = state.cy.edges().filter(e => {
         return e.data('source') === sourceId && e.data('target') === targetId;
       }).first();
     }
     
-    if (!edge || edge.length === 0) return;
+    if (!edge || edge.length === 0) {
+      console.warn('Could not find edge with ID:', edgeId);
+      return;
+    }
     
     // Clear previous highlights
     this.clearAllHighlights();

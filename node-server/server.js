@@ -375,9 +375,9 @@ app.get('/review-ui', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'))
 })
 
-// Proxy review API endpoints to Python backend
+// Proxy review API endpoints to Python backend (NO /api prefix!)
 app.use('/review', (req, res) => {
-  const url = `${fastapiBase}/api/review${req.url}`
+  const url = `${fastapiBase}/review${req.url}`
   console.log(`Proxying ${req.method} /review${req.url} to ${url}`)
   
   axios({

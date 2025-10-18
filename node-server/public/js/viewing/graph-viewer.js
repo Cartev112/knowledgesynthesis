@@ -180,13 +180,16 @@ export class GraphViewer {
     });
     
     // Then add edges, but only if both source and target nodes exist
+    let skippedEdges = 0;
     (data.relationships || []).forEach(r => {
       if (!nodeIds.has(r.source)) {
         console.warn(`Skipping edge ${r.id}: source node '${r.source}' not found`);
+        skippedEdges++;
         return;
       }
       if (!nodeIds.has(r.target)) {
         console.warn(`Skipping edge ${r.id}: target node '${r.target}' not found`);
+        skippedEdges++;
         return;
       }
       
@@ -210,11 +213,17 @@ export class GraphViewer {
       });
     });
     
+    if (skippedEdges > 0) {
+      console.warn(`⚠️ Skipped ${skippedEdges} edges due to missing nodes. This indicates a data consistency issue in the backend.`);
+    }
+    
     state.cy.elements().remove();
     
     if (elements.length === 0) {
       return;
     }
+    
+    console.log(`Rendering ${nodeIds.size} nodes and ${elements.length - nodeIds.size} edges`);
     
     // Batch add elements for better performance
     state.cy.startBatch();
