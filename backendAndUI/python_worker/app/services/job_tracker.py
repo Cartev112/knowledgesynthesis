@@ -13,8 +13,7 @@ if REDIS_URL:
     # Use REDIS_URL if provided (Railway, Upstash, etc.)
     redis_client = redis.from_url(
         REDIS_URL,
-        decode_responses=True,
-        ssl_cert_reqs=None  # Allow self-signed certs
+        decode_responses=True
     )
 else:
     # Fall back to individual environment variables (local development)
