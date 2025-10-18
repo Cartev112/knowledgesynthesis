@@ -20,6 +20,12 @@ export class GraphViewer {
     this.hideNodeTooltipTimeout = null;
     this.modalManager = new ModalManager();
     this.indexManager = new IndexPanelManager(this.modalManager);
+    
+    // Performance optimization: cache and debounce
+    this.viewportCache = null;
+    this.renderDebounceTimer = null;
+    this.lastZoom = 1;
+    this.lastPan = { x: 0, y: 0 };
   }
 
   async init() {
@@ -62,6 +68,9 @@ export class GraphViewer {
           state.selectedNodes.add(nodeId);
           node.addClass('multi-selected');
         }
+        
+        // Update FAB visibility
+        this.updateFabVisibility();
       } else {
         // Regular click - show details
         this.showNodeModal(node.data());
@@ -176,22 +185,32 @@ export class GraphViewer {
       return;
     }
     
+    // Batch add elements for better performance
+    state.cy.startBatch();
     state.cy.add(elements);
+    state.cy.endBatch();
     
     // Apply layout
     const nodeCount = (data.nodes || []).length;
     const layoutConfig = getLayoutConfig(nodeCount);
     
     state.cy.resize();
+    
+    // Show loading indicator for large graphs
+    if (nodeCount > 100) {
+      console.log(`Laying out ${nodeCount} nodes...`);
+    }
+    
     const layout = state.cy.layout(layoutConfig);
     layout.run();
     
     layout.on('layoutstop', () => {
-      setTimeout(async () => {
+      // Use requestAnimationFrame for smoother fit
+      requestAnimationFrame(() => {
         state.cy.fit(undefined, 30);
         // Populate index after graph is rendered
-        await this.indexManager.populateIndex();
-      }, 50);
+        this.indexManager.populateIndex();
+      });
     });
   }
   
@@ -289,11 +308,24 @@ export class GraphViewer {
     }
   }
   
+  updateFabVisibility() {
+    const fabContainer = document.getElementById('fab-container');
+    if (!fabContainer) return;
+    
+    // Show FAB only when exactly 2 nodes are selected
+    if (state.selectedNodes.size === 2) {
+      fabContainer.classList.remove('hidden');
+    } else {
+      fabContainer.classList.add('hidden');
+    }
+  }
+  
   clearSelection() {
     state.selectedNodes.clear();
     if (state.cy) {
       state.cy.nodes().removeClass('multi-selected');
     }
+    this.updateFabVisibility();
   }
   
   clearAllHighlights() {

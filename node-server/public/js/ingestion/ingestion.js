@@ -52,34 +52,162 @@ export class IngestionManager {
       const nodeIds = Array.from(state.selectedNodes);
       const data = await API.getSubgraph(nodeIds);
       
-      let contextText = '=== EXISTING KNOWLEDGE GRAPH CONTEXT ===\n\n';
-      contextText += `This subgraph contains ${data.nodes.length} entities and ${data.relationships.length} relationships:\n\n`;
-      contextText += 'ENTITIES:\n';
+      // Get 1-hop neighbors for richer context
+      const neighbors = this._getNeighbors(data.nodes, data.relationships);
       
+      let contextText = '=== EXISTING KNOWLEDGE GRAPH CONTEXT ===\n\n';
+      contextText += `This subgraph contains ${data.nodes.length} selected entities, ${neighbors.length} neighbor entities, and ${data.relationships.length} relationships:\n\n`;
+      
+      contextText += 'SELECTED ENTITIES:\n';
       data.nodes.forEach(node => {
         const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
         const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
-        contextText += `- ${label} (${type})\n`;
+        const sig = node.significance ? ` (significance: ${node.significance}/5)` : '';
+        contextText += `- ${label} (${type})${sig}\n`;
       });
       
-      contextText += '\nRELATIONSHIPS:\n';
+      if (neighbors.length > 0) {
+        contextText += '\nNEIGHBOR ENTITIES:\n';
+        neighbors.forEach(node => {
+          const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
+          const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
+          contextText += `- ${label} (${type})\n`;
+        });
+      }
       
+      contextText += '\nRELATIONSHIPS:\n';
       data.relationships.forEach(rel => {
-        const sourceNode = data.nodes.find(n => n.id === rel.source);
-        const targetNode = data.nodes.find(n => n.id === rel.target);
+        const sourceNode = data.nodes.find(n => n.id === rel.source) || neighbors.find(n => n.id === rel.source);
+        const targetNode = data.nodes.find(n => n.id === rel.target) || neighbors.find(n => n.id === rel.target);
         const sourceName = String(sourceNode ? sourceNode.label : rel.source).replace(/[^\w\s-]/g, '');
         const targetName = String(targetNode ? targetNode.label : rel.target).replace(/[^\w\s-]/g, '');
         const relation = String(rel.relation || 'RELATED_TO').replace(/[^\w\s-]/g, '');
+        const conf = rel.confidence ? ` (confidence: ${rel.confidence.toFixed(2)})` : '';
         
-        contextText += `- ${sourceName} -> [${relation}] -> ${targetName}\n`;
+        contextText += `- ${sourceName} -> [${relation}] -> ${targetName}${conf}\n`;
       });
       
       contextText += '\n=== END CONTEXT ===\n\n';
-      return contextText;
+      return { text: contextText, data, neighbors };
       
     } catch (error) {
       console.error('Error getting graph context:', error);
       return null;
+    }
+  }
+  
+  _getNeighbors(selectedNodes, relationships) {
+    // Get unique neighbor node IDs from relationships
+    const selectedIds = new Set(selectedNodes.map(n => n.id));
+    const neighborIds = new Set();
+    
+    relationships.forEach(rel => {
+      if (selectedIds.has(rel.source) && !selectedIds.has(rel.target)) {
+        neighborIds.add(rel.target);
+      }
+      if (selectedIds.has(rel.target) && !selectedIds.has(rel.source)) {
+        neighborIds.add(rel.source);
+      }
+    });
+    
+    // Fetch neighbor nodes from cytoscape
+    const neighbors = [];
+    if (state.cy) {
+      neighborIds.forEach(id => {
+        const node = state.cy.getElementById(id);
+        if (node.length > 0) {
+          neighbors.push(node.data());
+        }
+      });
+    }
+    
+    return neighbors;
+  }
+  
+  async showContextPreview() {
+    const modal = document.getElementById('context-preview-modal');
+    if (!modal) return;
+    
+    try {
+      const result = await this.getGraphContextText();
+      if (!result) {
+        alert('Failed to load context');
+        return;
+      }
+      
+      const { text, data, neighbors } = result;
+      
+      // Populate nodes list
+      const nodesList = document.getElementById('preview-nodes-list');
+      nodesList.innerHTML = data.nodes.map(node => 
+        `<div style="padding: 4px 0; color: #374151;">
+          🔵 <strong>${node.label || 'Unknown'}</strong> (${node.type || 'Concept'})
+          ${node.significance ? `<span style="color: #6b7280; font-size: 12px;"> - Sig: ${node.significance}/5</span>` : ''}
+        </div>`
+      ).join('');
+      
+      // Populate relationships list
+      const relsList = document.getElementById('preview-relationships-list');
+      relsList.innerHTML = data.relationships.map(rel => {
+        const source = data.nodes.find(n => n.id === rel.source) || neighbors.find(n => n.id === rel.source);
+        const target = data.nodes.find(n => n.id === rel.target) || neighbors.find(n => n.id === rel.target);
+        return `<div style="padding: 4px 0; color: #374151; font-size: 13px;">
+          ${source?.label || rel.source} <span style="color: #8b5cf6; font-weight: 600;">→ [${rel.relation}] →</span> ${target?.label || rel.target}
+          ${rel.confidence ? `<span style="color: #6b7280; font-size: 11px;"> (${(rel.confidence * 100).toFixed(0)}%)</span>` : ''}
+        </div>`;
+      }).join('');
+      
+      // Populate neighbors list
+      const neighborsList = document.getElementById('preview-neighbors-list');
+      if (neighbors.length > 0) {
+        neighborsList.innerHTML = neighbors.map(node => 
+          `<div style="padding: 4px 0; color: #6b7280; font-size: 13px;">
+            ○ ${node.label || 'Unknown'} (${node.type || 'Concept'})
+          </div>`
+        ).join('');
+      } else {
+        neighborsList.innerHTML = '<div style="color: #9ca3af; font-style: italic;">No neighbor entities</div>';
+      }
+      
+      // Populate raw text
+      document.getElementById('preview-raw-text').textContent = text;
+      
+      // Estimate tokens (rough: ~4 chars per token)
+      const tokenCount = Math.ceil(text.length / 4);
+      document.getElementById('preview-token-count').textContent = tokenCount;
+      
+      // Update counts
+      document.getElementById('preview-node-count').textContent = data.nodes.length;
+      document.getElementById('preview-rel-count').textContent = data.relationships.length;
+      document.getElementById('preview-neighbor-count').textContent = neighbors.length;
+      
+      // Store text for copying
+      this.cachedContextText = text;
+      
+      // Show modal
+      modal.style.display = 'flex';
+      
+    } catch (error) {
+      console.error('Error showing context preview:', error);
+      alert('Error loading context preview');
+    }
+  }
+  
+  closeContextPreview() {
+    const modal = document.getElementById('context-preview-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+  
+  copyContextText() {
+    if (this.cachedContextText) {
+      navigator.clipboard.writeText(this.cachedContextText).then(() => {
+        alert('✓ Context text copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy text');
+      });
     }
   }
   
@@ -99,12 +227,12 @@ export class IngestionManager {
     
     // Get graph context if checkbox is checked
     if (useGraphContext) {
-      const graphContext = await this.getGraphContextText();
-      if (graphContext) {
+      const result = await this.getGraphContextText();
+      if (result && result.text) {
         if (extractionContext) {
-          extractionContext = graphContext + '\nUSER FOCUS: ' + extractionContext;
+          extractionContext = result.text + '\nUSER FOCUS: ' + extractionContext;
         } else {
-          extractionContext = graphContext;
+          extractionContext = result.text;
         }
       } else {
         this.showStatus('error', 'Failed to load graph context. Please try again or uncheck the option.');
@@ -173,9 +301,9 @@ export class IngestionManager {
         jobIds: []
       };
       
-      const fileListEl = document.getElementById('file-list-status');
+      const fileListEl = document.getElementById('progress-modal-files');
       fileListEl.innerHTML = files.map((file, index) => 
-        `<div id="file-status-${index}" class="file-status-item pending">
+        `<div id="file-status-${index}" style="padding: 8px; margin: 4px 0; background: #f9fafb; border-radius: 4px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
           <span>⏳</span>
           <span>${file.name}</span>
         </div>`
@@ -193,7 +321,8 @@ export class IngestionManager {
           this.updateProgress(queueProgress, 100, `Queuing: ${file.name}`);
           this.updateStatusBar(`Queuing ${i + 1}/${totalFiles}: ${file.name}`);
           
-          fileStatusEl.className = 'file-status-item processing';
+          fileStatusEl.style.background = '#dbeafe';
+          fileStatusEl.style.color = '#1e40af';
           fileStatusEl.innerHTML = `<span>📤</span><span>Queuing: ${file.name}</span>`;
           
           try {
@@ -229,7 +358,8 @@ export class IngestionManager {
             
           } catch (e) {
             results.failed++;
-            fileStatusEl.className = 'file-status-item error';
+            fileStatusEl.style.background = '#fee2e2';
+            fileStatusEl.style.color = '#991b1b';
             fileStatusEl.innerHTML = `<span>✗</span><span>${file.name} - ${e.message}</span>`;
           }
         }
@@ -248,17 +378,20 @@ export class IngestionManager {
               results.successful++;
               results.totalTriplets += jobResult.triplets_written || 0;
               
-              fileStatusEl.className = 'file-status-item success';
+              fileStatusEl.style.background = '#d1fae5';
+              fileStatusEl.style.color = '#065f46';
               const written = jobResult.triplets_written || 0;
               fileStatusEl.innerHTML = `<span>✓</span><span>${fileName} (${written} relationships)</span>`;
             } else {
               results.failed++;
-              fileStatusEl.className = 'file-status-item error';
+              fileStatusEl.style.background = '#fee2e2';
+              fileStatusEl.style.color = '#991b1b';
               fileStatusEl.innerHTML = `<span>✗</span><span>${fileName} - ${jobResult.error}</span>`;
             }
           } catch (e) {
             results.failed++;
-            fileStatusEl.className = 'file-status-item error';
+            fileStatusEl.style.background = '#fee2e2';
+            fileStatusEl.style.color = '#991b1b';
             fileStatusEl.innerHTML = `<span>✗</span><span>${fileName} - ${e.message}</span>`;
           }
         });
@@ -266,20 +399,26 @@ export class IngestionManager {
         await Promise.all(pollingPromises);
         
         this.updateProgress(100, 100, 'All files processed!');
-        this.updateStatusBar('✓ Complete!');
-        setTimeout(() => {
-          this.showProgress(false);
-          this.restoreButton();
-          if (results.failed === 0) {
-            this.showStatus('success', 
-              `✓ All ${results.successful} file(s) processed successfully! Total: ${results.totalTriplets} relationships extracted.`
-            );
-          } else {
-            this.showStatus('error', 
-              `⚠ Processed ${results.successful} file(s) successfully, ${results.failed} failed. Total: ${results.totalTriplets} relationships extracted.`
-            );
-          }
-        }, 1500);
+        
+        // Show summary
+        document.getElementById('progress-summary-success').textContent = results.successful;
+        document.getElementById('progress-summary-failed').textContent = results.failed;
+        document.getElementById('progress-summary-triplets').textContent = results.totalTriplets;
+        document.getElementById('progress-modal-summary').style.display = 'block';
+        
+        // Change button text
+        document.getElementById('progress-modal-close-btn').textContent = 'Close';
+        
+        this.restoreButton();
+        if (results.failed === 0) {
+          this.showStatus('success', 
+            `✓ All ${results.successful} file(s) processed successfully! Total: ${results.totalTriplets} relationships extracted.`
+          );
+        } else {
+          this.showStatus('error', 
+            `⚠ Processed ${results.successful} file(s) successfully, ${results.failed} failed. Total: ${results.totalTriplets} relationships extracted.`
+          );
+        }
         
         document.getElementById('pdf-file').value = '';
         document.getElementById('extraction-context').value = '';
@@ -391,21 +530,24 @@ export class IngestionManager {
   }
   
   showProgress(show) {
-    const progressContainer = document.getElementById('progress-container');
+    const modal = document.getElementById('progress-modal');
     if (show) {
-      progressContainer.classList.add('active');
+      modal.style.display = 'flex';
     } else {
-      progressContainer.classList.remove('active');
+      modal.style.display = 'none';
     }
   }
   
   updateProgress(current, total, statusText) {
     const percentage = Math.round((current / total) * 100);
-    document.getElementById('progress-bar-fill').style.width = percentage + '%';
-    document.getElementById('progress-percentage').textContent = percentage + '%';
-    document.getElementById('progress-count').textContent = `${current} / ${total}`;
-    document.getElementById('progress-text').textContent = statusText;
-    document.getElementById('current-file-status').textContent = statusText;
+    document.getElementById('progress-modal-bar').style.width = percentage + '%';
+    document.getElementById('progress-modal-percentage').textContent = percentage + '%';
+    document.getElementById('progress-modal-count').textContent = `${current} / ${total}`;
+    document.getElementById('progress-modal-status').textContent = statusText;
+  }
+  
+  closeProgressModal() {
+    this.showProgress(false);
   }
   
   hideStatus() {

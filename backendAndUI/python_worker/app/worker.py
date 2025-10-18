@@ -14,9 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.models.job import JobStatus
 from app.services.job_tracker import JobTracker
-from app.services.openai_extract import extract_triplets
+from app.services.openai_extract import extract_triplets, extract_title_with_llm
 from app.services.graph_write import write_triplets
-from app.routes.ingest import extract_title_from_text
 
 # Configure logging
 logging.basicConfig(
@@ -101,8 +100,8 @@ class IngestionWorker:
         if not full_text.strip():
             raise ValueError("Could not extract any text from the PDF")
         
-        # Extract title
-        document_title = extract_title_from_text(full_text)
+        # Extract title using LLM
+        document_title = extract_title_with_llm(full_text)
         
         # Generate document_id from hash
         sha256 = hashlib.sha256(pdf_bytes).hexdigest()
@@ -145,7 +144,7 @@ class IngestionWorker:
         # Extract or use provided title
         document_title = job_data.get('document_title')
         if not document_title:
-            document_title = extract_title_from_text(text_content)
+            document_title = extract_title_with_llm(text_content)
         
         document_id = job_data.get('document_id', f"text-{job_id}")
         

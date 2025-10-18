@@ -6,12 +6,18 @@ export const cytoscapeConfig = {
   wheelSensitivity: 0.2,
   minZoom: 0.1,
   maxZoom: 3,
-  textureOnViewport: true,
-  motionBlur: false,
-  motionBlurOpacity: 0.2,
-  hideEdgesOnViewport: false,
-  hideLabelsOnViewport: false,
-  pixelRatio: 'auto'
+  // Performance optimizations
+  textureOnViewport: true, // Use texture during viewport changes
+  motionBlur: true, // Enable motion blur for smoother feel
+  motionBlurOpacity: 0.15,
+  hideEdgesOnViewport: true, // Hide edges during pan/zoom for performance
+  hideLabelsOnViewport: true, // Hide labels during pan/zoom for performance
+  pixelRatio: 'auto',
+  // Additional performance settings
+  boxSelectionEnabled: false, // Disable if not needed
+  selectionType: 'single',
+  autoungrabify: false,
+  autounselectify: false
 };
 
 export const cytoscapeStyles = [
@@ -146,11 +152,12 @@ export const cytoscapeStyles = [
 
 export function getLayoutConfig(nodeCount) {
   if (nodeCount > 200) {
+    // Large graphs: use faster preset layout first, then refine
     return {
       name: 'cose',
       idealEdgeLength: 80,
       nodeOverlap: 30,
-      refresh: 20,
+      refresh: 10, // Reduced for performance
       fit: true,
       padding: 20,
       randomize: false,
@@ -159,17 +166,19 @@ export function getLayoutConfig(nodeCount) {
       edgeElasticity: 80,
       nestingFactor: 5,
       gravity: 100,
-      numIter: 500,
+      numIter: 300, // Reduced iterations for faster layout
       initialTemp: 150,
-      coolingFactor: 0.9,
-      minTemp: 1.0
+      coolingFactor: 0.85, // Faster cooling
+      minTemp: 1.0,
+      animate: false, // Disable animation for large graphs
+      animationDuration: 0
     };
   } else if (nodeCount > 50) {
     return {
       name: 'cose',
       idealEdgeLength: 100,
       nodeOverlap: 20,
-      refresh: 20,
+      refresh: 15,
       fit: true,
       padding: 30,
       randomize: false,
@@ -178,10 +187,12 @@ export function getLayoutConfig(nodeCount) {
       edgeElasticity: 100,
       nestingFactor: 5,
       gravity: 80,
-      numIter: 1000,
+      numIter: 600, // Reduced from 1000
       initialTemp: 200,
-      coolingFactor: 0.95,
-      minTemp: 1.0
+      coolingFactor: 0.92,
+      minTemp: 1.0,
+      animate: 'end', // Animate only at end
+      animationDuration: 250
     };
   } else {
     return {
@@ -197,10 +208,12 @@ export function getLayoutConfig(nodeCount) {
       edgeElasticity: 120,
       nestingFactor: 5,
       gravity: 80,
-      numIter: 800,
+      numIter: 600, // Reduced from 800
       initialTemp: 200,
       coolingFactor: 0.95,
-      minTemp: 1.0
+      minTemp: 1.0,
+      animate: 'end',
+      animationDuration: 300
     };
   }
 }

@@ -136,6 +136,129 @@ class AppManager {
       }
     });
   }
+  
+  // FAB Actions for 2-Node Selection
+  createRelationship() {
+    if (state.selectedNodes.size !== 2) {
+      alert('Please select exactly 2 nodes');
+      return;
+    }
+    
+    const nodeIds = Array.from(state.selectedNodes);
+    const node1 = state.cy.getElementById(nodeIds[0]);
+    const node2 = state.cy.getElementById(nodeIds[1]);
+    
+    // Store nodes for relationship creation
+    this.manualEdgeNodes = {
+      node1: {
+        id: node1.id(),
+        label: node1.data('label')
+      },
+      node2: {
+        id: node2.id(),
+        label: node2.data('label')
+      }
+    };
+    
+    // Populate form
+    document.getElementById('manual-from').value = this.manualEdgeNodes.node1.label;
+    document.getElementById('manual-to').value = this.manualEdgeNodes.node2.label;
+    
+    // Show modal
+    const modal = document.getElementById('create-edge-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+  
+  closeCreateRelationshipModal() {
+    const modal = document.getElementById('create-edge-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+    document.getElementById('create-edge-form').reset();
+  }
+  
+  async saveManualRelationship(event) {
+    event.preventDefault();
+    
+    const relation = document.getElementById('manual-relation').value;
+    const evidence = document.getElementById('manual-evidence').value;
+    const confidence = parseFloat(document.getElementById('manual-confidence').value);
+    
+    try {
+      const payload = {
+        subject_id: this.manualEdgeNodes.node1.id,
+        subject_name: this.manualEdgeNodes.node1.label,
+        object_id: this.manualEdgeNodes.node2.id,
+        object_name: this.manualEdgeNodes.node2.label,
+        relation: relation,
+        evidence: evidence,
+        confidence: confidence,
+        created_by: state.currentUser?.email || 'expert-user',
+        created_by_first_name: state.currentUser?.first_name || '',
+        created_by_last_name: state.currentUser?.last_name || ''
+      };
+      
+      const response = await fetch('/api/manual/relationship', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create relationship');
+      }
+      
+      this.closeCreateRelationshipModal();
+      this.graphViewer.clearSelection();
+      alert('✓ Manual relationship created successfully!');
+      
+      // Reload the graph to show the new relationship
+      await this.graphViewer.loadAllData();
+    } catch (e) {
+      alert('Error creating relationship: ' + e.message);
+    }
+  }
+  
+  findPathBetweenNodes() {
+    if (state.selectedNodes.size !== 2) {
+      alert('Please select exactly 2 nodes');
+      return;
+    }
+    
+    const nodeIds = Array.from(state.selectedNodes);
+    console.log('Finding path between:', nodeIds);
+    
+    // TODO: Implement pathfinding algorithm
+    alert('Path finding feature coming soon!');
+  }
+  
+  compareNodes() {
+    if (state.selectedNodes.size !== 2) {
+      alert('Please select exactly 2 nodes');
+      return;
+    }
+    
+    const nodeIds = Array.from(state.selectedNodes);
+    console.log('Comparing nodes:', nodeIds);
+    
+    // TODO: Implement node comparison modal
+    alert('Node comparison feature coming soon!');
+  }
+  
+  mergeNodes() {
+    if (state.selectedNodes.size !== 2) {
+      alert('Please select exactly 2 nodes');
+      return;
+    }
+    
+    const nodeIds = Array.from(state.selectedNodes);
+    console.log('Merging nodes:', nodeIds);
+    
+    // TODO: Implement node merging
+    alert('Node merging feature coming soon!');
+  }
 }
 
 // Initialize application

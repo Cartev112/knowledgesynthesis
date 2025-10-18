@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Knowledge Graph Review Queue</title>
+    <link rel="stylesheet" href="/static/css/review.css">
+  </head>
+  <body>
+    <!-- Header -->
+    <div id="header">
+      <h1>📋 Knowledge Graph Review Queue</h1>
+      <div id="stats">
+        <div class="stat stat-unverified">
+          <div class="stat-label">Unverified</div>
+          <div class="stat-value" id="stat-unverified">0</div>
+        </div>
+        <div class="stat stat-verified">
+          <div class="stat-label">Verified</div>
+          <div class="stat-value" id="stat-verified">0</div>
+        </div>
+        <div class="stat stat-incorrect">
+          <div class="stat-label">Incorrect</div>
+          <div class="stat-value" id="stat-incorrect">0</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Controls -->
+    <div id="controls">
+      <select id="filter-status" onchange="applyFilters()">
+        <option value="all">All Statuses</option>
+        <option value="unverified" selected>Unverified Only</option>
+        <option value="verified">Verified Only</option>
+        <option value="incorrect">Incorrect Only</option>
+      </select>
+      
+      <select id="filter-type" onchange="applyFilters()">
+        <option value="all">All Types</option>
+      </select>
+      
+      <input type="text" id="search-box" placeholder="Search entities or relationships..." oninput="applyFilters()" />
+      
+      <button onclick="applyFilters()">🔍 Search</button>
+      <button onclick="resetFilters()">🔄 Reset</button>
+    </div>
+    
+    <!-- Relationship Cards -->
+    <div id="container">
+      <div id="loading">Loading relationships...</div>
+      <div id="relationships-list"></div>
+      <div id="no-results" style="display: none; text-align: center; padding: 48px; color: #9ca3af;">
+        No relationships found matching your filters.
+      </div>
+    </div>
+    
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title">Edit Relationship</h2>
+          <button class="modal-close" onclick="closeEditModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="edit-subject" />
+          </div>
+          
+          <div class="form-group">
+            <label>Predicate</label>
+            <input type="text" id="edit-predicate" />
+          </div>
+          
+          <div class="form-group">
+            <label>Object</label>
+            <input type="text" id="edit-object" />
+          </div>
+          
+          <div class="form-group">
+            <label>Evidence / Original Text</label>
+            <textarea id="edit-evidence" rows="4"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Confidence (0-1)</label>
+            <input type="number" id="edit-confidence" min="0" max="1" step="0.1" />
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+            <button onclick="closeEditModal()" class="btn-secondary">Cancel</button>
+            <button onclick="saveEdit()" class="btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script src="/static/js/review/review.js"></script>
+  </body>
+</html>

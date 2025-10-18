@@ -331,3 +331,53 @@
 #legend-toggle-btn:active {
   transform: scale(0.95);
 }
+
+/* FAB Container for 2-Node Actions */
+#fab-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 150;
+  transition: all 0.3s;
+}
+
+#fab-container.hidden {
+  display: none;
+}
+
+#fab-container .fab-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-right: 8px;
+}
+
+#fab-container .fab-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+#fab-container .fab-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+#fab-container .fab-btn:active {
+  transform: translateY(0);
+}

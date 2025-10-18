@@ -303,3 +303,79 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
         raise HTTPException(status_code=502, detail=f"OpenAI extraction failed: {exc}")
 
 
+def extract_title_with_llm(text: str) -> str:
+    """
+    Extract document title using LLM.
+    Uses first 1500 characters to keep cost low.
+    
+    Args:
+        text: Full document text
+        
+    Returns:
+        Extracted title string
+    """
+    import logging
+    import openai
+    
+    logger = logging.getLogger(__name__)
+    
+    # Take first 1500 characters for title extraction
+    sample = text[:200].strip()
+    
+    if not sample:
+        return "Untitled Document"
+    
+    try:
+        # Use OpenAI to extract title
+        client = openai.OpenAI(api_key=settings.openai_api_key)
+        
+        response = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[{
+                "role": "user",
+                "content": (
+                    "Extract the document title from the beginning of this text. "
+                    "Return ONLY the title, nothing else. "
+                    "Do not include author names, affiliations, or other metadata. "
+                    "If there is no clear title, return 'Untitled Document'.\n\n"
+                    f"{sample}"
+                )
+            }],
+            temperature=0,
+            max_tokens=100
+        )
+        
+        title = response.choices[0].message.content.strip()
+        
+        # Clean up common issues
+        title = title.strip('"\'')  # Remove quotes
+        title = title.replace('\n', ' ')  # Remove newlines
+        
+        # Limit length
+        if len(title) > 200:
+            title = title[:197] + "..."
+        
+        # Fallback if extraction failed
+        if not title or title.lower() == "untitled document":
+            logger.warning("LLM title extraction returned empty or default, using fallback")
+            return _fallback_title_extraction(text)
+        
+        logger.info(f"Extracted title with LLM: {title}")
+        return title
+        
+    except Exception as e:
+        logger.error(f"LLM title extraction failed: {e}, using fallback")
+        return _fallback_title_extraction(text)
+
+
+def _fallback_title_extraction(text: str) -> str:
+    """Simple fallback title extraction using first non-empty line."""
+    lines = [l.strip() for l in text.strip().split('\n') if l.strip()]
+    if lines:
+        title = lines[0]
+        if len(title) > 200:
+            title = title[:197] + "..."
+        return title
+    return "Untitled Document"
+
+

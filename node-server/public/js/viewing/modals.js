@@ -151,7 +151,7 @@ export class ModalManager {
     const content = document.getElementById('document-modal-content');
     
     try {
-      const res = await fetch(`/api/query/graph_by_docs?doc_ids=${docId}`);
+      const res = await fetch(`/query/graph_by_docs?doc_ids=${docId}`);
       if (!res.ok) throw new Error('Failed to fetch document data');
       
       const data = await res.json();

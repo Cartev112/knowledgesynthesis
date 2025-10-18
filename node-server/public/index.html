@@ -80,7 +80,14 @@
                 Select nodes in the Viewer (Shift+Click), then check this box to find relationships that agree with, disagree with, or add to the existing knowledge
               </div>
               <div id="graph-context-status" style="display: none; margin-top: 8px; padding: 10px; background: #dbeafe; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; color: #1e40af;">
-                <strong>Context Ready:</strong> <span id="graph-context-count">0</span> nodes selected
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>Context Ready:</strong> <span id="graph-context-count">0</span> nodes selected
+                  </div>
+                  <button type="button" onclick="window.ingestionManager.showContextPreview()" style="padding: 4px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                    👁️ Preview
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -110,21 +117,6 @@
               <button class="primary" id="ingest-btn" onclick="window.ingestionManager.ingestDocument()">
                 🚀 Extract Knowledge
               </button>
-            </div>
-            
-            <!-- Progress Bar -->
-            <div id="progress-container" class="progress-container">
-              <div class="progress-header">
-                <span id="progress-text">Processing...</span>
-                <span id="progress-count">0 / 0</span>
-              </div>
-              <div class="progress-bar-bg">
-                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;">
-                  <span id="progress-percentage">0%</span>
-                </div>
-              </div>
-              <div id="current-file-status" class="current-file-status"></div>
-              <div id="file-list-status" class="file-list-status"></div>
             </div>
             
             <div id="ingest-status"></div>
@@ -158,6 +150,23 @@
           <div class="tooltip-info" id="node-tooltip-type"></div>
           <div class="tooltip-info" id="node-tooltip-significance"></div>
           <button class="tooltip-btn" id="node-tooltip-read-more">📖 Read More</button>
+        </div>
+        
+        <!-- FAB Container for 2-Node Actions -->
+        <div id="fab-container" class="hidden">
+          <div class="fab-label">2 nodes selected</div>
+          <button class="fab-btn" id="fab-create-relationship" onclick="window.appManager.createRelationship()" title="Create manual relationship between nodes">
+            ➕ Create Relationship
+          </button>
+          <button class="fab-btn" id="fab-find-path" onclick="window.appManager.findPathBetweenNodes()" title="Find shortest path between nodes">
+            🔗 Find Path
+          </button>
+          <button class="fab-btn" id="fab-compare" onclick="window.appManager.compareNodes()" title="Compare selected nodes">
+            ⚖️ Compare
+          </button>
+          <button class="fab-btn" id="fab-merge" onclick="window.appManager.mergeNodes()" title="Merge selected nodes">
+            🔀 Merge
+          </button>
         </div>
       </div>
     </div>
@@ -241,6 +250,158 @@
         <button class="modal-close" onclick="closeDocumentModal()">×</button>
       </div>
       <div class="modal-body" id="document-modal-content"></div>
+    </div>
+  </div>
+  
+  <!-- Create Relationship Modal -->
+  <div id="create-edge-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Manual Relationship</h2>
+        <button class="modal-close" onclick="window.appManager.closeCreateRelationshipModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-edge-form" onsubmit="window.appManager.saveManualRelationship(event)">
+          <div class="form-group">
+            <label>From (Subject)</label>
+            <input type="text" id="manual-from" readonly style="background: #f9fafb;" />
+          </div>
+          
+          <div class="form-group">
+            <label>Relationship Type</label>
+            <input type="text" id="manual-relation" list="manual-predicate-suggestions" required placeholder="e.g., targets, inhibits, activates..." />
+            <datalist id="manual-predicate-suggestions">
+              <option value="targets">
+              <option value="inhibits">
+              <option value="activates">
+              <option value="regulates">
+              <option value="binds_to">
+              <option value="causes">
+              <option value="treats">
+              <option value="associated_with">
+              <option value="located_in">
+              <option value="part_of">
+            </datalist>
+          </div>
+          
+          <div class="form-group">
+            <label>To (Object)</label>
+            <input type="text" id="manual-to" readonly style="background: #f9fafb;" />
+          </div>
+          
+          <div class="form-group">
+            <label>Evidence / Source Text</label>
+            <textarea id="manual-evidence" required style="min-height: 80px;" placeholder="Provide the text or citation that supports this relationship..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Confidence (0-1)</label>
+            <input type="number" id="manual-confidence" min="0" max="1" step="0.1" value="0.9" />
+          </div>
+          
+          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+            <button type="button" onclick="window.appManager.closeCreateRelationshipModal()" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Create Relationship</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Ingestion Progress Modal -->
+  <div id="progress-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">🚀 Knowledge Extraction in Progress</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeProgressModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Email notification message -->
+        <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: start; gap: 10px;">
+            <span style="font-size: 20px;">📧</span>
+            <div style="font-size: 13px; color: #1e40af;">
+              <strong>Processing in background</strong><br>
+              You'll receive an email summary with all extracted relationships when complete. Feel free to close this modal and continue working.
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overall progress -->
+        <div class="modal-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #374151;" id="progress-modal-status">Queuing files...</span>
+            <span style="font-size: 13px; color: #6b7280;" id="progress-modal-count">0 / 0</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+            <div id="progress-modal-bar" style="height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 0%; transition: width 0.3s;"></div>
+          </div>
+          <div style="text-align: center; margin-top: 4px; font-size: 12px; color: #6b7280;" id="progress-modal-percentage">0%</div>
+        </div>
+        
+        <!-- File list -->
+        <div class="modal-section">
+          <div class="modal-section-title">Files</div>
+          <div id="progress-modal-files" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+        
+        <!-- Summary stats -->
+        <div id="progress-modal-summary" style="display: none; margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 6px;">
+          <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">Summary</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+            <div>✓ Successful: <strong id="progress-summary-success">0</strong></div>
+            <div>✗ Failed: <strong id="progress-summary-failed">0</strong></div>
+            <div style="grid-column: 1 / -1;">📊 Total Relationships: <strong id="progress-summary-triplets">0</strong></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <button type="button" onclick="window.ingestionManager.closeProgressModal()" class="btn-primary" id="progress-modal-close-btn">
+            Continue in Background
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Graph Context Preview Modal -->
+  <div id="context-preview-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 class="modal-title">📊 Graph Context Preview</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeContextPreview()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">Selected Nodes (<span id="preview-node-count">0</span>)</div>
+          <div id="preview-nodes-list" class="modal-section-content"></div>
+        </div>
+        
+        <div class="modal-section">
+          <div class="modal-section-title">Relationships (<span id="preview-rel-count">0</span>)</div>
+          <div id="preview-relationships-list" class="modal-section-content"></div>
+        </div>
+        
+        <div class="modal-section">
+          <div class="modal-section-title">Neighbor Entities (<span id="preview-neighbor-count">0</span>)</div>
+          <div id="preview-neighbors-list" class="modal-section-content"></div>
+        </div>
+        
+        <div class="modal-section">
+          <div class="modal-section-title">Context Text</div>
+          <div class="modal-section-content">
+            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap;" id="preview-raw-text"></div>
+            <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">
+              Estimated tokens: <strong id="preview-token-count">0</strong>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <button type="button" onclick="window.ingestionManager.copyContextText()" class="btn-secondary">📋 Copy Text</button>
+          <button type="button" onclick="window.ingestionManager.closeContextPreview()" class="btn-primary">Close</button>
+        </div>
+      </div>
     </div>
   </div>
   

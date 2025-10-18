@@ -406,6 +406,11 @@ app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
 
+// Review UI route
+app.get('/review-ui', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'review.html'))
+})
+
 app.get('/app', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
