@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 # RabbitMQ connection settings
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
-RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
-RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "guest")
-RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "guest")
-RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT") or "5672")
+RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER") or "guest"
+RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS") or "guest"
+RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST") or "/"
 
 # Queue names
 INGEST_QUEUE = "ingestion_jobs"
