@@ -126,8 +126,8 @@ export class IngestionManager {
           body: JSON.stringify({
             text,
             document_title: 'Text Upload',
-            document_id: `user-${state.currentUser.user_id}-${Date.now()}`,
-            user_id: state.currentUser.user_id,
+            document_id: `user-${state.currentUser.email || 'anonymous'}-${Date.now()}`,
+            user_id: state.currentUser.email || 'anonymous',
             user_first_name: state.currentUser.first_name || '',
             user_last_name: state.currentUser.last_name || '',
             user_email: state.currentUser.email || '',
@@ -199,7 +199,7 @@ export class IngestionManager {
           try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('user_id', state.currentUser.user_id);
+            formData.append('user_id', state.currentUser.email || 'anonymous');
             formData.append('user_first_name', state.currentUser.first_name || '');
             formData.append('user_last_name', state.currentUser.last_name || '');
             formData.append('user_email', state.currentUser.email || '');
