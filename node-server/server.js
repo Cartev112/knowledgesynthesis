@@ -5,6 +5,7 @@ import path from 'path'
 import axios from 'axios'
 import dotenv from 'dotenv'
 import session from 'express-session'
+import FormData from 'form-data'
 import { fileURLToPath } from 'url'
 import { ensureAdminFromEnv, createUser, verifyUser, getUserByEmail } from './users.js'
 
@@ -326,7 +327,6 @@ app.use('/query', (req, res, next) => {
 // Special handler for PDF upload with file forwarding
 app.post('/api/ingest/pdf_async', requireAuth, upload.single('file'), async (req, res) => {
   try {
-    const FormData = require('form-data')
     const form = new FormData()
     
     // Add the file
