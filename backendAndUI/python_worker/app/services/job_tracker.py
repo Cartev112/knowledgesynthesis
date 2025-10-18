@@ -6,19 +6,30 @@ from datetime import datetime
 import os
 from ..models.job import IngestJob, JobStatus
 
-# Redis connection
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_DB = int(os.getenv("REDIS_DB", 0))
+# Redis connection - support both REDIS_URL (Railway) and individual vars
+REDIS_URL = os.getenv("REDIS_URL")
 
-redis_client = redis.Redis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    db=REDIS_DB,
-    password=os.getenv("REDIS_PASSWORD"),  # Railway Redis has password
-    decode_responses=True,
-    ssl=True if os.getenv("RAILWAY_ENVIRONMENT") else False  # SSL in production
-)
+if REDIS_URL:
+    # Use REDIS_URL if provided (Railway, Upstash, etc.)
+    redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        ssl_cert_reqs=None  # Allow self-signed certs
+    )
+else:
+    # Fall back to individual environment variables (local development)
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_DB = int(os.getenv("REDIS_DB", 0))
+    
+    redis_client = redis.Redis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=REDIS_DB,
+        password=os.getenv("REDIS_PASSWORD"),
+        decode_responses=True,
+        ssl=True if os.getenv("RAILWAY_ENVIRONMENT") else False
+    )
 
 
 class JobTracker:
