@@ -323,10 +323,57 @@ app.use('/query', (req, res, next) => {
   })
 })
 
-// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout)
+// Special handler for PDF upload with file forwarding
+app.post('/api/ingest/pdf_async', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    const FormData = require('form-data')
+    const form = new FormData()
+    
+    // Add the file
+    if (req.file) {
+      form.append('file', fs.createReadStream(req.file.path), {
+        filename: req.file.originalname,
+        contentType: 'application/pdf'
+      })
+    }
+    
+    // Add all other form fields
+    Object.keys(req.body).forEach(key => {
+      form.append(key, req.body[key])
+    })
+    
+    const url = `${fastapiBase}/api/ingest/pdf_async`
+    console.log(`Forwarding PDF upload to ${url}`)
+    
+    const response = await axios.post(url, form, {
+      headers: form.getHeaders()
+    })
+    
+    // Clean up uploaded file
+    if (req.file) {
+      fs.unlinkSync(req.file.path)
+    }
+    
+    res.status(response.status).json(response.data)
+  } catch (err) {
+    console.error('PDF upload proxy error:', err.message)
+    console.error('Error details:', err.response?.data)
+    
+    // Clean up uploaded file on error
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path) } catch {}
+    }
+    
+    const status = err.response?.status || 500
+    const data = err.response?.data || { detail: err.message }
+    res.status(status).json(data)
+  }
+})
+
+// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async)
 app.use('/api', (req, res, next) => {
   // Skip proxy for Node-handled endpoints
-  if (req.path === '/me' || req.path === '/login' || req.path === '/logout') {
+  if (req.path === '/me' || req.path === '/login' || req.path === '/logout' || req.path === '/ingest/pdf_async') {
     return next()
   }
   
@@ -347,6 +394,7 @@ app.use('/api', (req, res, next) => {
   })
   .catch(err => {
     console.error(`Proxy error for /api${req.url}:`, err.message)
+    console.error('Error details:', err.response?.data)
     const status = err.response?.status || 500
     const data = err.response?.data || { detail: err.message }
     res.status(status).json(data)
