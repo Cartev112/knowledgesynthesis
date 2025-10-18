@@ -81,26 +81,26 @@
 
 #edge-modal, #node-modal {
   background: white;
-  border-radius: 1rem;
-  max-width: 46.875rem;
+  border-radius: 0.75rem;
+  max-width: 37.5rem;
   width: 90%;
-  max-height: 85vh;
+  max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.3);
 }
 
 #document-modal {
   background: white;
-  border-radius: 1rem;
-  max-width: 56.25rem;
-  width: 92%;
-  max-height: 85vh;
+  border-radius: 0.75rem;
+  max-width: 50rem;
+  width: 90%;
+  max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.3);
 }
 
 #edge-modal .modal-header, #node-modal .modal-header, #document-modal .modal-header, #legend-modal .modal-header, .modal-header {
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 2px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -113,7 +113,7 @@
 }
 
 #edge-modal .modal-title, #node-modal .modal-title, #document-modal .modal-title, #legend-modal .modal-title, .modal-title {
-  font-size: 1.375rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #111827;
   margin: 0;
@@ -145,7 +145,7 @@
 }
 
 #edge-modal .modal-body, #node-modal .modal-body, #document-modal .modal-body, #legend-modal .modal-body, .modal-body {
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 #edge-modal .modal-section, #node-modal .modal-section, #document-modal .modal-section, #legend-modal .modal-section {
@@ -299,10 +299,10 @@
 
 .modal-container {
   background: white;
-  border-radius: 1rem;
-  max-width: 37.5rem;
+  border-radius: 0.75rem;
+  max-width: 32rem;
   width: 90%;
-  max-height: 85vh;
+  max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.3);
 }
@@ -352,6 +352,31 @@
 .doc-modal-list {
   max-height: 25rem;
   overflow-y: auto;
+}
+
+.doc-modal-list-paginated {
+  /* No max-height or scrolling - pagination handles this */
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-modal-show-more {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.doc-modal-show-more:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
 }
 
 .doc-modal-item {

@@ -5,6 +5,12 @@
 import { state } from '../state.js';
 
 export class ModalManager {
+  constructor() {
+    this.docModalNodesPage = 1;
+    this.docModalRelsPage = 1;
+    this.docModalPageSize = 15;
+  }
+  
   showEdgeModal(data) {
     const modal = document.getElementById('edge-modal-overlay');
     const content = document.getElementById('edge-modal-content');
@@ -191,18 +197,20 @@ export class ModalManager {
         // Left column: Concepts
         html += `<div class="doc-modal-column">`;
         if (data.nodes && data.nodes.length > 0) {
+          const pageSize = this.docModalPageSize;
+          const showing = Math.min(this.docModalNodesPage * pageSize, data.nodes.length);
           html += `
             <div class="modal-section">
-              <div class="modal-section-title">Concepts (${data.nodes.length})</div>
-              <div class="modal-section-content doc-modal-list">
-                ${data.nodes.slice(0, 25).map(n => `
+              <div class="modal-section-title">Concepts (${showing}/${data.nodes.length})</div>
+              <div class="modal-section-content doc-modal-list-paginated" id="doc-modal-nodes-list">
+                ${data.nodes.slice(0, showing).map(n => `
                   <div class="doc-modal-item" onclick="window.viewingManager.focusNode('${n.id}')">
                     <span class="doc-modal-icon">🔵</span>
                     <span class="doc-modal-text">${n.label || n.id}</span>
                   </div>
                 `).join('')}
-                ${data.nodes.length > 25 ? `<div style="margin-top: 12px; color: #6b7280; font-size: 13px;">... and ${data.nodes.length - 25} more</div>` : ''}
               </div>
+              ${showing < data.nodes.length ? `<button class="doc-modal-show-more" onclick="window.viewingManager.modalManager.showMoreNodes('${docId}', ${data.nodes.length})">Show More (${data.nodes.length - showing} remaining)</button>` : ''}
             </div>
           `;
         }
@@ -211,11 +219,13 @@ export class ModalManager {
         // Right column: Relationships
         html += `<div class="doc-modal-column">`;
         if (data.relationships && data.relationships.length > 0) {
+          const pageSize = this.docModalPageSize;
+          const showing = Math.min(this.docModalRelsPage * pageSize, data.relationships.length);
           html += `
             <div class="modal-section">
-              <div class="modal-section-title">Relationships (${data.relationships.length})</div>
-              <div class="modal-section-content doc-modal-list">
-                ${data.relationships.slice(0, 20).map(r => {
+              <div class="modal-section-title">Relationships (${showing}/${data.relationships.length})</div>
+              <div class="modal-section-content doc-modal-list-paginated" id="doc-modal-rels-list">
+                ${data.relationships.slice(0, showing).map(r => {
                   const source = data.nodes.find(n => n.id === r.source);
                   const target = data.nodes.find(n => n.id === r.target);
                   // Use relationship_id or construct edge ID from source-target
@@ -230,8 +240,8 @@ export class ModalManager {
                     </div>
                   `;
                 }).join('')}
-                ${data.relationships.length > 20 ? `<div style="margin-top: 12px; color: #6b7280; font-size: 13px;">... and ${data.relationships.length - 20} more</div>` : ''}
               </div>
+              ${showing < data.relationships.length ? `<button class="doc-modal-show-more" onclick="window.viewingManager.modalManager.showMoreRels('${docId}', ${data.relationships.length})">Show More (${data.relationships.length - showing} remaining)</button>` : ''}
             </div>
           `;
         }
@@ -242,9 +252,26 @@ export class ModalManager {
       content.innerHTML = html;
       modal.classList.add('visible');
     } catch (e) {
+      this.docModalNodesPage = 1;
+      this.docModalRelsPage = 1;
       console.error('Error loading document details:', e);
       content.innerHTML = `<div class="modal-section"><div class="modal-section-content" style="color: #dc2626;">Failed to load document details</div></div>`;
       modal.classList.add('visible');
     }
+  }
+  
+  async showMoreNodes(docId, totalCount) {
+    this.docModalNodesPage++;
+    await this.showDocumentModal(docId);
+  }
+  
+  async showMoreRels(docId, totalCount) {
+    this.docModalRelsPage++;
+    await this.showDocumentModal(docId);
+  }
+  
+  resetDocModalPagination() {
+    this.docModalNodesPage = 1;
+    this.docModalRelsPage = 1;
   }
 }

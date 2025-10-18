@@ -22,6 +22,6 @@ Step 2.3: Refine the Visual Distinction of Node Types.
 
 The prompt is generating too many granular node types. First, try to refine the prompt to use a smaller, more consistent set of categories. Then, consider using different shapes (e.g., circles for concepts, squares for methods) or a subtle color scheme to visually distinguish between these primary categories in the viewer.
 
-Step 2.4 Node/Relationship taxonomy/hierarchy
+Step 2.4 Node/Relationship type taxonomy/hierarchy
 
-One eventual goal of this system is to implement a comprehensive taxonomy/hierarchy of all entities, layered via abstraction via generalization. Obviously, we can't have the first information extraction LLM worker do all of this. Brainstorm the best ways to develop this. We could use an LLM. Then, implement this hierarchy, both in the index, and as a new page. 
+One eventual goal of this system is to implement a comprehensive taxonomy/hierarchy of all entities, layered via abstraction via generalization. Obviously, we can't have the first information extraction LLM worker do all of this. Brainstorm the best ways to develop this. We could use an LLM. Create a planning document.

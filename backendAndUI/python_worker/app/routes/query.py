@@ -146,11 +146,32 @@ def list_documents(
     limit: int = Q(50, ge=1, le=500, description="Number of documents per page")
 ):
     skip = (page_number - 1) * limit
-    cypher = "MATCH (d:Document) RETURN d.document_id AS id, d.title AS title ORDER BY d.title SKIP $skip LIMIT $limit"
+    cypher = """
+        MATCH (d:Document) 
+        RETURN d.document_id AS id, 
+               d.title AS title,
+               d.created_by_first_name AS created_by_first_name,
+               d.created_by_last_name AS created_by_last_name,
+               d.uploaded_by_first_name AS uploaded_by_first_name,
+               d.uploaded_by_last_name AS uploaded_by_last_name,
+               d.created_by AS created_by,
+               d.created_at AS created_at
+        ORDER BY d.title 
+        SKIP $skip LIMIT $limit
+    """
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(cypher, skip=skip, limit=limit)
-            documents = [{"id": r["id"], "title": r["title"]} for r in result]
+            documents = [{
+                "id": r["id"], 
+                "title": r["title"],
+                "created_by_first_name": r["created_by_first_name"],
+                "created_by_last_name": r["created_by_last_name"],
+                "uploaded_by_first_name": r["uploaded_by_first_name"],
+                "uploaded_by_last_name": r["uploaded_by_last_name"],
+                "created_by": r["created_by"],
+                "created_at": r["created_at"]
+            } for r in result]
             return {"documents": documents, "page_number": page_number}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to list documents: {exc}")

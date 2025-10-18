@@ -164,11 +164,11 @@ function renderRelationships() {
       
       <div class="actions">
         ${rel.status === 'unverified' ? `
-          <button class="action-btn btn-verify" onclick="verifyRelationship('${rel.relationship_id}')">
-            ✓ Verify
+          <button class="action-btn btn-verify" onclick="confirmRelationship('${rel.relationship_id}')">
+            ✓ Confirm
           </button>
           <button class="action-btn btn-incorrect" onclick="flagRelationship('${rel.relationship_id}')">
-            ✗ Incorrect
+            ⚠ Flag as Incorrect
           </button>
         ` : ''}
         <button class="action-btn btn-edit" onclick="openEditModal('${rel.relationship_id}')">
@@ -179,10 +179,10 @@ function renderRelationships() {
   `).join('');
 }
 
-// Verify relationship
-async function verifyRelationship(relationshipId) {
+// Confirm relationship (matches original review-ui.py)
+async function confirmRelationship(relationshipId) {
   try {
-    const response = await fetch(`/review/${relationshipId}/verify`, {
+    const response = await fetch(`/review/${relationshipId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -192,25 +192,44 @@ async function verifyRelationship(relationshipId) {
       })
     });
     
-    if (!response.ok) throw new Error('Failed to verify');
+    if (!response.ok) throw new Error('Failed to confirm');
     
-    alert('✓ Relationship verified!');
+    showMessage('✓ Relationship confirmed!', 'success');
     fetchStats();
     fetchRelationships();
     
   } catch (error) {
-    console.error('Error verifying:', error);
-    alert('Error verifying relationship');
+    console.error('Error confirming:', error);
+    showMessage('Error confirming relationship', 'error');
   }
 }
 
-// Flag relationship
-async function flagRelationship(relationshipId) {
-  const reason = prompt('Why is this relationship incorrect?');
-  if (!reason) return;
+// Flag relationship - open modal
+function flagRelationship(relationshipId) {
+  currentEditId = relationshipId;
+  document.getElementById('flag-modal').classList.add('visible');
+  document.getElementById('flag-comment').focus();
+}
+
+// Close flag modal
+function closeFlagModal() {
+  document.getElementById('flag-modal').classList.remove('visible');
+  document.getElementById('flag-comment').value = '';
+  currentEditId = null;
+}
+
+// Submit flag
+async function submitFlag(event) {
+  event.preventDefault();
+  
+  const reason = document.getElementById('flag-comment').value.trim();
+  if (!reason) {
+    showMessage('Please provide a reason for flagging', 'error');
+    return;
+  }
   
   try {
-    const response = await fetch(`/review/${relationshipId}/flag`, {
+    const response = await fetch(`/review/${currentEditId}/flag`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -223,13 +242,14 @@ async function flagRelationship(relationshipId) {
     
     if (!response.ok) throw new Error('Failed to flag');
     
-    alert('✓ Relationship flagged as incorrect!');
+    closeFlagModal();
+    showMessage('✓ Relationship flagged as incorrect!', 'warning');
     fetchStats();
     fetchRelationships();
     
   } catch (error) {
     console.error('Error flagging:', error);
-    alert('Error flagging relationship');
+    showMessage('Error flagging relationship', 'error');
   }
 }
 
@@ -272,20 +292,70 @@ async function saveEdit() {
   
   try {
     const response = await fetch(`/review/${currentEditId}/edit`, {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     
     if (!response.ok) throw new Error('Failed to save');
     
-    alert('✓ Changes saved!');
+    showMessage('✓ Changes saved!', 'success');
     closeEditModal();
+    fetchStats();
     fetchRelationships();
     
   } catch (error) {
     console.error('Error saving:', error);
-    alert('Error saving changes');
+    showMessage('Error saving changes', 'error');
+  }
+}
+
+// Show message
+function showMessage(msg, type) {
+  const messageEl = document.getElementById('message');
+  if (!messageEl) return;
+  
+  messageEl.textContent = msg;
+  messageEl.className = 'show';
+  messageEl.style.background = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';
+  setTimeout(() => messageEl.classList.remove('show'), 3000);
+}
+
+// Export functionality
+async function exportReviewQueue() {
+  if (!allRelationships || allRelationships.length === 0) {
+    showMessage('No items to export', 'error');
+    return;
+  }
+  
+  const format = document.getElementById('export-format').value;
+  
+  try {
+    const response = await fetch('/api/export/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        format: format,
+        items: allRelationships
+      })
+    });
+    
+    if (!response.ok) throw new Error('Export failed');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `review_queue_${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    showMessage(`Exported ${allRelationships.length} items as ${format.toUpperCase()}`, 'success');
+  } catch (error) {
+    console.error('Export error:', error);
+    showMessage('Export failed', 'error');
   }
 }
 

@@ -42,7 +42,18 @@
       
       <button onclick="applyFilters()">🔍 Search</button>
       <button onclick="resetFilters()">🔄 Reset</button>
+      <label>
+        Export:
+        <select id="export-format" style="padding: 8px 12px;">
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </label>
+      <button onclick="exportReviewQueue()" style="background: #059669; color: white;">💾 Export</button>
     </div>
+    
+    <!-- Message Toast -->
+    <div id="message"></div>
     
     <!-- Relationship Cards -->
     <div id="container">
@@ -90,6 +101,35 @@
             <button onclick="closeEditModal()" class="btn-secondary">Cancel</button>
             <button onclick="saveEdit()" class="btn-primary">Save Changes</button>
           </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Flag Modal -->
+    <div id="flag-modal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title">⚠ Flag Relationship as Incorrect</h2>
+          <button class="modal-close" onclick="closeFlagModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="flag-form" onsubmit="submitFlag(event)">
+            <div class="form-group">
+              <label>Why is this relationship incorrect?</label>
+              <textarea id="flag-comment" rows="6" required placeholder="Please explain why this relationship is incorrect..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit;"></textarea>
+              <div style="font-size: 13px; color: #6b7280; margin-top: 6px; line-height: 1.5;">
+                <strong>Examples of helpful feedback:</strong><br>
+                • "The paper actually states the opposite relationship"<br>
+                • "This is a misinterpretation of the original text"<br>
+                • "The entities are confused - should be X instead of Y"
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button type="button" onclick="closeFlagModal()" class="btn-secondary">Cancel</button>
+              <button type="submit" class="btn-primary" style="background: #dc2626;">Flag as Incorrect</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

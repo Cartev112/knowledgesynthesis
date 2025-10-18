@@ -8,6 +8,29 @@ import { API } from '../utils/api.js';
 export class IndexPanelManager {
   constructor(modalManager) {
     this.modalManager = modalManager;
+    this.conceptsPage = 1;
+    this.relsPage = 1;
+    this.pageSize = 20;
+    this.searchTerm = '';
+    this.collapsedSections = new Set(); // Track collapsed sections
+    this.setupSearchHandlers();
+  }
+  
+  setupSearchHandlers() {
+    // Wait for DOM to be ready
+    if (typeof document !== 'undefined') {
+      setTimeout(() => {
+        const searchInput = document.getElementById('index-search');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            this.searchTerm = e.target.value.toLowerCase();
+            this.conceptsPage = 1;
+            this.relsPage = 1;
+            this.renderIndexItems();
+          });
+        }
+      }, 100);
+    }
   }
 
   async populateIndex() {
@@ -118,15 +141,23 @@ export class IndexPanelManager {
       });
     }
     
-    // Filter and render concepts
+    // Filter and render concepts with search and pagination
     const conceptsList = document.getElementById('concepts-list');
     conceptsList.innerHTML = '';
     
-    const filteredNodes = state.indexData.nodes.filter(n => 
-      !typeFilter || n.type === typeFilter
-    );
+    let filteredNodes = state.indexData.nodes.filter(n => {
+      const matchesType = !typeFilter || n.type === typeFilter;
+      const matchesSearch = !this.searchTerm || 
+        n.label.toLowerCase().includes(this.searchTerm) ||
+        n.type.toLowerCase().includes(this.searchTerm);
+      return matchesType && matchesSearch;
+    });
     
-    filteredNodes.forEach(node => {
+    const totalConcepts = filteredNodes.length;
+    const showing = Math.min(this.conceptsPage * this.pageSize, totalConcepts);
+    const displayNodes = filteredNodes.slice(0, showing);
+    
+    displayNodes.forEach(node => {
       const li = document.createElement('li');
       li.className = 'index-item';
       li.innerHTML = `${node.label}<span class="index-item-type">${node.type}</span>`;
@@ -134,17 +165,38 @@ export class IndexPanelManager {
       conceptsList.appendChild(li);
     });
     
-    document.getElementById('concepts-count').textContent = filteredNodes.length;
+    // Add "Show More" button if needed
+    if (showing < totalConcepts) {
+      const showMoreBtn = document.createElement('button');
+      showMoreBtn.className = 'index-show-more';
+      showMoreBtn.textContent = `Show More (${totalConcepts - showing} remaining)`;
+      showMoreBtn.onclick = () => {
+        this.conceptsPage++;
+        this.renderIndexItems();
+      };
+      conceptsList.appendChild(showMoreBtn);
+    }
     
-    // Filter and render relationships
+    document.getElementById('concepts-count').textContent = `${showing}/${totalConcepts}`;
+    
+    // Filter and render relationships with search and pagination
     const relsList = document.getElementById('relationships-list');
     relsList.innerHTML = '';
     
-    const filteredEdges = state.indexData.edges.filter(e => 
-      !typeFilter || e.relation === typeFilter
-    );
+    let filteredEdges = state.indexData.edges.filter(e => {
+      const matchesType = !typeFilter || e.relation === typeFilter;
+      const matchesSearch = !this.searchTerm || 
+        e.source.toLowerCase().includes(this.searchTerm) ||
+        e.target.toLowerCase().includes(this.searchTerm) ||
+        e.relation.toLowerCase().includes(this.searchTerm);
+      return matchesType && matchesSearch;
+    });
     
-    filteredEdges.forEach(edge => {
+    const totalRels = filteredEdges.length;
+    const showingRels = Math.min(this.relsPage * this.pageSize, totalRels);
+    const displayEdges = filteredEdges.slice(0, showingRels);
+    
+    displayEdges.forEach(edge => {
       const div = document.createElement('div');
       div.className = 'index-relationship';
       div.innerHTML = `${edge.source}<span class="rel-arrow">→</span>${edge.target}`;
@@ -157,7 +209,19 @@ export class IndexPanelManager {
       relsList.appendChild(div);
     });
     
-    document.getElementById('relationships-count').textContent = filteredEdges.length;
+    // Add "Show More" button if needed
+    if (showingRels < totalRels) {
+      const showMoreBtn = document.createElement('button');
+      showMoreBtn.className = 'index-show-more';
+      showMoreBtn.textContent = `Show More (${totalRels - showingRels} remaining)`;
+      showMoreBtn.onclick = () => {
+        this.relsPage++;
+        this.renderIndexItems();
+      };
+      relsList.appendChild(showMoreBtn);
+    }
+    
+    document.getElementById('relationships-count').textContent = `${showingRels}/${totalRels}`;
   }
   
   highlightDocumentElements(docId, highlight) {
@@ -302,5 +366,25 @@ export class IndexPanelManager {
     });
     
     state.cy.elements().removeClass('highlighted neighbor');
+  }
+  
+  toggleSection(sectionName) {
+    const section = document.getElementById(`${sectionName}-section`);
+    if (!section) return;
+    
+    const content = section.querySelector('.index-section-content');
+    const arrow = section.querySelector('.section-arrow');
+    
+    if (this.collapsedSections.has(sectionName)) {
+      // Expand
+      this.collapsedSections.delete(sectionName);
+      content.classList.remove('collapsed');
+      if (arrow) arrow.textContent = '▼';
+    } else {
+      // Collapse
+      this.collapsedSections.add(sectionName);
+      content.classList.add('collapsed');
+      if (arrow) arrow.textContent = '▶';
+    }
   }
 }

@@ -324,5 +324,11 @@ window.closeNodeModal = () => {
 };
 window.closeDocumentModal = () => {
   const modal = document.getElementById('document-modal-overlay');
-  if (modal) modal.classList.remove('visible');
+  if (modal) {
+    modal.classList.remove('visible');
+    // Reset pagination when closing
+    if (window.viewingManager && window.viewingManager.modalManager) {
+      window.viewingManager.modalManager.resetDocModalPagination();
+    }
+  }
 };

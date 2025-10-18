@@ -53,6 +53,19 @@ export class GraphViewer {
   setupEventHandlers() {
     const cy = state.cy;
     
+    // Tooltip "Read More" button handler
+    const readMoreBtn = document.getElementById('node-tooltip-read-more');
+    if (readMoreBtn) {
+      readMoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Get the currently hovered node data
+        if (this.currentHoveredNode) {
+          this.hideNodeTooltip();
+          this.showNodeModal(this.currentHoveredNode);
+        }
+      });
+    }
+    
     // Node click handler with multi-select support
     cy.on('tap', 'node', (evt) => {
       const node = evt.target;
@@ -259,6 +272,9 @@ export class GraphViewer {
     if (!tooltip) return;
     
     const data = node.data();
+    // Store current node data for Read More button
+    this.currentHoveredNode = data;
+    
     document.getElementById('node-tooltip-label').textContent = data.label || data.id;
     document.getElementById('node-tooltip-type').textContent = `Type: ${data.type || 'N/A'}`;
     document.getElementById('node-tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';

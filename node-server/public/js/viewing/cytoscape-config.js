@@ -8,10 +8,11 @@ export const cytoscapeConfig = {
   maxZoom: 3,
   // Performance optimizations - disable texture to prevent white space
   textureOnViewport: false,
-  motionBlur: true,
-  motionBlurOpacity: 0.2,
-  hideEdgesOnViewport: false,
-  hideLabelsOnViewport: false,
+  // Disable motion blur to prevent flicker on zoom
+  motionBlur: false,
+  // Hide edges/labels during viewport changes for smoother performance
+  hideEdgesOnViewport: true,
+  hideLabelsOnViewport: true,
   pixelRatio: 'auto',
   // Additional performance settings
   boxSelectionEnabled: false,

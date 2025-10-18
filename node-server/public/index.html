@@ -193,6 +193,7 @@
       
       <!-- Index Filters -->
       <div class="index-filters">
+        <input type="text" id="index-search" class="index-search-input" placeholder="🔍 Search..." />
         <select id="index-view-filter" onchange="filterIndex()" class="index-filter-select">
           <option value="all">All Items</option>
           <option value="documents">Documents Only</option>
@@ -205,24 +206,27 @@
       </div>
       
       <div class="index-section" id="documents-section">
-        <div class="index-section-title">
+        <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('documents')">
+          <span class="section-arrow">▼</span>
           📄 Documents (<span id="documents-count">0</span>)
         </div>
-        <div id="documents-list"></div>
+        <div id="documents-list" class="index-section-content"></div>
       </div>
       
       <div class="index-section" id="concepts-section">
-        <div class="index-section-title">
+        <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('concepts')">
+          <span class="section-arrow">▼</span>
           🔵 Concepts (<span id="concepts-count">0</span>)
         </div>
-        <ul class="index-list" id="concepts-list"></ul>
+        <ul class="index-list index-section-content" id="concepts-list"></ul>
       </div>
       
       <div class="index-section" id="relationships-section">
-        <div class="index-section-title">
+        <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('relationships')">
+          <span class="section-arrow">▼</span>
           🔗 Relationships (<span id="relationships-count">0</span>)
         </div>
-        <div id="relationships-list"></div>
+        <div id="relationships-list" class="index-section-content"></div>
       </div>
     </div>
 
