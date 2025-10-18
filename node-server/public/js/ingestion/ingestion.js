@@ -133,8 +133,8 @@ export class IngestionManager {
             user_email: state.currentUser.email || '',
             max_concepts: maxConcepts,
             max_relationships: maxRelationships,
-            extraction_context: extractionContext,
-            model: model
+            extraction_context: extractionContext
+            // Note: model parameter removed - backend uses OPENAI_MODEL from env
           })
         });
         
@@ -205,7 +205,7 @@ export class IngestionManager {
             formData.append('user_email', state.currentUser.email || '');
             formData.append('max_concepts', maxConcepts);
             formData.append('max_relationships', maxRelationships);
-            formData.append('model', model);
+            // Note: model parameter removed - backend uses OPENAI_MODEL from env
             if (extractionContext) formData.append('extraction_context', extractionContext);
             
             const response = await fetch('/api/ingest/pdf_async', {
