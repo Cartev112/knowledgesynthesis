@@ -25,6 +25,7 @@ export class IndexPanelManager {
     }));
     
     state.indexData.edges = edges.map(e => ({
+      id: e.id(),
       source: state.cy.getElementById(e.data().source).data().label,
       target: state.cy.getElementById(e.data().target).data().label,
       relation: e.data().relation || 'relates to',
@@ -149,7 +150,10 @@ export class IndexPanelManager {
       div.innerHTML = `${edge.source}<span class="rel-arrow">→</span>${edge.target}`;
       div.title = edge.relation;
       div.style.cursor = 'pointer';
-      div.onclick = () => this.highlightAndZoomToEdge(edge.id);
+      div.onclick = () => {
+        console.log('Clicked edge:', edge.id, edge);
+        this.highlightAndZoomToEdge(edge.id);
+      };
       relsList.appendChild(div);
     });
     
@@ -248,20 +252,28 @@ export class IndexPanelManager {
   }
   
   highlightAndZoomToEdge(edgeId) {
-    if (!state.cy || !edgeId) return;
+    console.log('highlightAndZoomToEdge called with:', edgeId);
+    if (!state.cy || !edgeId) {
+      console.warn('Missing cy or edgeId:', { cy: !!state.cy, edgeId });
+      return;
+    }
     
     let edge = state.cy.getElementById(edgeId);
+    console.log('Edge lookup by ID:', edge.length > 0 ? 'found' : 'not found');
     
     // If not found by ID, try to find by source-target pattern
     if (edge.length === 0 && typeof edgeId === 'string' && edgeId.includes('-')) {
       const [sourceId, targetId] = edgeId.split('-');
+      console.log('Trying to find edge by source-target:', { sourceId, targetId });
       edge = state.cy.edges().filter(e => {
         return e.data('source') === sourceId && e.data('target') === targetId;
       }).first();
+      console.log('Edge lookup by source-target:', edge.length > 0 ? 'found' : 'not found');
     }
     
     if (!edge || edge.length === 0) {
       console.warn('Could not find edge with ID:', edgeId);
+      console.log('Available edges:', state.cy.edges().map(e => ({ id: e.id(), source: e.data('source'), target: e.data('target') })));
       return;
     }
     

@@ -35,11 +35,15 @@ async function fetchRelationships() {
   
   try {
     const statusFilter = document.getElementById('filter-status').value;
+    console.log('Fetching review queue with status:', statusFilter);
     const response = await fetch(`/review/queue?limit=100&status_filter=${statusFilter}`);
     
+    console.log('Review queue response status:', response.status);
     if (!response.ok) throw new Error('Failed to fetch relationships');
     
     const data = await response.json();
+    console.log('Review queue data:', data);
+    console.log('Relationships count:', data.relationships?.length || 0);
     allRelationships = data.relationships || [];
     
     loading.classList.add('hidden');

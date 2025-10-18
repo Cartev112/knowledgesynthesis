@@ -99,7 +99,11 @@ def get_all(
     page_number: int = Q(1, ge=1, description="Page number for pagination"),
     limit: int = Q(100, ge=1, le=1000, description="Number of items per page")
 ):
-    """Return all nodes and relationships in the graph (supports legacy and new schemas)."""
+    """Return all nodes and relationships in the graph (supports legacy and new schemas).
+    
+    IMPORTANT: Returns relationships only where BOTH source and target nodes are in the result set.
+    This prevents orphaned edges that reference nodes outside the pagination window.
+    """
     skip = (page_number - 1) * limit
     nodes_cypher = (
         "MATCH (n:Entity) "
@@ -108,13 +112,19 @@ def get_all(
         "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), type: coalesce(n.type, head(labels(n))), significance: coalesce(n.significance, null), sources: source_docs} AS node "
         "SKIP $skip LIMIT $limit"
     )
+    
+    # Modified query: Get relationships where BOTH endpoints are in the paginated node set
     rels_cypher = (
+        "MATCH (n:Entity) "
+        "WITH collect(coalesce(n.id, n.name, elementId(n))) as node_ids "
+        "SKIP $skip LIMIT $limit "
+        "WITH node_ids "
         "MATCH (s:Entity)-[r]->(t:Entity) "
-        "WITH r, s, t "
+        "WHERE coalesce(s.id, s.name, elementId(s)) IN node_ids "
+        "  AND coalesce(t.id, t.name, elementId(t)) IN node_ids "
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
         "WITH r, s, t, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "RETURN {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, toLower(type(r))), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship "
-        "SKIP $skip LIMIT $limit"
+        "RETURN {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, toLower(type(r))), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship"
     )
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
