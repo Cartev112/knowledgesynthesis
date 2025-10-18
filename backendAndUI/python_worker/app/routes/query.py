@@ -113,24 +113,26 @@ def get_all(
         "SKIP $skip LIMIT $limit"
     )
     
-    # Modified query: Get relationships where BOTH endpoints are in the paginated node set
+    # Modified query: Get relationships where BOTH endpoints are in the returned node set
     rels_cypher = (
-        "MATCH (n:Entity) "
-        "SKIP $skip LIMIT $limit "
-        "WITH collect(coalesce(n.id, n.name, elementId(n))) as node_ids "
         "MATCH (s:Entity)-[r]->(t:Entity) "
-        "WHERE coalesce(s.id, s.name, elementId(s)) IN node_ids "
-        "  AND coalesce(t.id, t.name, elementId(t)) IN node_ids "
+        "WHERE coalesce(s.id, s.name, elementId(s)) IN $node_ids "
+        "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
         "WITH r, s, t, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
         "RETURN {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, toLower(type(r))), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship"
     )
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            # First get the nodes
             nodes_result = session.run(nodes_cypher, skip=skip, limit=limit)
             nodes = [record["node"] for record in nodes_result]
-
-            rels_result = session.run(rels_cypher, skip=skip, limit=limit)
+            
+            # Extract node IDs from the returned nodes
+            node_ids = [node["id"] for node in nodes]
+            
+            # Then get relationships using those exact node IDs
+            rels_result = session.run(rels_cypher, node_ids=node_ids)
             relationships = [record["relationship"] for record in rels_result]
 
             return {"nodes": nodes, "relationships": relationships, "page_number": page_number}

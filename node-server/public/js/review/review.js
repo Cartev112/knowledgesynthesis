@@ -43,8 +43,9 @@ async function fetchRelationships() {
     
     const data = await response.json();
     console.log('Review queue data:', data);
-    console.log('Relationships count:', data.relationships?.length || 0);
-    allRelationships = data.relationships || [];
+    // Backend returns 'items' not 'relationships'
+    allRelationships = data.items || data.relationships || [];
+    console.log('Relationships count:', allRelationships.length);
     
     loading.classList.add('hidden');
     applyFilters();
