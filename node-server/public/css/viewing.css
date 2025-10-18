@@ -261,6 +261,19 @@
   font-size: 0.75rem;
   color: #6b7280;
   line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+#index-panel .index-relationship:hover {
+  background: #ede9fe;
+  border-left-color: #8b5cf6;
+  transform: translateX(0.25rem);
+}
+
+#index-panel .index-relationship.highlighted {
+  background: #ede9fe;
+  border-left-color: #7c3aed;
+  font-weight: 600;
 }
 
 #index-panel .index-relationship .rel-arrow {

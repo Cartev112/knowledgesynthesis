@@ -70,12 +70,12 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
             rel_type AS predicate,
             o.name AS object,
             o.type AS object_type,
-            r.confidence AS confidence,
-            r.original_text AS original_text,
-            r.sources AS sources,
+            coalesce(r.confidence, 0.0) AS confidence,
+            coalesce(r.original_text, '') AS original_text,
+            coalesce(r.sources, []) AS sources,
             coalesce(r.status, 'unverified') AS status,
             r.created_at AS created_at,
-            r.flag_reason AS flag_reason,
+            coalesce(r.flag_reason, '') AS flag_reason,
             docs AS documents
         ORDER BY r.created_at DESC
         LIMIT $limit
@@ -95,12 +95,12 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
             rel_type AS predicate,
             o.name AS object,
             o.type AS object_type,
-            r.confidence AS confidence,
-            r.original_text AS original_text,
-            r.sources AS sources,
+            coalesce(r.confidence, 0.0) AS confidence,
+            coalesce(r.original_text, '') AS original_text,
+            coalesce(r.sources, []) AS sources,
             coalesce(r.status, 'unverified') AS status,
             r.created_at AS created_at,
-            r.flag_reason AS flag_reason,
+            coalesce(r.flag_reason, '') AS flag_reason,
             docs AS documents
         ORDER BY r.created_at DESC
         LIMIT $limit

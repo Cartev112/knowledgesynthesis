@@ -116,9 +116,8 @@ def get_all(
     # Modified query: Get relationships where BOTH endpoints are in the paginated node set
     rels_cypher = (
         "MATCH (n:Entity) "
-        "WITH collect(coalesce(n.id, n.name, elementId(n))) as node_ids "
         "SKIP $skip LIMIT $limit "
-        "WITH node_ids "
+        "WITH collect(coalesce(n.id, n.name, elementId(n))) as node_ids "
         "MATCH (s:Entity)-[r]->(t:Entity) "
         "WHERE coalesce(s.id, s.name, elementId(s)) IN node_ids "
         "  AND coalesce(t.id, t.name, elementId(t)) IN node_ids "

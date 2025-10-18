@@ -78,9 +78,11 @@ function applyFilters() {
   const typeFilter = document.getElementById('filter-type').value;
   const searchTerm = document.getElementById('search-box').value.toLowerCase();
   
+  console.log('Applying filters:', { typeFilter, searchTerm, allRelationshipsCount: allRelationships.length });
+  
   filteredRelationships = allRelationships.filter(rel => {
     // Type filter
-    if (typeFilter !== 'all') {
+    if (typeFilter && typeFilter !== 'all' && typeFilter !== '') {
       if (rel.subject_type !== typeFilter && rel.object_type !== typeFilter) {
         return false;
       }
@@ -97,6 +99,7 @@ function applyFilters() {
     return true;
   });
   
+  console.log('Filtered relationships count:', filteredRelationships.length);
   renderRelationships();
 }
 
