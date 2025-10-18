@@ -163,8 +163,11 @@ export class GraphViewer {
   
   renderGraph(data) {
     const elements = [];
+    const nodeIds = new Set();
     
+    // First, add all nodes and track their IDs
     (data.nodes || []).forEach(n => {
+      nodeIds.add(n.id);
       elements.push({
         data: {
           id: n.id,
@@ -176,7 +179,17 @@ export class GraphViewer {
       });
     });
     
+    // Then add edges, but only if both source and target nodes exist
     (data.relationships || []).forEach(r => {
+      if (!nodeIds.has(r.source)) {
+        console.warn(`Skipping edge ${r.id}: source node '${r.source}' not found`);
+        return;
+      }
+      if (!nodeIds.has(r.target)) {
+        console.warn(`Skipping edge ${r.id}: target node '${r.target}' not found`);
+        return;
+      }
+      
       elements.push({
         data: {
           id: r.id,

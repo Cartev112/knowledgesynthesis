@@ -148,6 +148,8 @@ export class IndexPanelManager {
       div.className = 'index-relationship';
       div.innerHTML = `${edge.source}<span class="rel-arrow">→</span>${edge.target}`;
       div.title = edge.relation;
+      div.style.cursor = 'pointer';
+      div.onclick = () => this.highlightAndZoomToEdge(edge.id);
       relsList.appendChild(div);
     });
     
@@ -241,6 +243,38 @@ export class IndexPanelManager {
     state.cy.animate({
       center: { eles: node },
       zoom: 2,
+      duration: 500
+    });
+  }
+  
+  highlightAndZoomToEdge(edgeId) {
+    if (!state.cy) return;
+    
+    let edge = state.cy.getElementById(edgeId);
+    
+    // If not found by ID, try to find by source-target pattern
+    if (edge.length === 0 && edgeId.includes('-')) {
+      const [sourceId, targetId] = edgeId.split('-');
+      edge = state.cy.edges().filter(e => {
+        return e.data('source') === sourceId && e.data('target') === targetId;
+      }).first();
+    }
+    
+    if (!edge || edge.length === 0) return;
+    
+    // Clear previous highlights
+    this.clearAllHighlights();
+    
+    // Highlight source and target nodes
+    const source = edge.source();
+    const target = edge.target();
+    state.cy.elements().removeClass('highlighted');
+    source.addClass('highlighted');
+    target.addClass('highlighted');
+    
+    // Zoom to show both nodes and the edge
+    state.cy.animate({
+      fit: { eles: edge.union(source).union(target), padding: 100 },
       duration: 500
     });
   }

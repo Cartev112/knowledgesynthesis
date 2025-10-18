@@ -370,7 +370,12 @@ app.post('/api/ingest/pdf_async', requireAuth, upload.single('file'), async (req
   }
 })
 
-// Proxy review API endpoints to Python backend (BEFORE other routes)
+// Review UI route (MUST be before /review proxy to avoid conflict)
+app.get('/review-ui', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'review.html'))
+})
+
+// Proxy review API endpoints to Python backend
 app.use('/review', (req, res) => {
   const url = `${fastapiBase}/api/review${req.url}`
   console.log(`Proxying ${req.method} /review${req.url} to ${url}`)
@@ -428,11 +433,6 @@ app.use('/api', (req, res, next) => {
 // Main app route - serve index.html
 app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
-})
-
-// Review UI route
-app.get('/review-ui', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'review.html'))
 })
 
 app.get('/app', requireAuth, (req, res) => {
