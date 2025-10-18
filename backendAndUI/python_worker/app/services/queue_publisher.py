@@ -8,7 +8,8 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 # RabbitMQ connection settings
-
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
 RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "guest")
 RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "guest")
 RABBITMQ_VHOST = os.getenv("RABBITMQ_VHOST", "/")
@@ -29,20 +30,15 @@ class QueuePublisher:
     def _connect(self):
         """Establish connection to RabbitMQ."""
         try:
-            credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
+            # Check if RABBITMQ_URL is provided (Railway, CloudAMQP, etc.)
+            rabbitmq_url = os.getenv("RABBITMQ_URL")
             
-            # Check if we're in production (Railway sets RAILWAY_ENVIRONMENT)
-            if os.getenv("RAILWAY_ENVIRONMENT"):
-                # Production: use SSL for Railway managed services
-                # Production: use the full URL provided by Railway
-                rabbitmq_url = os.getenv("RABBITMQ_URL")
-                if not rabbitmq_url:
-                    raise ValueError("RABBITMQ_URL environment variable not set in Railway environment")
-                
+            if rabbitmq_url:
+                # Use URL-based connection (works for both Railway and local)
                 parameters = pika.URLParameters(rabbitmq_url)
                 logger.info("Publisher connecting to RabbitMQ via URL")
             else:
-                # Development: no SSL
+                # Fall back to individual parameters (local development)
                 credentials = pika.PlainCredentials(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS)
                 parameters = pika.ConnectionParameters(
                     host=RABBITMQ_HOST,
@@ -52,6 +48,7 @@ class QueuePublisher:
                     heartbeat=600,
                     blocked_connection_timeout=300
                 )
+                logger.info(f"Publisher connecting to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
             
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
