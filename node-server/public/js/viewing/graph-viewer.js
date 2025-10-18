@@ -83,17 +83,26 @@ export class GraphViewer {
       this.showEdgeModal(evt.target.data());
     });
     
-    // Tooltip handlers
+    // Improved tooltip handlers with debouncing
     cy.on('mouseover', 'node', (evt) => {
       this.isOverNode = true;
       if (this.hideNodeTooltipTimeout) {
         clearTimeout(this.hideNodeTooltipTimeout);
       }
-      this.showNodeTooltip(evt.target, evt);
+      if (this.showNodeTooltipTimeout) {
+        clearTimeout(this.showNodeTooltipTimeout);
+      }
+      // Delay showing tooltip to avoid flicker on quick mouseovers
+      this.showNodeTooltipTimeout = setTimeout(() => {
+        this.showNodeTooltip(evt.target, evt);
+      }, 150);
     });
     
     cy.on('mouseout', 'node', () => {
       this.isOverNode = false;
+      if (this.showNodeTooltipTimeout) {
+        clearTimeout(this.showNodeTooltipTimeout);
+      }
       this.scheduleHideNodeTooltip();
     });
     
@@ -102,11 +111,20 @@ export class GraphViewer {
       if (this.hideTooltipTimeout) {
         clearTimeout(this.hideTooltipTimeout);
       }
-      this.showEdgeTooltip(evt.target, evt);
+      if (this.showEdgeTooltipTimeout) {
+        clearTimeout(this.showEdgeTooltipTimeout);
+      }
+      // Delay showing tooltip to avoid flicker
+      this.showEdgeTooltipTimeout = setTimeout(() => {
+        this.showEdgeTooltip(evt.target, evt);
+      }, 150);
     });
     
     cy.on('mouseout', 'edge', () => {
       this.isOverEdge = false;
+      if (this.showEdgeTooltipTimeout) {
+        clearTimeout(this.showEdgeTooltipTimeout);
+      }
       this.scheduleHideTooltip();
     });
     
@@ -223,12 +241,34 @@ export class GraphViewer {
     document.getElementById('node-tooltip-type').textContent = `Type: ${data.type || 'N/A'}`;
     document.getElementById('node-tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';
     
-    tooltip.style.left = evt.renderedPosition.x + 20 + 'px';
-    tooltip.style.top = evt.renderedPosition.y + 20 + 'px';
+    // Smart positioning to keep tooltip on screen
+    const x = evt.renderedPosition.x;
+    const y = evt.renderedPosition.y;
+    const offset = 15;
+    
+    // Position tooltip, ensuring it stays within viewport
+    let left = x + offset;
+    let top = y + offset;
+    
+    // Check if tooltip would go off right edge
+    if (left + 300 > window.innerWidth) {
+      left = x - 300 - offset;
+    }
+    
+    // Check if tooltip would go off bottom edge
+    if (top + 150 > window.innerHeight) {
+      top = y - 150 - offset;
+    }
+    
+    tooltip.style.left = Math.max(10, left) + 'px';
+    tooltip.style.top = Math.max(10, top) + 'px';
     tooltip.classList.add('visible');
   }
   
   scheduleHideNodeTooltip() {
+    if (this.hideNodeTooltipTimeout) {
+      clearTimeout(this.hideNodeTooltipTimeout);
+    }
     this.hideNodeTooltipTimeout = setTimeout(() => {
       if (!this.isOverNode) {
         this.hideNodeTooltip();
@@ -257,12 +297,31 @@ export class GraphViewer {
     document.getElementById('tooltip-confidence').textContent = data.confidence ? `Confidence: ${(data.confidence * 100).toFixed(0)}%` : '';
     document.getElementById('tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';
     
-    tooltip.style.left = evt.renderedPosition.x + 20 + 'px';
-    tooltip.style.top = evt.renderedPosition.y + 20 + 'px';
+    // Smart positioning
+    const x = evt.renderedPosition.x;
+    const y = evt.renderedPosition.y;
+    const offset = 15;
+    
+    let left = x + offset;
+    let top = y + offset;
+    
+    // Keep tooltip on screen
+    if (left + 300 > window.innerWidth) {
+      left = x - 300 - offset;
+    }
+    if (top + 200 > window.innerHeight) {
+      top = y - 200 - offset;
+    }
+    
+    tooltip.style.left = Math.max(10, left) + 'px';
+    tooltip.style.top = Math.max(10, top) + 'px';
     tooltip.classList.add('visible');
   }
   
   scheduleHideTooltip() {
+    if (this.hideTooltipTimeout) {
+      clearTimeout(this.hideTooltipTimeout);
+    }
     this.hideTooltipTimeout = setTimeout(() => {
       if (!this.isOverEdge && !this.isOverTooltip) {
         this.hideEdgeTooltip();
@@ -309,7 +368,7 @@ export class GraphViewer {
   }
   
   updateFabVisibility() {
-    const fabContainer = document.getElementById('fab-container');
+    const fabContainer = document.getElementById('fab-container-2node');
     if (!fabContainer) return;
     
     // Show FAB only when exactly 2 nodes are selected
@@ -331,6 +390,63 @@ export class GraphViewer {
   clearAllHighlights() {
     if (state.cy) {
       state.cy.nodes().removeClass('highlighted neighbor');
+    }
+  }
+  
+  focusNode(nodeId) {
+    if (!state.cy) return;
+    
+    const node = state.cy.getElementById(nodeId);
+    if (node.length > 0) {
+      // Clear existing highlights
+      this.clearAllHighlights();
+      
+      // Highlight the node
+      node.addClass('highlighted');
+      
+      // Zoom to the node
+      state.cy.animate({
+        center: { eles: node },
+        zoom: 1.5
+      }, {
+        duration: 500
+      });
+      
+      // Close document modal
+      const modal = document.getElementById('document-modal-overlay');
+      if (modal) modal.classList.remove('visible');
+    }
+  }
+  
+  focusRelationship(edgeId) {
+    if (!state.cy) return;
+    
+    const edge = state.cy.getElementById(edgeId);
+    if (edge.length > 0) {
+      // Clear existing highlights
+      this.clearAllHighlights();
+      
+      // Highlight source and target nodes
+      const source = edge.source();
+      const target = edge.target();
+      source.addClass('highlighted');
+      target.addClass('highlighted');
+      
+      // Zoom to show both nodes
+      state.cy.animate({
+        fit: { eles: edge.union(source).union(target), padding: 100 }
+      }, {
+        duration: 500
+      });
+      
+      // Show edge details after animation
+      setTimeout(() => {
+        this.showEdgeModal(edge.data());
+      }, 600);
+      
+      // Close document modal
+      const modal = document.getElementById('document-modal-overlay');
+      if (modal) modal.classList.remove('visible');
     }
   }
 }

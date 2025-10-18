@@ -153,7 +153,7 @@
         </div>
         
         <!-- FAB Container for 2-Node Actions -->
-        <div id="fab-container" class="hidden">
+        <div id="fab-container-2node" class="hidden">
           <div class="fab-label">2 nodes selected</div>
           <button class="fab-btn" id="fab-create-relationship" onclick="window.appManager.createRelationship()" title="Create manual relationship between nodes">
             ➕ Create Relationship
@@ -166,6 +166,18 @@
           </button>
           <button class="fab-btn" id="fab-merge" onclick="window.appManager.mergeNodes()" title="Merge selected nodes">
             🔀 Merge
+          </button>
+        </div>
+        
+        <!-- Always-visible FAB Container -->
+        <div id="fab-container-always" class="fab-container-always">
+          <button class="fab-round" onclick="window.appManager.openExport()" title="Export Graph">
+            <span>💾</span>
+            <span class="fab-tooltip">Export</span>
+          </button>
+          <button class="fab-round" onclick="window.appManager.openReviewQueue()" title="Review Queue">
+            <span>✅</span>
+            <span class="fab-tooltip">Review Queue</span>
           </button>
         </div>
       </div>

@@ -157,54 +157,84 @@ export class ModalManager {
       const data = await res.json();
       const doc = state.indexData.documents.find(d => d.id === docId);
       
+      // Format uploader info
+      let uploaderInfo = 'Unknown';
+      if (doc?.uploaded_by_first_name || doc?.uploaded_by_last_name) {
+        uploaderInfo = `${doc.uploaded_by_first_name || ''} ${doc.uploaded_by_last_name || ''}`.trim();
+      } else if (doc?.created_by) {
+        uploaderInfo = doc.created_by;
+      }
+      
       let html = `
         <div class="modal-section">
           <div class="modal-section-title">Document Information</div>
           <div class="modal-section-content">
             <strong>Title:</strong> ${doc?.title || 'Untitled'}<br>
             <strong>ID:</strong> ${doc?.id || docId}<br>
-            ${doc?.created_by ? `<strong>Created by:</strong> ${doc.created_by}<br>` : ''}
+            <strong>Uploaded by:</strong> ${uploaderInfo}<br>
             ${doc?.created_at ? `<strong>Created:</strong> ${new Date(doc.created_at).toLocaleString()}<br>` : ''}
           </div>
         </div>
         
         <div class="modal-section">
-          <div class="modal-section-title">Extracted Knowledge</div>
+          <div class="modal-section-title">Extracted Knowledge Summary</div>
           <div class="modal-section-content">
-            <strong>Concepts:</strong> ${data.nodes?.length || 0}<br>
-            <strong>Relationships:</strong> ${data.relationships?.length || 0}
+            <strong>Concepts:</strong> ${data.nodes?.length || 0} &nbsp;&nbsp;&nbsp; <strong>Relationships:</strong> ${data.relationships?.length || 0}
           </div>
         </div>
       `;
       
-      if (data.nodes && data.nodes.length > 0) {
-        html += `
-          <div class="modal-section">
-            <div class="modal-section-title">Concepts Extracted</div>
-            <div class="modal-section-content">
-              ${data.nodes.slice(0, 20).map(n => `<div style="padding: 4px 0;">🔵 ${n.label || n.id}</div>`).join('')}
-              ${data.nodes.length > 20 ? `<div style="margin-top: 8px; color: #6b7280;">... and ${data.nodes.length - 20} more</div>` : ''}
+      // Two-column layout for concepts and relationships
+      if ((data.nodes && data.nodes.length > 0) || (data.relationships && data.relationships.length > 0)) {
+        html += `<div class="doc-modal-two-column">`;
+        
+        // Left column: Concepts
+        html += `<div class="doc-modal-column">`;
+        if (data.nodes && data.nodes.length > 0) {
+          html += `
+            <div class="modal-section">
+              <div class="modal-section-title">Concepts (${data.nodes.length})</div>
+              <div class="modal-section-content doc-modal-list">
+                ${data.nodes.slice(0, 25).map(n => `
+                  <div class="doc-modal-item" onclick="window.viewingManager.focusNode('${n.id}')">
+                    <span class="doc-modal-icon">🔵</span>
+                    <span class="doc-modal-text">${n.label || n.id}</span>
+                  </div>
+                `).join('')}
+                ${data.nodes.length > 25 ? `<div style="margin-top: 12px; color: #6b7280; font-size: 13px;">... and ${data.nodes.length - 25} more</div>` : ''}
+              </div>
             </div>
-          </div>
-        `;
-      }
-      
-      if (data.relationships && data.relationships.length > 0) {
-        html += `
-          <div class="modal-section">
-            <div class="modal-section-title">Relationships Extracted</div>
-            <div class="modal-section-content">
-              ${data.relationships.slice(0, 15).map(r => {
-                const source = data.nodes.find(n => n.id === r.source);
-                const target = data.nodes.find(n => n.id === r.target);
-                return `<div style="padding: 4px 0; font-size: 13px;">
-                  ${source?.label || r.source} <span style="color: #8b5cf6; font-weight: 600;">→ ${r.relation}</span> → ${target?.label || r.target}
-                </div>`;
-              }).join('')}
-              ${data.relationships.length > 15 ? `<div style="margin-top: 8px; color: #6b7280;">... and ${data.relationships.length - 15} more</div>` : ''}
+          `;
+        }
+        html += `</div>`;
+        
+        // Right column: Relationships
+        html += `<div class="doc-modal-column">`;
+        if (data.relationships && data.relationships.length > 0) {
+          html += `
+            <div class="modal-section">
+              <div class="modal-section-title">Relationships (${data.relationships.length})</div>
+              <div class="modal-section-content doc-modal-list">
+                ${data.relationships.slice(0, 20).map(r => {
+                  const source = data.nodes.find(n => n.id === r.source);
+                  const target = data.nodes.find(n => n.id === r.target);
+                  return `
+                    <div class="doc-modal-item doc-modal-rel" onclick="window.viewingManager.focusRelationship('${r.id}')">
+                      <div class="doc-modal-rel-text">
+                        <span class="doc-modal-rel-node">${source?.label || r.source}</span>
+                        <span class="doc-modal-rel-type">${r.relation}</span>
+                        <span class="doc-modal-rel-node">${target?.label || r.target}</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+                ${data.relationships.length > 20 ? `<div style="margin-top: 12px; color: #6b7280; font-size: 13px;">... and ${data.relationships.length - 20} more</div>` : ''}
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
+        html += `</div>`;
+        html += `</div>`;
       }
       
       content.innerHTML = html;

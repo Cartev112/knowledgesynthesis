@@ -79,18 +79,28 @@
   display: flex;
 }
 
-#edge-modal, #node-modal, #document-modal {
+#edge-modal, #node-modal {
   background: white;
-  border-radius: 12px;
-  max-width: 700px;
+  border-radius: 16px;
+  max-width: 750px;
   width: 90%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
 
-#edge-modal .modal-header, #node-modal .modal-header, #document-modal .modal-header, #legend-modal .modal-header {
-  padding: 20px 24px;
+#document-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+#edge-modal .modal-header, #node-modal .modal-header, #document-modal .modal-header, #legend-modal .modal-header, .modal-header {
+  padding: 24px 32px;
   border-bottom: 2px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -99,33 +109,43 @@
   top: 0;
   background: white;
   z-index: 1;
+  border-radius: 12px 12px 0 0;
 }
 
-#edge-modal .modal-title, #node-modal .modal-title, #document-modal .modal-title, #legend-modal .modal-title {
-  font-size: 20px;
+#edge-modal .modal-title, #node-modal .modal-title, #document-modal .modal-title, #legend-modal .modal-title, .modal-title {
+  font-size: 22px;
   font-weight: 700;
   color: #111827;
   margin: 0;
+  flex: 1;
 }
 
-#edge-modal .modal-close, #node-modal .modal-close, #document-modal .modal-close, #legend-modal .modal-close {
-  background: transparent;
+#edge-modal .modal-close, #node-modal .modal-close, #document-modal .modal-close, #legend-modal .modal-close, .modal-close {
+  background: #f3f4f6;
   border: none;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
   color: #6b7280;
   line-height: 1;
   padding: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-left: 16px;
 }
 
-#edge-modal .modal-close:hover, #node-modal .modal-close:hover, #document-modal .modal-close:hover, #legend-modal .modal-close:hover {
+#edge-modal .modal-close:hover, #node-modal .modal-close:hover, #document-modal .modal-close:hover, #legend-modal .modal-close:hover, .modal-close:hover {
+  background: #e5e7eb;
   color: #111827;
 }
 
-#edge-modal .modal-body, #node-modal .modal-body, #document-modal .modal-body, #legend-modal .modal-body {
-  padding: 24px;
+#edge-modal .modal-body, #node-modal .modal-body, #document-modal .modal-body, #legend-modal .modal-body, .modal-body {
+  padding: 32px;
 }
 
 #edge-modal .modal-section, #node-modal .modal-section, #document-modal .modal-section, #legend-modal .modal-section {
@@ -266,18 +286,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 2000;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.modal-overlay.visible {
+  display: flex;
 }
 
 .modal-container {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   max-width: 600px;
   width: 90%;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
@@ -310,4 +335,83 @@
 
 .btn-primary:hover {
   background: #7c3aed;
+}
+
+/* Document Modal Two-Column Layout */
+.doc-modal-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.doc-modal-column {
+  min-width: 0;
+}
+
+.doc-modal-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.doc-modal-item {
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: #f9fafb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-modal-item:hover {
+  background: #f3f4f6;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.doc-modal-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.doc-modal-text {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.doc-modal-rel {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.doc-modal-rel-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.doc-modal-rel-node {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.doc-modal-rel-type {
+  font-size: 12px;
+  color: #8b5cf6;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 0;
+}
+
+@media (max-width: 768px) {
+  .doc-modal-two-column {
+    grid-template-columns: 1fr;
+  }
 }

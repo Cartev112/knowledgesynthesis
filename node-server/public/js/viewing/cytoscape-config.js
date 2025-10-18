@@ -9,12 +9,12 @@ export const cytoscapeConfig = {
   // Performance optimizations
   textureOnViewport: true, // Use texture during viewport changes
   motionBlur: true, // Enable motion blur for smoother feel
-  motionBlurOpacity: 0.15,
-  hideEdgesOnViewport: true, // Hide edges during pan/zoom for performance
-  hideLabelsOnViewport: true, // Hide labels during pan/zoom for performance
+  motionBlurOpacity: 0.2,
+  hideEdgesOnViewport: false, // Keep edges visible for better UX
+  hideLabelsOnViewport: false, // Keep labels visible for better UX
   pixelRatio: 'auto',
   // Additional performance settings
-  boxSelectionEnabled: false, // Disable if not needed
+  boxSelectionEnabled: false,
   selectionType: 'single',
   autoungrabify: false,
   autounselectify: false

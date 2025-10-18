@@ -259,6 +259,41 @@ class AppManager {
     // TODO: Implement node merging
     alert('Node merging feature coming soon!');
   }
+  
+  openExport() {
+    // Export current graph to various formats
+    const elements = state.cy.elements().jsons();
+    const exportData = {
+      nodes: elements.filter(e => e.group === 'nodes'),
+      edges: elements.filter(e => e.group === 'edges')
+    };
+    
+    // Create download options modal
+    const formats = ['JSON', 'CSV', 'GraphML'];
+    const format = prompt(`Export format:\n1. JSON\n2. CSV (nodes and edges)\n3. GraphML\n\nEnter 1, 2, or 3:`);
+    
+    if (format === '1') {
+      // JSON export
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `knowledge-graph-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === '2') {
+      // CSV export (simplified)
+      alert('CSV export coming soon!');
+    } else if (format === '3') {
+      // GraphML export
+      alert('GraphML export coming soon!');
+    }
+  }
+  
+  openReviewQueue() {
+    // Navigate to review queue page
+    window.location.href = '/review-ui';
+  }
 }
 
 // Initialize application

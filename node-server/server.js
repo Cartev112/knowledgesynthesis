@@ -411,6 +411,30 @@ app.get('/review-ui', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'))
 })
 
+// Proxy review API endpoints to Python backend
+app.use('/review', (req, res) => {
+  const url = `${fastapiBase}/api/review${req.url}`
+  console.log(`Proxying ${req.method} /review${req.url} to ${url}`)
+  
+  axios({
+    method: req.method,
+    url,
+    data: req.body,
+    headers: {
+      'Content-Type': req.headers['content-type'] || 'application/json'
+    }
+  })
+  .then(response => {
+    res.status(response.status).json(response.data)
+  })
+  .catch(err => {
+    console.error(`Proxy error for /review${req.url}:`, err.message)
+    const status = err.response?.status || 500
+    const data = err.response?.data || { detail: err.message }
+    res.status(status).json(data)
+  })
+})
+
 app.get('/app', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 })
