@@ -37,9 +37,10 @@ export class IngestionManager {
         return;
       }
       countSpan.textContent = state.selectedNodes.size;
-      statusDiv.style.display = 'block';
+      statusDiv.classList.remove('hidden');
+      statusDiv.style.display = 'block'; // Override hidden class
     } else {
-      statusDiv.style.display = 'none';
+      statusDiv.classList.add('hidden');
     }
   }
   
@@ -185,7 +186,7 @@ export class IngestionManager {
       this.cachedContextText = text;
       
       // Show modal
-      modal.style.display = 'flex';
+      modal.classList.add('visible');
       
     } catch (error) {
       console.error('Error showing context preview:', error);
@@ -196,7 +197,7 @@ export class IngestionManager {
   closeContextPreview() {
     const modal = document.getElementById('context-preview-modal');
     if (modal) {
-      modal.style.display = 'none';
+      modal.classList.remove('visible');
     }
   }
   
@@ -532,9 +533,9 @@ export class IngestionManager {
   showProgress(show) {
     const modal = document.getElementById('progress-modal');
     if (show) {
-      modal.style.display = 'flex';
+      modal.classList.add('visible');
     } else {
-      modal.style.display = 'none';
+      modal.classList.remove('visible');
     }
   }
   

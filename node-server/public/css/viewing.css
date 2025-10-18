@@ -23,25 +23,25 @@
 
 /* Floating Action Buttons */
 .fab-container {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   z-index: 100;
 }
 
 .fab {
-  width: 44px;
-  height: 44px;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(139, 92, 246, 0.4);
   cursor: pointer;
-  font-size: 20px;
+  font-size: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,7 +51,7 @@
 
 .fab:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(139, 92, 246, 0.5);
 }
 
 .fab:active {
@@ -60,39 +60,39 @@
 
 .fab.export {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(5, 150, 105, 0.4);
 }
 
 .fab.export:hover {
-  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(5, 150, 105, 0.5);
 }
 
 .fab.review {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(245, 158, 11, 0.4);
 }
 
 .fab.review:hover {
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(245, 158, 11, 0.5);
 }
 
 .fab.legend {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(59, 130, 246, 0.4);
 }
 
 .fab.legend:hover {
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(59, 130, 246, 0.5);
 }
 
 .fab-tooltip {
   position: absolute;
-  left: 70px;
+  left: 4.375rem;
   background: #1f2937;
   color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -111,16 +111,16 @@
 
 /* Dynamic Index Panel */
 #index-panel {
-  position: fixed;
+  position: absolute;
   right: 0;
-  top: 115px;
+  top: 0;
   bottom: 0;
-  width: 320px;
+  width: 20rem;
   background: white;
   border-left: 2px solid #e5e7eb;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.05);
+  box-shadow: -0.25rem 0 0.75rem rgba(0,0,0,0.05);
   overflow-y: auto;
-  padding: 20px;
+  padding: 1.25rem;
   z-index: 100;
   transition: transform 0.3s ease;
 }
@@ -132,36 +132,36 @@
 #index-panel .index-header {
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid #8b5cf6;
 }
 
 #index-panel .index-title {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 4px 0;
+  margin: 0 0 0.25rem 0;
 }
 
 #index-panel .index-count {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #6b7280;
   font-weight: 500;
 }
 
 #index-panel .index-section {
-  margin-bottom: 24px;
+  margin-bottom: 1.5rem;
 }
 
 #index-panel .index-section-title {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 #index-panel .index-list {
@@ -171,13 +171,13 @@
 }
 
 #index-panel .index-item {
-  padding: 8px 12px;
-  margin-bottom: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
   background: #f9fafb;
-  border-radius: 6px;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #374151;
   border-left: 3px solid transparent;
 }
@@ -185,7 +185,7 @@
 #index-panel .index-item:hover {
   background: #ede9fe;
   border-left-color: #8b5cf6;
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
 }
 
 #index-panel .index-item.highlighted {
@@ -196,24 +196,24 @@
 
 /* Document Items in Index */
 #index-panel .doc-item {
-  padding: 10px 12px;
-  margin-bottom: 6px;
+  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.375rem;
   background: #fef3c7;
-  border-radius: 6px;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #92400e;
   border-left: 3px solid transparent;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 #index-panel .doc-item:hover {
   background: #fde68a;
   border-left-color: #f59e0b;
-  transform: translateX(4px);
+  transform: translateX(0.25rem);
 }
 
 #index-panel .doc-item.active {
@@ -223,15 +223,15 @@
 }
 
 #index-panel .doc-toggle {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
   border: 2px solid #d97706;
-  border-radius: 3px;
+  border-radius: 0.1875rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 0.625rem;
   background: white;
 }
 
@@ -246,19 +246,19 @@
 }
 
 #index-panel .index-item-type {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-left: 6px;
+  letter-spacing: 0.03125rem;
+  margin-left: 0.375rem;
 }
 
 #index-panel .index-relationship {
-  padding: 6px 10px;
-  margin-bottom: 3px;
+  padding: 0.375rem 0.625rem;
+  margin-bottom: 0.1875rem;
   background: #f9fafb;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
   color: #6b7280;
   line-height: 1.4;
 }
@@ -266,23 +266,23 @@
 #index-panel .index-relationship .rel-arrow {
   color: #8b5cf6;
   font-weight: 700;
-  margin: 0 4px;
+  margin: 0 0.25rem;
 }
 
 /* Index Toggle Button */
 #index-toggle-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(139, 92, 246, 0.4);
   cursor: pointer;
-  font-size: 24px;
+  font-size: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,7 +292,7 @@
 
 #index-toggle-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(139, 92, 246, 0.5);
 }
 
 #index-toggle-btn:active {
@@ -305,18 +305,18 @@
 
 /* Visual Legend Toggle Button */
 #legend-toggle-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 100px;
-  width: 56px;
-  height: 56px;
+  position: absolute;
+  bottom: 1.5rem;
+  right: 6.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(59, 130, 246, 0.4);
   cursor: pointer;
-  font-size: 24px;
+  font-size: 1.5rem;
   align-items: center;
   justify-content: center;
   z-index: 99;
@@ -325,7 +325,7 @@
 
 #legend-toggle-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(59, 130, 246, 0.5);
 }
 
 #legend-toggle-btn:active {
@@ -334,17 +334,17 @@
 
 /* FAB Container for 2-Node Actions */
 #fab-container-2node {
-  position: fixed;
-  bottom: 24px;
+  position: absolute;
+  bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   background: white;
-  padding: 12px 20px;
-  border-radius: 50px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem 1.25rem;
+  border-radius: 3.125rem;
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.15);
   z-index: 150;
   transition: all 0.3s;
 }
@@ -354,28 +354,28 @@
 }
 
 #fab-container-2node .fab-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #6b7280;
-  margin-right: 8px;
+  margin-right: 0.5rem;
 }
 
 #fab-container-2node .fab-btn {
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
-  border-radius: 20px;
-  font-size: 13px;
+  border-radius: 1.25rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0.125rem 0.5rem rgba(139, 92, 246, 0.3);
 }
 
 #fab-container-2node .fab-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.25rem 0.75rem rgba(139, 92, 246, 0.4);
 }
 
 #fab-container-2node .fab-btn:active {
@@ -384,35 +384,35 @@
 
 /* Always-visible FAB Container */
 .fab-container-always {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   z-index: 100;
 }
 
 .fab-round {
-  width: 56px;
-  height: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 0.25rem 0.75rem rgba(102, 126, 234, 0.4);
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.5rem;
   position: relative;
 }
 
 .fab-round:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 0.375rem 1rem rgba(102, 126, 234, 0.5);
 }
 
 .fab-round:active {
@@ -421,12 +421,12 @@
 
 .fab-round .fab-tooltip {
   position: absolute;
-  left: 70px;
+  left: 4.375rem;
   background: #1f2937;
   color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;

@@ -421,7 +421,16 @@ export class GraphViewer {
   focusRelationship(edgeId) {
     if (!state.cy) return;
     
-    const edge = state.cy.getElementById(edgeId);
+    let edge = state.cy.getElementById(edgeId);
+    
+    // If not found by ID, try to find by source-target pattern
+    if (edge.length === 0 && edgeId.includes('-')) {
+      const [sourceId, targetId] = edgeId.split('-');
+      edge = state.cy.edges().filter(e => {
+        return e.data('source') === sourceId && e.data('target') === targetId;
+      }).first();
+    }
+    
     if (edge.length > 0) {
       // Clear existing highlights
       this.clearAllHighlights();
@@ -447,6 +456,8 @@ export class GraphViewer {
       // Close document modal
       const modal = document.getElementById('document-modal-overlay');
       if (modal) modal.classList.remove('visible');
+    } else {
+      console.warn('Could not find edge with ID:', edgeId);
     }
   }
 }

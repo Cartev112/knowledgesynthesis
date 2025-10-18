@@ -108,11 +108,11 @@ class AppManager {
     const fabContainer = document.getElementById('fab-container');
     
     if (tabName === 'viewing') {
-      if (indexToggleBtn) indexToggleBtn.style.display = 'flex';
-      if (legendToggleBtn) legendToggleBtn.style.display = 'flex';
+      if (indexToggleBtn) indexToggleBtn.classList.remove('hidden');
+      if (legendToggleBtn) legendToggleBtn.classList.remove('hidden');
     } else {
-      if (indexToggleBtn) indexToggleBtn.style.display = 'none';
-      if (legendToggleBtn) legendToggleBtn.style.display = 'none';
+      if (indexToggleBtn) indexToggleBtn.classList.add('hidden');
+      if (legendToggleBtn) legendToggleBtn.classList.add('hidden');
       if (fabContainer) fabContainer.classList.add('hidden');
     }
   }
@@ -167,14 +167,14 @@ class AppManager {
     // Show modal
     const modal = document.getElementById('create-edge-modal');
     if (modal) {
-      modal.style.display = 'flex';
+      modal.classList.add('visible');
     }
   }
   
   closeCreateRelationshipModal() {
     const modal = document.getElementById('create-edge-modal');
     if (modal) {
-      modal.style.display = 'none';
+      modal.classList.remove('visible');
     }
     document.getElementById('create-edge-form').reset();
   }

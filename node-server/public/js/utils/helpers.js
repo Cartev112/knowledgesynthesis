@@ -12,28 +12,18 @@ export function showMessage(msg, type = 'success') {
   const messageEl = document.getElementById('message') || createMessageElement();
   messageEl.textContent = msg;
   messageEl.className = 'show';
-  messageEl.style.background = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';
-  messageEl.style.display = 'block';
+  // Set background color based on type
+  const bgColor = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';
+  messageEl.style.background = bgColor;
   setTimeout(() => {
-    messageEl.style.display = 'none';
+    messageEl.classList.remove('show');
   }, 3000);
 }
 
 function createMessageElement() {
   const el = document.createElement('div');
   el.id = 'message';
-  el.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 24px;
-    padding: 12px 20px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 500;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    display: none;
-    z-index: 1000;
-  `;
+  // Styles are now in custom-classes.css
   document.body.appendChild(el);
   return el;
 }

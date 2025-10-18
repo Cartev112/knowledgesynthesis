@@ -218,8 +218,10 @@ export class ModalManager {
                 ${data.relationships.slice(0, 20).map(r => {
                   const source = data.nodes.find(n => n.id === r.source);
                   const target = data.nodes.find(n => n.id === r.target);
+                  // Use relationship_id or construct edge ID from source-target
+                  const edgeId = r.relationship_id || r.id || `${r.source}-${r.target}`;
                   return `
-                    <div class="doc-modal-item doc-modal-rel" onclick="window.viewingManager.focusRelationship('${r.id}')">
+                    <div class="doc-modal-item doc-modal-rel" onclick="window.viewingManager.focusRelationship('${edgeId}')">
                       <div class="doc-modal-rel-text">
                         <span class="doc-modal-rel-node">${source?.label || r.source}</span>
                         <span class="doc-modal-rel-type">${r.relation}</span>

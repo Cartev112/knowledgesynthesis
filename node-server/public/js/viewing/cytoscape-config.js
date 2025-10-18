@@ -6,12 +6,12 @@ export const cytoscapeConfig = {
   wheelSensitivity: 0.2,
   minZoom: 0.1,
   maxZoom: 3,
-  // Performance optimizations
-  textureOnViewport: true, // Use texture during viewport changes
-  motionBlur: true, // Enable motion blur for smoother feel
+  // Performance optimizations - disable texture to prevent white space
+  textureOnViewport: false,
+  motionBlur: true,
   motionBlurOpacity: 0.2,
-  hideEdgesOnViewport: false, // Keep edges visible for better UX
-  hideLabelsOnViewport: false, // Keep labels visible for better UX
+  hideEdgesOnViewport: false,
+  hideLabelsOnViewport: false,
   pixelRatio: 'auto',
   // Additional performance settings
   boxSelectionEnabled: false,

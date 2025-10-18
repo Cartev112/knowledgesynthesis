@@ -48,7 +48,7 @@
     <div id="container">
       <div id="loading">Loading relationships...</div>
       <div id="relationships-list"></div>
-      <div id="no-results" style="display: none; text-align: center; padding: 48px; color: #9ca3af;">
+      <div id="no-results" class="no-results-message">
         No relationships found matching your filters.
       </div>
     </div>
@@ -86,7 +86,7 @@
             <input type="number" id="edit-confidence" min="0" max="1" step="0.1" />
           </div>
           
-          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <div class="modal-footer">
             <button onclick="closeEditModal()" class="btn-secondary">Cancel</button>
             <button onclick="saveEdit()" class="btn-primary">Save Changes</button>
           </div>

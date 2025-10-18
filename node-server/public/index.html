@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/static/css/viewing.css">
   <link rel="stylesheet" href="/static/css/query-builder.css">
   <link rel="stylesheet" href="/static/css/modals.css">
+  <link rel="stylesheet" href="/static/css/custom-classes.css">
   
   <!-- External Dependencies -->
   <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
@@ -43,7 +44,7 @@
         <div class="ingestion-grid">
           <!-- Left Column: Document Upload -->
           <div>
-            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #374151; font-weight: 600;">Document Source</h3>
+            <h3 class="section-heading">Document Source</h3>
             
             <div class="form-group">
               <label>Upload PDF File(s)</label>
@@ -56,35 +57,35 @@
             
             <div class="form-group">
               <label>Or Paste Text Directly</label>
-              <textarea id="text-input" placeholder="Paste your document text here..." style="min-height: 90px;"></textarea>
+              <textarea id="text-input" placeholder="Paste your document text here..." class="text-input-area"></textarea>
               <div class="help-text">You can paste raw text instead of uploading a file</div>
             </div>
             
             <div class="form-group">
               <label>Extraction Context (Optional)</label>
-              <textarea id="extraction-context" placeholder="e.g., I'm interested in proteins and their functional relationships, drug-target interactions, or disease mechanisms..." style="min-height: 80px;"></textarea>
+              <textarea id="extraction-context" placeholder="e.g., I'm interested in proteins and their functional relationships, drug-target interactions, or disease mechanisms..." class="extraction-context-area"></textarea>
               <div class="help-text">Guide the AI: describe what types of relationships you're most interested in</div>
             </div>
           </div>
           
           <!-- Right Column: Extraction Parameters -->
           <div>
-            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #374151; font-weight: 600;">Extraction Settings</h3>
+            <h3 class="section-heading">Extraction Settings</h3>
             
             <div class="form-group">
-              <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
-                <input type="checkbox" id="use-graph-context" style="width: auto; margin-right: 10px; cursor: pointer;" onchange="window.ingestionManager.toggleGraphContext()" />
-                <span style="font-weight: 600;">Use Selected Graph as Context</span>
+              <label class="checkbox-label">
+                <input type="checkbox" id="use-graph-context" class="checkbox-input" onchange="window.ingestionManager.toggleGraphContext()" />
+                <span class="checkbox-text">Use Selected Graph as Context</span>
               </label>
-              <div class="help-text" id="graph-context-help" style="color: #9ca3af;">
+              <div class="help-text" id="graph-context-help">
                 Select nodes in the Viewer (Shift+Click), then check this box to find relationships that agree with, disagree with, or add to the existing knowledge
               </div>
-              <div id="graph-context-status" style="display: none; margin-top: 8px; padding: 10px; background: #dbeafe; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; color: #1e40af;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div id="graph-context-status" class="graph-context-status">
+                <div class="graph-context-status-inner">
                   <div>
                     <strong>Context Ready:</strong> <span id="graph-context-count">0</span> nodes selected
                   </div>
-                  <button type="button" onclick="window.ingestionManager.showContextPreview()" style="padding: 4px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                  <button type="button" onclick="window.ingestionManager.showContextPreview()" class="preview-btn">
                     👁️ Preview
                   </button>
                 </div>
@@ -191,14 +192,14 @@
       </div>
       
       <!-- Index Filters -->
-      <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">
-        <select id="index-view-filter" onchange="filterIndex()" style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px;">
+      <div class="index-filters">
+        <select id="index-view-filter" onchange="filterIndex()" class="index-filter-select">
           <option value="all">All Items</option>
           <option value="documents">Documents Only</option>
           <option value="concepts">Concepts Only</option>
           <option value="relationships">Relationships Only</option>
         </select>
-        <select id="index-type-filter" onchange="filterIndex()" style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+        <select id="index-type-filter" onchange="filterIndex()" class="index-filter-select">
           <option value="">All Types</option>
         </select>
       </div>
@@ -276,7 +277,7 @@
         <form id="create-edge-form" onsubmit="window.appManager.saveManualRelationship(event)">
           <div class="form-group">
             <label>From (Subject)</label>
-            <input type="text" id="manual-from" readonly style="background: #f9fafb;" />
+            <input type="text" id="manual-from" readonly class="readonly-input" />
           </div>
           
           <div class="form-group">
@@ -298,12 +299,12 @@
           
           <div class="form-group">
             <label>To (Object)</label>
-            <input type="text" id="manual-to" readonly style="background: #f9fafb;" />
+            <input type="text" id="manual-to" readonly class="readonly-input" />
           </div>
           
           <div class="form-group">
             <label>Evidence / Source Text</label>
-            <textarea id="manual-evidence" required style="min-height: 80px;" placeholder="Provide the text or citation that supports this relationship..."></textarea>
+            <textarea id="manual-evidence" required class="evidence-textarea" placeholder="Provide the text or citation that supports this relationship..."></textarea>
           </div>
           
           <div class="form-group">
@@ -311,7 +312,7 @@
             <input type="number" id="manual-confidence" min="0" max="1" step="0.1" value="0.9" />
           </div>
           
-          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <div class="modal-footer">
             <button type="button" onclick="window.appManager.closeCreateRelationshipModal()" class="btn-secondary">Cancel</button>
             <button type="submit" class="btn-primary">Create Relationship</button>
           </div>
@@ -322,17 +323,17 @@
   
   <!-- Ingestion Progress Modal -->
   <div id="progress-modal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 600px;">
+    <div class="modal-container progress-modal-container">
       <div class="modal-header">
         <h2 class="modal-title">🚀 Knowledge Extraction in Progress</h2>
         <button class="modal-close" onclick="window.ingestionManager.closeProgressModal()">×</button>
       </div>
       <div class="modal-body">
         <!-- Email notification message -->
-        <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: start; gap: 10px;">
-            <span style="font-size: 20px;">📧</span>
-            <div style="font-size: 13px; color: #1e40af;">
+        <div class="email-notification">
+          <div class="email-notification-inner">
+            <span class="email-icon">📧</span>
+            <div class="email-text">
               <strong>Processing in background</strong><br>
               You'll receive an email summary with all extracted relationships when complete. Feel free to close this modal and continue working.
             </div>
@@ -341,33 +342,33 @@
         
         <!-- Overall progress -->
         <div class="modal-section">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight: 600; color: #374151;" id="progress-modal-status">Queuing files...</span>
-            <span style="font-size: 13px; color: #6b7280;" id="progress-modal-count">0 / 0</span>
+          <div class="progress-header-row">
+            <span class="progress-status" id="progress-modal-status">Queuing files...</span>
+            <span class="progress-count" id="progress-modal-count">0 / 0</span>
           </div>
-          <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-            <div id="progress-modal-bar" style="height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 0%; transition: width 0.3s;"></div>
+          <div class="progress-bar-wrapper">
+            <div id="progress-modal-bar" class="progress-bar-inner"></div>
           </div>
-          <div style="text-align: center; margin-top: 4px; font-size: 12px; color: #6b7280;" id="progress-modal-percentage">0%</div>
+          <div class="progress-percentage" id="progress-modal-percentage">0%</div>
         </div>
         
         <!-- File list -->
         <div class="modal-section">
           <div class="modal-section-title">Files</div>
-          <div id="progress-modal-files" style="max-height: 300px; overflow-y: auto;"></div>
+          <div id="progress-modal-files" class="progress-files-list"></div>
         </div>
         
         <!-- Summary stats -->
-        <div id="progress-modal-summary" style="display: none; margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 6px;">
-          <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">Summary</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+        <div id="progress-modal-summary" class="progress-summary">
+          <div class="progress-summary-title">Summary</div>
+          <div class="progress-summary-grid">
             <div>✓ Successful: <strong id="progress-summary-success">0</strong></div>
             <div>✗ Failed: <strong id="progress-summary-failed">0</strong></div>
-            <div style="grid-column: 1 / -1;">📊 Total Relationships: <strong id="progress-summary-triplets">0</strong></div>
+            <div class="progress-summary-full">📊 Total Relationships: <strong id="progress-summary-triplets">0</strong></div>
           </div>
         </div>
         
-        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <div class="modal-footer">
           <button type="button" onclick="window.ingestionManager.closeProgressModal()" class="btn-primary" id="progress-modal-close-btn">
             Continue in Background
           </button>
@@ -378,7 +379,7 @@
   
   <!-- Graph Context Preview Modal -->
   <div id="context-preview-modal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 700px;">
+    <div class="modal-container context-preview-container">
       <div class="modal-header">
         <h2 class="modal-title">📊 Graph Context Preview</h2>
         <button class="modal-close" onclick="window.ingestionManager.closeContextPreview()">×</button>
@@ -402,14 +403,14 @@
         <div class="modal-section">
           <div class="modal-section-title">Context Text</div>
           <div class="modal-section-content">
-            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap;" id="preview-raw-text"></div>
-            <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">
+            <div class="preview-raw-text" id="preview-raw-text"></div>
+            <div class="preview-token-info">
               Estimated tokens: <strong id="preview-token-count">0</strong>
             </div>
           </div>
         </div>
         
-        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <div class="modal-footer">
           <button type="button" onclick="window.ingestionManager.copyContextText()" class="btn-secondary">📋 Copy Text</button>
           <button type="button" onclick="window.ingestionManager.closeContextPreview()" class="btn-primary">Close</button>
         </div>
@@ -429,19 +430,19 @@
           <div class="modal-section-title">Node Colors</div>
           <div class="modal-section-content">
             <div class="legend-item">
-              <div class="legend-color" style="background: #667eea;"></div>
+              <div class="legend-color legend-color-default"></div>
               <span>Default Entity</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: #dc2626;"></div>
+              <div class="legend-color legend-color-highlighted"></div>
               <span>Searched/Highlighted</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: #f59e0b;"></div>
+              <div class="legend-color legend-color-neighbor"></div>
               <span>Neighbor</span>
             </div>
             <div class="legend-item">
-              <div class="legend-color" style="background: #8b5cf6;"></div>
+              <div class="legend-color legend-color-selected"></div>
               <span>Multi-Selected</span>
             </div>
           </div>
@@ -451,15 +452,15 @@
           <div class="modal-section-title">Node Size</div>
           <div class="modal-section-content">
             <div class="legend-item">
-              <span style="font-size: 10px;">●</span>
+              <span class="legend-size-small">●</span>
               <span>Low significance (1-2)</span>
             </div>
             <div class="legend-item">
-              <span style="font-size: 14px;">●</span>
+              <span class="legend-size-medium">●</span>
               <span>Medium significance (3)</span>
             </div>
             <div class="legend-item">
-              <span style="font-size: 18px;">●</span>
+              <span class="legend-size-large">●</span>
               <span>High significance (4-5)</span>
             </div>
           </div>
@@ -469,19 +470,19 @@
           <div class="modal-section-title">Edge Styles</div>
           <div class="modal-section-content">
             <div class="legend-item">
-              <div class="legend-line" style="background: #94a3b8;"></div>
+              <div class="legend-line legend-line-unverified"></div>
               <span>Unverified</span>
             </div>
             <div class="legend-item">
-              <div class="legend-line" style="background: #059669;"></div>
+              <div class="legend-line legend-line-verified"></div>
               <span>Verified</span>
             </div>
             <div class="legend-item">
-              <div class="legend-line" style="background: #dc2626; border-style: dashed;"></div>
+              <div class="legend-line legend-line-incorrect"></div>
               <span>Incorrect</span>
             </div>
             <div class="legend-item">
-              <div class="legend-line" style="background: #94a3b8; border-style: dotted;"></div>
+              <div class="legend-line legend-line-negative"></div>
               <span>Negative Polarity</span>
             </div>
           </div>

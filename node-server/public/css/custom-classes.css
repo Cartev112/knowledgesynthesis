@@ -1,0 +1,327 @@
+/* ==========================================
+   CUSTOM CLASSES FOR INLINE STYLE REPLACEMENTS
+   ========================================== */
+
+/* Section Headings */
+.section-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Textarea Variants */
+.text-input-area {
+  min-height: 5.625rem;
+}
+
+.extraction-context-area {
+  min-height: 5rem;
+}
+
+.evidence-textarea {
+  min-height: 5rem;
+}
+
+/* Checkbox Styling */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: auto;
+  margin-right: 0.625rem;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  font-weight: 600;
+}
+
+/* Graph Context Status */
+.graph-context-status {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.625rem;
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  color: #1e40af;
+}
+
+.graph-context-status-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-btn {
+  padding: 0.25rem 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.preview-btn:hover {
+  background: #2563eb;
+}
+
+/* Index Filters */
+.index-filters {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.index-filter-select {
+  width: 100%;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+
+.index-filter-select:last-child {
+  margin-bottom: 0;
+}
+
+/* Readonly Input */
+.readonly-input {
+  background: #f9fafb;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Progress Modal Specific */
+.progress-modal-container {
+  max-width: 37.5rem;
+}
+
+.email-notification {
+  background: #dbeafe;
+  border-left: 0.25rem solid #3b82f6;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1.25rem;
+}
+
+.email-notification-inner {
+  display: flex;
+  align-items: start;
+  gap: 0.625rem;
+}
+
+.email-icon {
+  font-size: 1.25rem;
+}
+
+.email-text {
+  font-size: 0.8125rem;
+  color: #1e40af;
+}
+
+.progress-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.progress-status {
+  font-weight: 600;
+  color: #374151;
+}
+
+.progress-count {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  height: 0.5rem;
+  background: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.progress-percentage {
+  text-align: center;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.progress-files-list {
+  max-height: 18.75rem;
+  overflow-y: auto;
+}
+
+.progress-summary {
+  display: none;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.progress-summary-title {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.progress-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.progress-summary-full {
+  grid-column: 1 / -1;
+}
+
+/* Context Preview Modal */
+.context-preview-container {
+  max-width: 43.75rem;
+}
+
+.preview-raw-text {
+  background: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  max-height: 12.5rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.preview-token-info {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* Legend Colors */
+.legend-color-default {
+  background: #667eea;
+}
+
+.legend-color-highlighted {
+  background: #dc2626;
+}
+
+.legend-color-neighbor {
+  background: #f59e0b;
+}
+
+.legend-color-selected {
+  background: #8b5cf6;
+}
+
+/* Legend Sizes */
+.legend-size-small {
+  font-size: 0.625rem;
+}
+
+.legend-size-medium {
+  font-size: 0.875rem;
+}
+
+.legend-size-large {
+  font-size: 1.125rem;
+}
+
+/* Legend Lines */
+.legend-line-unverified {
+  background: #94a3b8;
+}
+
+.legend-line-verified {
+  background: #059669;
+}
+
+.legend-line-incorrect {
+  background: #dc2626;
+  border-style: dashed;
+}
+
+.legend-line-negative {
+  background: #94a3b8;
+  border-style: dotted;
+}
+
+/* Utility Classes for JavaScript */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+.flex-visible {
+  display: flex !important;
+}
+
+/* Message/Toast Notification */
+#message {
+  position: fixed;
+  top: 5rem;
+  right: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.2);
+  z-index: 3000;
+  display: none;
+  transition: opacity 0.3s;
+}
+
+#message.show {
+  display: block;
+  opacity: 1;
+}
+
+/* File Status Colors */
+.file-status-queuing {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+}
+
+.file-status-success {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.file-status-error {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}

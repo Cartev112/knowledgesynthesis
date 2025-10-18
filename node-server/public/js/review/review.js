@@ -30,7 +30,7 @@ async function fetchRelationships() {
   const loading = document.getElementById('loading');
   const list = document.getElementById('relationships-list');
   
-  loading.style.display = 'block';
+  loading.classList.remove('hidden');
   list.innerHTML = '';
   
   try {
@@ -42,7 +42,7 @@ async function fetchRelationships() {
     const data = await response.json();
     allRelationships = data.relationships || [];
     
-    loading.style.display = 'none';
+    loading.classList.add('hidden');
     applyFilters();
     
   } catch (error) {
@@ -111,11 +111,12 @@ function renderRelationships() {
   
   if (filteredRelationships.length === 0) {
     list.innerHTML = '';
+    noResults.classList.remove('hidden');
     noResults.style.display = 'block';
     return;
   }
   
-  noResults.style.display = 'none';
+  noResults.classList.add('hidden');
   
   list.innerHTML = filteredRelationships.map(rel => `
     <div class="relationship-card">
@@ -237,12 +238,12 @@ function openEditModal(relationshipId) {
   document.getElementById('edit-evidence').value = rel.original_text || '';
   document.getElementById('edit-confidence').value = rel.confidence || 0.9;
   
-  document.getElementById('edit-modal').style.display = 'flex';
+  document.getElementById('edit-modal').classList.add('visible');
 }
 
 // Close edit modal
 function closeEditModal() {
-  document.getElementById('edit-modal').style.display = 'none';
+  document.getElementById('edit-modal').classList.remove('visible');
   currentEditId = null;
 }
 
