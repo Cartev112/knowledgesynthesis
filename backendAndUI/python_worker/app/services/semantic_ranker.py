@@ -90,55 +90,56 @@ class SemanticRanker:
         Rank papers by semantic relevance to query and optional context.
         
         Args:
-            papers: List of paper dictionaries with 'title' and 'abstract'
-            query: User's search query
-            context: Optional context from knowledge graph
-            top_k: Return only top K results (None = return all)
+            papers: List of paper dictionaries
+            query: Search query
             
         Returns:
-            Papers sorted by relevance with 'relevance_score' added
+            Papers sorted by relevance with relevance_score added
         """
         if not papers:
             return []
         
-        # Combine query and context for reference embedding
-        reference_text = query
-        if context:
-            reference_text = f"{query}\n\nContext: {context}"
-        
-        # Get reference embedding
-        reference_embedding = self.get_embedding(reference_text)
-        if reference_embedding is None:
-            logger.warning("Failed to get reference embedding, returning unranked papers")
+        try:
+            # Prepare all texts for batch embedding
+            texts = [query]  # Query first
+            for paper in papers:
+                paper_text = f"{paper.get('title', '')} {paper.get('abstract', '')[:500]}"  # Limit abstract length
+                texts.append(paper_text)
+            
+            # Get all embeddings in ONE batch call (much faster!)
+            if settings.openai_dry_run:
+                # Dry run mode - return dummy scores
+                for i, paper in enumerate(papers):
+                    paper['relevance_score'] = 1.0 - (i * 0.01)  # Decreasing scores
+                logger.info(f"Ranked {len(papers)} papers (dry run mode)")
+                return papers
+            
+            response = self.client.embeddings.create(
+                model="text-embedding-3-small",
+                input=texts
+            )
+            
+            # Extract embeddings
+            query_embedding = np.array(response.data[0].embedding)
+            paper_embeddings = [np.array(response.data[i+1].embedding) for i in range(len(papers))]
+            
+            # Calculate similarities
+            for i, paper in enumerate(papers):
+                similarity = self.cosine_similarity(query_embedding, paper_embeddings[i])
+                paper['relevance_score'] = float(similarity)
+            
+            # Sort by relevance score (highest first)
+            papers.sort(key=lambda x: x['relevance_score'], reverse=True)
+            
+            logger.info(f"Ranked {len(papers)} papers by semantic relevance")
             return papers
-        
-        # Calculate similarity for each paper
-        ranked_papers = []
-        for paper in papers:
-            # Combine title and abstract for paper embedding
-            paper_text = f"{paper.get('title', '')} {paper.get('abstract', '')}"
             
-            paper_embedding = self.get_embedding(paper_text)
-            if paper_embedding is None:
-                # If embedding fails, assign low score
-                similarity = 0.0
-            else:
-                similarity = self.cosine_similarity(reference_embedding, paper_embedding)
-            
-            # Add relevance score to paper
-            paper_with_score = paper.copy()
-            paper_with_score['relevance_score'] = round(similarity, 4)
-            ranked_papers.append(paper_with_score)
-        
-        # Sort by relevance (highest first)
-        ranked_papers.sort(key=lambda x: x['relevance_score'], reverse=True)
-        
-        # Return top K if specified
-        if top_k is not None:
-            ranked_papers = ranked_papers[:top_k]
-        
-        logger.info(f"Ranked {len(ranked_papers)} papers by semantic relevance")
-        return ranked_papers
+        except Exception as e:
+            logger.error(f"Semantic ranking failed: {e}")
+            # Return unranked papers
+            for paper in papers:
+                paper['relevance_score'] = 0.5
+            return papers
     
     def rank_by_graph_context(
         self,

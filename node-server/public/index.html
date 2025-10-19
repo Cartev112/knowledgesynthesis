@@ -496,6 +496,7 @@
         <p>Search PubMed, ArXiv, and Semantic Scholar for relevant research papers</p>
       </div>
       
+      <!-- LEFT: Search Configuration -->
       <div class="discovery-search-panel">
         <form class="discovery-search-form" id="discovery-search-form">
           <div class="discovery-form-group">
@@ -503,51 +504,52 @@
             <input 
               type="text" 
               id="discovery-query" 
-              placeholder="e.g., BRAF inhibitors in melanoma, machine learning protein folding"
+              placeholder="e.g., machine learning protein folding"
               required
             />
           </div>
           
           <div class="discovery-search-options">
             <div class="discovery-form-group">
-              <label for="discovery-max-results">Max Results</label>
-              <input type="number" id="discovery-max-results" value="20" min="1" max="50" />
+              <label for="discovery-max-results">Max Results Per Source</label>
+              <input type="number" id="discovery-max-results" value="10" min="1" max="20" />
             </div>
             
             <div class="discovery-form-group">
-              <label>Sources</label>
-              <div style="display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap;">
+              <label>Data Sources</label>
+              <div class="discovery-sources-group">
                 <div class="discovery-checkbox-group">
                   <input type="checkbox" id="discovery-source-pubmed" checked />
-                  <label for="discovery-source-pubmed">PubMed</label>
+                  <label for="discovery-source-pubmed">📚 PubMed (Biomedical)</label>
                 </div>
                 <div class="discovery-checkbox-group">
                   <input type="checkbox" id="discovery-source-arxiv" checked />
-                  <label for="discovery-source-arxiv">ArXiv</label>
+                  <label for="discovery-source-arxiv">📄 ArXiv (Preprints)</label>
                 </div>
                 <div class="discovery-checkbox-group">
-                  <input type="checkbox" id="discovery-source-semantic-scholar" checked />
-                  <label for="discovery-source-semantic-scholar">Semantic Scholar</label>
+                  <input type="checkbox" id="discovery-source-semantic-scholar" />
+                  <label for="discovery-source-semantic-scholar">🎓 Semantic Scholar (All)</label>
                 </div>
               </div>
+              <small style="color: #666; font-size: 12px; margin-top: 5px;">Semantic Scholar may be rate-limited</small>
             </div>
             
             <div class="discovery-form-group">
+              <label>Options</label>
               <div class="discovery-checkbox-group">
                 <input type="checkbox" id="discovery-use-semantic-ranking" checked />
-                <label for="discovery-use-semantic-ranking">Use Semantic Ranking (AI-powered relevance)</label>
+                <label for="discovery-use-semantic-ranking">🤖 AI Relevance Ranking</label>
               </div>
             </div>
           </div>
           
           <div class="discovery-button-group">
-            <button type="submit" class="discovery-btn discovery-btn-primary">🔍 Search Papers</button>
-            <button type="button" class="discovery-btn discovery-btn-secondary" onclick="window.discoveryManager?.searchWithGraphContext()">
-              🧠 Search with Graph Context
-            </button>
+            <button type="submit" class="discovery-btn discovery-btn-primary" style="width: 100%;">🔍 Search Papers</button>
           </div>
         </form>
       </div>
+      
+      <!-- RIGHT: Results -->
       
       <div class="discovery-results-panel" id="discovery-results-panel">
         <div class="discovery-results-header">

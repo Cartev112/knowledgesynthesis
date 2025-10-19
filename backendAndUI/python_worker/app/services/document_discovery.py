@@ -338,20 +338,36 @@ class SemanticScholarSearcher:
         }
         
         try:
+            # Add delay to respect rate limits (100 req per 5 min = ~1 req per 3 sec)
+            import time
+            time.sleep(3)
+            
             response = requests.get(
                 f"{self.BASE_URL}/paper/search",
                 params=params,
                 headers=self.headers,
                 timeout=10
             )
+            
+            # Handle rate limiting
+            if response.status_code == 429:
+                logger.warning(f"Semantic Scholar rate limit hit, skipping for this search")
+                return []
+            
             response.raise_for_status()
             
             papers = response.json().get("data", [])
-            result = [self._format_paper(p) for p in papers]
+            result = [self._format_paper(p) for p in papers if self._format_paper(p)]
             
             logger.info(f"Semantic Scholar search for '{query}' returned {len(result)} results")
             return result
             
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.warning(f"Semantic Scholar rate limited, skipping")
+            else:
+                logger.error(f"Semantic Scholar HTTP error: {e}")
+            return []
         except Exception as e:
             logger.error(f"Semantic Scholar search failed: {e}")
             return []
