@@ -1,0 +1,128 @@
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import logging
+
+from ..services.neo4j_client import get_neo4j_client
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/relationships", tags=["comments"])
+
+
+class CommentCreate(BaseModel):
+    text: str
+    author: str
+
+
+class Comment(BaseModel):
+    id: str
+    text: str
+    author: str
+    created_at: datetime
+
+
+@router.post("/{relationship_id}/comments", response_model=Comment)
+async def add_comment(relationship_id: str, comment: CommentCreate):
+    """Add a comment to a relationship"""
+    try:
+        client = get_neo4j_client()
+        
+        # Create comment node and link to relationship
+        query = """
+        MATCH ()-[r]->()
+        WHERE elementId(r) = $rel_id
+        CREATE (c:Comment {
+            text: $text,
+            author: $author,
+            created_at: datetime()
+        })
+        CREATE (r)-[:HAS_COMMENT]->(c)
+        RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
+        """
+        
+        result = client.execute_query(
+            query,
+            rel_id=relationship_id,
+            text=comment.text,
+            author=comment.author
+        )
+        
+        if not result or len(result) == 0:
+            raise HTTPException(status_code=404, detail="Relationship not found")
+        
+        record = result[0]
+        return Comment(
+            id=record["id"],
+            text=record["text"],
+            author=record["author"],
+            created_at=record["created_at"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error adding comment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{relationship_id}/comments", response_model=List[Comment])
+async def get_comments(relationship_id: str, skip: int = 0, limit: int = 10):
+    """Get comments for a relationship with pagination"""
+    try:
+        client = get_neo4j_client()
+        
+        query = """
+        MATCH ()-[r]->()
+        WHERE elementId(r) = $rel_id
+        MATCH (r)-[:HAS_COMMENT]->(c:Comment)
+        RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
+        ORDER BY c.created_at DESC
+        SKIP $skip
+        LIMIT $limit
+        """
+        
+        result = client.execute_query(
+            query,
+            rel_id=relationship_id,
+            skip=skip,
+            limit=limit
+        )
+        
+        comments = []
+        for record in result:
+            comments.append(Comment(
+                id=record["id"],
+                text=record["text"],
+                author=record["author"],
+                created_at=record["created_at"]
+            ))
+        
+        return comments
+        
+    except Exception as e:
+        logger.error(f"Error fetching comments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{relationship_id}/comments/{comment_id}")
+async def delete_comment(relationship_id: str, comment_id: str):
+    """Delete a comment"""
+    try:
+        client = get_neo4j_client()
+        
+        query = """
+        MATCH (c:Comment)
+        WHERE elementId(c) = $comment_id
+        DETACH DELETE c
+        RETURN count(c) as deleted
+        """
+        
+        result = client.execute_query(query, comment_id=comment_id)
+        
+        if not result or result[0]["deleted"] == 0:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        
+        return {"message": "Comment deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting comment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
