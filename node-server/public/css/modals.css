@@ -71,12 +71,14 @@
   background: rgba(0, 0, 0, 0.6);
   z-index: 2000;
   display: none;
-  align-items: center;
-  justify-content: center;
+  
 }
 
 #edge-modal-overlay.visible, #node-modal-overlay.visible, #document-modal-overlay.visible {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  
 }
 
 #edge-modal, #node-modal {

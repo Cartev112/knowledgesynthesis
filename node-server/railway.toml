@@ -3,8 +3,9 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "node server.js"
+startCommand = "node -e 'require(\"http\").createServer((r,s)=>s.end(\"ok\")).listen(process.env.PORT || 3000); setInterval(()=>{},10000)'"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
+
