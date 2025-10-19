@@ -111,9 +111,9 @@
 
 /* Dynamic Index Panel */
 #index-panel {
-  position: absolute;
+  position: fixed;
   right: 0;
-  top: 0;
+  top: 5rem;
   bottom: 0;
   width: 20rem;
   background: white;
@@ -286,7 +286,7 @@
 #index-toggle-btn {
   position: absolute;
   bottom: 1rem;
-  right: 1rem;
+  left: 1rem;
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
@@ -320,7 +320,7 @@
 #legend-toggle-btn {
   position: absolute;
   bottom: 1rem;
-  right: 5rem;
+  left: 5rem;
   width: 3rem;
   height: 3rem;
   border-radius: 50%;

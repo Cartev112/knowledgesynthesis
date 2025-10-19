@@ -30,7 +30,7 @@ async function fetchRelationships() {
   const loading = document.getElementById('loading');
   const list = document.getElementById('relationships-list');
   
-  loading.classList.remove('hidden');
+  loading.style.display = 'block';
   list.innerHTML = '';
   
   try {
@@ -47,7 +47,7 @@ async function fetchRelationships() {
     allRelationships = data.items || data.relationships || [];
     console.log('Relationships count:', allRelationships.length);
     
-    loading.classList.add('hidden');
+    loading.style.display = 'none';
     applyFilters();
     
   } catch (error) {
@@ -119,12 +119,11 @@ function renderRelationships() {
   
   if (filteredRelationships.length === 0) {
     list.innerHTML = '';
-    noResults.classList.remove('hidden');
     noResults.style.display = 'block';
     return;
   }
   
-  noResults.classList.add('hidden');
+  noResults.style.display = 'none';
   
   list.innerHTML = filteredRelationships.map(rel => `
     <div class="relationship-card">
