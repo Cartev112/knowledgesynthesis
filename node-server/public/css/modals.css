@@ -87,7 +87,6 @@
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.3);
-  margin: auto;
 }
 
 #document-modal {
@@ -98,7 +97,6 @@
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 1.25rem 3.75rem rgba(0,0,0,0.3);
-  margin: auto;
 }
 
 #edge-modal .modal-header, #node-modal .modal-header, #document-modal .modal-header, #legend-modal .modal-header, .modal-header {
