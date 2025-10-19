@@ -213,7 +213,107 @@
   border-radius: 0.375rem;
   font-style: italic;
   color: #374151;
-  line-height: 1.7;
+  line-height: 1.6;
+}
+
+/* Comments Section */
+.comments-list {
+  margin-bottom: 1rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.no-comments {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.comment-item {
+  background: #f9fafb;
+  border-left: 3px solid #8b5cf6;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.375rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.comment-text {
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}
+
+.add-comment-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.comment-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.comment-input::placeholder {
+  color: #9ca3af;
+}
+
+.comment-submit-btn {
+  margin-top: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0.125rem 0.25rem rgba(139, 92, 246, 0.3);
+}
+
+.comment-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.25rem 0.5rem rgba(139, 92, 246, 0.4);
+}
+
+.comment-submit-btn:active {
+  transform: translateY(0);
 }
 
 /* Legend Modal Overlay */

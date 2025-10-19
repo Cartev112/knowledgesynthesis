@@ -170,16 +170,12 @@
           </button>
         </div>
         
-        <!-- Always-visible FAB Container -->
-        <div id="fab-container-always" class="fab-container-always">
-          <button class="fab-round" onclick="window.appManager.openExport()" title="Export Graph">
-            <span>💾</span>
-            <span class="fab-tooltip">Export</span>
-          </button>
-          <button class="fab-round" onclick="window.appManager.openReviewQueue()" title="Review Queue">
-            <span>✅</span>
-            <span class="fab-tooltip">Review Queue</span>
-          </button>
+        <!-- Consolidated FAB Container - Bottom Left -->
+        <div id="fab-container-left">
+          <button id="index-toggle-btn" onclick="toggleIndex()" title="Toggle Index">📋</button>
+          <button id="legend-toggle-btn" onclick="toggleLegend()" title="Visual Guide">📊</button>
+          <button id="export-toggle-btn" onclick="window.appManager.openExport()" title="Export Graph">💾</button>
+          <button id="review-toggle-btn" onclick="window.appManager.openReviewQueue()" title="Review Queue">✅</button>
         </div>
       </div>
     </div>
@@ -230,12 +226,6 @@
       </div>
     </div>
 
-    <!-- FAB Container -->
-    <div id="fab-container-left">
-      <button id="index-toggle-btn" onclick="toggleIndex()" title="Toggle Index">📋</button>
-      <button id="legend-toggle-btn" onclick="toggleLegend()" title="Visual Guide">📊</button>
-      <button id="export-toggle-btn" onclick="exportGraph()" title="Export Graph">💾</button>
-    </div>
   </div>
 
   <!-- Edge Details Modal -->

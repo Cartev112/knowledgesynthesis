@@ -74,8 +74,87 @@ export class ModalManager {
       html += `</div></div>`;
     }
     
+    // Add comments section
+    const comments = data.comments || [];
+    html += `
+      <div class="modal-section">
+        <div class="modal-section-title">Comments (${comments.length})</div>
+        <div class="modal-section-content">
+          <div id="comments-list" class="comments-list">
+            ${comments.length === 0 ? '<div class="no-comments">No comments yet. Be the first to add one!</div>' : ''}
+            ${comments.map(comment => `
+              <div class="comment-item">
+                <div class="comment-header">
+                  <span class="comment-author">${comment.author || 'Anonymous'}</span>
+                  <span class="comment-date">${comment.created_at ? new Date(comment.created_at).toLocaleDateString() : ''}</span>
+                </div>
+                <div class="comment-text">${comment.text}</div>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div class="add-comment-section">
+            <textarea 
+              id="new-comment-text" 
+              class="comment-input" 
+              placeholder="Add a comment about this relationship..."
+              rows="3"
+            ></textarea>
+            <button 
+              class="comment-submit-btn" 
+              onclick="window.viewingManager.modalManager.submitComment('${data.id}')"
+            >
+              💬 Add Comment
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
     content.innerHTML = html;
     modal.classList.add('visible');
+  }
+  
+  async submitComment(relationshipId) {
+    const textarea = document.getElementById('new-comment-text');
+    const commentText = textarea.value.trim();
+    
+    if (!commentText) {
+      alert('Please enter a comment');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/relationships/${relationshipId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: commentText,
+          author: 'Current User' // TODO: Get from auth
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to add comment');
+      
+      // Clear textarea
+      textarea.value = '';
+      
+      // Refresh the modal to show new comment
+      const edge = state.cy.getElementById(relationshipId);
+      if (edge && edge.length > 0) {
+        // Refetch edge data with updated comments
+        const updatedResponse = await fetch(`/api/relationships/${relationshipId}`);
+        if (updatedResponse.ok) {
+          const updatedData = await updatedResponse.json();
+          this.showEdgeModal(updatedData);
+        }
+      }
+      
+      alert('✓ Comment added successfully!');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
+    }
   }
   
   showNodeModal(data) {
