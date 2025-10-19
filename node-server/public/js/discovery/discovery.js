@@ -1,0 +1,399 @@
+/**
+ * Discovery Manager
+ * Handles document discovery from PubMed, ArXiv, and Semantic Scholar
+ */
+
+class DiscoveryManager {
+    constructor() {
+        this.searchResults = [];
+        this.selectedPapers = new Set();
+        this.init();
+    }
+
+    init() {
+        // Set up event listeners
+        const searchForm = document.getElementById('discovery-search-form');
+        if (searchForm) {
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.performSearch();
+            });
+        }
+    }
+
+    async performSearch() {
+        const query = document.getElementById('discovery-query')?.value;
+        const maxResults = parseInt(document.getElementById('discovery-max-results')?.value || 20);
+        const useSemanticRanking = document.getElementById('discovery-use-semantic-ranking')?.checked;
+        
+        const sources = [];
+        if (document.getElementById('discovery-source-pubmed')?.checked) sources.push('pubmed');
+        if (document.getElementById('discovery-source-arxiv')?.checked) sources.push('arxiv');
+        if (document.getElementById('discovery-source-semantic-scholar')?.checked) sources.push('semantic_scholar');
+        
+        if (sources.length === 0) {
+            alert('Please select at least one source');
+            return;
+        }
+        
+        this.showLoading();
+        
+        try {
+            const response = await fetch('/api/discovery/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    max_results: maxResults,
+                    sources,
+                    use_semantic_ranking: useSemanticRanking
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Search failed');
+            }
+            
+            const data = await response.json();
+            this.searchResults = data.papers;
+            this.displayResults(data.papers, data.ranked);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            this.showError('Search failed: ' + error.message);
+        }
+    }
+
+    async searchWithGraphContext() {
+        const query = document.getElementById('discovery-query')?.value;
+        if (!query) {
+            alert('Please enter a research query');
+            return;
+        }
+        
+        // Get selected nodes from the viewing tab if available
+        const selectedNodes = window.selectedNodes ? Array.from(window.selectedNodes) : [];
+        
+        this.showLoading();
+        
+        try {
+            const response = await fetch('/api/discovery/search/graph-context', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    node_ids: selectedNodes.length > 0 ? selectedNodes : null,
+                    max_results: parseInt(document.getElementById('discovery-max-results')?.value || 20),
+                    use_semantic_ranking: true
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Search failed');
+            }
+            
+            const data = await response.json();
+            this.searchResults = data.papers;
+            
+            let message = '';
+            if (data.graph_context_used) {
+                message = `Using context: ${data.entities_in_context} entities, ${data.relationships_in_context} relationships`;
+            }
+            
+            this.displayResults(data.papers, data.ranked, message);
+            
+        } catch (error) {
+            console.error('Graph-context search error:', error);
+            this.showError('Graph-context search failed: ' + error.message);
+        }
+    }
+
+    showLoading() {
+        const panel = document.getElementById('discovery-results-panel');
+        const container = document.getElementById('discovery-results-container');
+        
+        if (panel) panel.classList.add('active');
+        if (container) {
+            container.innerHTML = `
+                <div class="discovery-loading">
+                    <div class="discovery-spinner"></div>
+                    <p>Searching databases...</p>
+                </div>
+            `;
+        }
+    }
+
+    showError(message) {
+        const panel = document.getElementById('discovery-results-panel');
+        const container = document.getElementById('discovery-results-container');
+        
+        if (panel) panel.classList.add('active');
+        if (container) {
+            container.innerHTML = `<div class="discovery-error-message">${this.escapeHtml(message)}</div>`;
+        }
+    }
+
+    displayResults(papers, ranked, contextMessage = '') {
+        const panel = document.getElementById('discovery-results-panel');
+        const container = document.getElementById('discovery-results-container');
+        const countEl = document.getElementById('discovery-results-count');
+        
+        if (panel) panel.classList.add('active');
+        if (countEl) countEl.textContent = `${papers.length} papers found`;
+        
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (contextMessage) {
+            container.innerHTML = `<div class="discovery-success-message">${this.escapeHtml(contextMessage)}</div>`;
+        }
+        
+        if (papers.length === 0) {
+            container.innerHTML += '<p style="text-align: center; color: #666; padding: 40px;">No papers found. Try a different query.</p>';
+            return;
+        }
+        
+        const listHtml = papers.map((paper, index) => this.renderPaperCard(paper, index, ranked)).join('');
+        container.innerHTML += `<div class="discovery-paper-list">${listHtml}</div>`;
+    }
+
+    renderPaperCard(paper, index, ranked) {
+        const source = paper.source || 'unknown';
+        const title = paper.title || 'Untitled';
+        const abstract = paper.abstract || 'No abstract available';
+        const authors = paper.authors?.slice(0, 3).join(', ') || 'Unknown authors';
+        const year = paper.year || '';
+        const score = ranked && paper.relevance_score ? paper.relevance_score : null;
+        
+        // Semantic Scholar specific fields
+        const citationCount = paper.citation_count || 0;
+        const influentialCount = paper.influential_citation_count || 0;
+        const venue = paper.venue || '';
+        
+        let citationInfo = '';
+        if (source === 'semantic_scholar' && citationCount > 0) {
+            citationInfo = `
+                <div class="discovery-citation-info">
+                    <span class="discovery-citation-badge">📚 ${citationCount} citations</span>
+                    ${influentialCount > 0 ? `<span class="discovery-influential-badge">⭐ ${influentialCount} influential</span>` : ''}
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="discovery-paper-card" data-index="${index}" onclick="window.discoveryManager.togglePaperSelection(${index})">
+                <div class="discovery-paper-header">
+                    <div class="discovery-paper-title">${this.escapeHtml(title)}</div>
+                    ${score !== null ? `<div class="discovery-paper-score">${(score * 100).toFixed(0)}% match</div>` : ''}
+                </div>
+                <div class="discovery-paper-meta">
+                    <span class="discovery-source-badge discovery-source-${source}">${source.replace('_', ' ')}</span>
+                    ${year ? `<span>📅 ${year}</span>` : ''}
+                    ${venue ? `<span>📖 ${this.escapeHtml(venue)}</span>` : ''}
+                    <span>👥 ${this.escapeHtml(authors)}</span>
+                </div>
+                ${citationInfo}
+                <div class="discovery-paper-abstract">${this.escapeHtml(abstract.substring(0, 300))}${abstract.length > 300 ? '...' : ''}</div>
+                <div class="discovery-paper-actions">
+                    <button class="discovery-btn discovery-btn-primary discovery-btn-small" onclick="event.stopPropagation(); window.discoveryManager.ingestSingle(${index})">
+                        ⚡ Ingest Now
+                    </button>
+                    ${paper.url ? `<a href="${paper.url}" target="_blank" class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="event.stopPropagation()">View Source</a>` : ''}
+                    ${paper.pdf_url ? `<a href="${paper.pdf_url}" target="_blank" class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    togglePaperSelection(index) {
+        const card = document.querySelector(`[data-index="${index}"]`);
+        
+        if (this.selectedPapers.has(index)) {
+            this.selectedPapers.delete(index);
+            card?.classList.remove('selected');
+        } else {
+            this.selectedPapers.add(index);
+            card?.classList.add('selected');
+        }
+        
+        this.updateBulkActions();
+    }
+
+    updateBulkActions() {
+        const bulkActions = document.getElementById('discovery-bulk-actions');
+        const selectedCount = document.getElementById('discovery-selected-count');
+        
+        if (selectedCount) {
+            selectedCount.textContent = this.selectedPapers.size;
+        }
+        
+        if (bulkActions) {
+            if (this.selectedPapers.size > 0) {
+                bulkActions.classList.add('active');
+            } else {
+                bulkActions.classList.remove('active');
+            }
+        }
+    }
+
+    clearSelection() {
+        this.selectedPapers.clear();
+        document.querySelectorAll('.discovery-paper-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        this.updateBulkActions();
+    }
+
+    async ingestSingle(index) {
+        const paper = this.searchResults[index];
+        await this.ingestPapers([paper]);
+    }
+
+    async ingestSelected() {
+        const papers = Array.from(this.selectedPapers).map(index => this.searchResults[index]);
+        await this.ingestPapers(papers);
+    }
+
+    async ingestPapers(papers) {
+        if (papers.length === 0) return;
+        
+        const confirmed = confirm(`Ingest ${papers.length} paper(s)? This will extract knowledge and add to the graph.`);
+        if (!confirmed) return;
+        
+        // Show progress
+        const resultsContainer = document.getElementById('discovery-results-container');
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'discovery-success-message';
+        progressDiv.innerHTML = `<strong>Ingesting ${papers.length} papers...</strong><br><div id="ingestion-progress"></div>`;
+        resultsContainer.insertBefore(progressDiv, resultsContainer.firstChild);
+        
+        const progressEl = document.getElementById('ingestion-progress');
+        const jobIds = [];
+        
+        // Process each paper
+        for (let i = 0; i < papers.length; i++) {
+            const paper = papers[i];
+            progressEl.innerHTML += `<br>${i + 1}/${papers.length}: ${this.escapeHtml(paper.title)}...`;
+            
+            try {
+                const jobId = await this.ingestSinglePaper(paper);
+                if (jobId) {
+                    jobIds.push(jobId);
+                    progressEl.innerHTML += ` ✅ Queued (Job: ${jobId.substring(0, 8)}...)`;
+                } else {
+                    progressEl.innerHTML += ` ⚠️ Skipped (no PDF/abstract)`;
+                }
+            } catch (error) {
+                console.error(`Failed to ingest paper: ${paper.title}`, error);
+                progressEl.innerHTML += ` ❌ Failed: ${error.message}`;
+            }
+        }
+        
+        // Show completion message
+        progressDiv.innerHTML = `
+            <strong>✅ Ingestion Complete!</strong><br>
+            ${jobIds.length} papers queued for processing.<br>
+            <small>Check the Review Queue to monitor extraction progress.</small>
+        `;
+        
+        // Clear selection
+        this.clearSelection();
+    }
+    
+    async ingestSinglePaper(paper) {
+        /**
+         * Ingest a single paper based on available content.
+         * Priority: PDF URL > Abstract text
+         */
+        
+        // Try PDF URL first (ArXiv, Semantic Scholar open access)
+        if (paper.pdf_url) {
+            return await this.ingestPdfUrl(paper);
+        }
+        
+        // Fall back to abstract for PubMed or papers without PDFs
+        if (paper.abstract && paper.abstract.length > 100) {
+            return await this.ingestAbstract(paper);
+        }
+        
+        // No ingestible content
+        return null;
+    }
+    
+    async ingestPdfUrl(paper) {
+        /**
+         * Ingest paper from PDF URL.
+         */
+        const response = await fetch('/api/ingest/pdf_url_async', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pdf_url: paper.pdf_url,
+                document_title: paper.title,
+                max_relationships: 50
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'PDF ingestion failed');
+        }
+        
+        const data = await response.json();
+        return data.job_id;
+    }
+    
+    async ingestAbstract(paper) {
+        /**
+         * Ingest paper from abstract text.
+         */
+        // Build text content with metadata
+        const authors = paper.authors?.join(', ') || 'Unknown authors';
+        const year = paper.year || 'Unknown year';
+        const venue = paper.venue || paper.journal || '';
+        
+        let textContent = `Title: ${paper.title}\n\n`;
+        textContent += `Authors: ${authors}\n`;
+        textContent += `Year: ${year}\n`;
+        if (venue) textContent += `Published in: ${venue}\n`;
+        if (paper.doi) textContent += `DOI: ${paper.doi}\n`;
+        textContent += `\nAbstract:\n${paper.abstract}`;
+        
+        const response = await fetch('/api/ingest/text_async', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: textContent,
+                document_title: paper.title,
+                document_id: paper.pmid || paper.arxiv_id || paper.semantic_scholar_id,
+                max_relationships: 30  // Fewer for abstracts
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Abstract ingestion failed');
+        }
+        
+        const data = await response.json();
+        return data.job_id;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize discovery manager when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.discoveryManager = new DiscoveryManager();
+    });
+} else {
+    window.discoveryManager = new DiscoveryManager();
+}

@@ -370,6 +370,11 @@ app.post('/api/ingest/pdf_async', requireAuth, upload.single('file'), async (req
   }
 })
 
+// Discovery UI route (MUST be before proxies to avoid conflict)
+app.get('/discovery-ui', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'discovery.html'))
+})
+
 // Review UI route (MUST be before /review proxy to avoid conflict)
 app.get('/review-ui', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'))

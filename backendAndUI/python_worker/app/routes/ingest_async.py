@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 from ..models.job import IngestJob, JobStatus
 from ..services.job_tracker import JobTracker
@@ -178,6 +178,83 @@ async def ingest_pdf_async(
         raise
     except Exception as e:
         logger.error(f"Error queueing PDF job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class IngestPdfUrlRequest(BaseModel):
+    """Request model for PDF URL ingestion."""
+    pdf_url: str
+    document_title: Optional[str] = None
+    user_id: Optional[str] = None
+    user_first_name: Optional[str] = None
+    user_last_name: Optional[str] = None
+    user_email: Optional[str] = None
+    max_concepts: int = 100
+    max_relationships: int = 50
+    extraction_context: Optional[str] = None
+
+
+@router.post("/pdf_url_async")
+async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
+    """
+    Submit a PDF URL for async ingestion.
+    The worker will download the PDF and process it.
+    Returns immediately with a job_id for status tracking.
+    """
+    try:
+        # Generate job ID
+        job_id = str(uuid.uuid4())
+        
+        # Create job object
+        job = IngestJob(
+            job_id=job_id,
+            status=JobStatus.PENDING,
+            document_title=payload.document_title or "PDF from URL",
+            user_id=payload.user_id,
+            user_first_name=payload.user_first_name,
+            user_last_name=payload.user_last_name,
+            user_email=payload.user_email,
+            max_concepts=payload.max_concepts,
+            max_relationships=payload.max_relationships,
+            extraction_context=payload.extraction_context,
+            created_at=datetime.utcnow().isoformat()
+        )
+        
+        # Store job in Redis
+        JobTracker.create_job(job)
+        
+        # Publish to queue with PDF URL
+        job_data = {
+            'job_id': job_id,
+            'pdf_url': payload.pdf_url,
+            'document_title': payload.document_title,
+            'user_id': payload.user_id,
+            'user_first_name': payload.user_first_name,
+            'user_last_name': payload.user_last_name,
+            'user_email': payload.user_email,
+            'max_relationships': payload.max_relationships,
+            'extraction_context': payload.extraction_context
+        }
+        
+        publisher = get_publisher()
+        success = publisher.publish_job(job_id, job_data)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to queue job")
+        
+        logger.info(f"Queued PDF URL ingestion job {job_id} for {payload.pdf_url}")
+        
+        return {
+            "job_id": job_id,
+            "status": "pending",
+            "message": "Job queued successfully. Use /api/ingest/job/{job_id} to check status.",
+            "pdf_url": payload.pdf_url
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error queueing PDF URL job: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

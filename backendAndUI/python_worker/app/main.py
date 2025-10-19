@@ -32,6 +32,8 @@ from .routes.export import router as export_router
 from .routes.manual import router as manual_router
 from .routes.pathway import router as pathway_router
 from .routes.comments import router as comments_router
+from .routes.discovery import router as discovery_router
+from .routes.discovery_ui import router as discovery_ui_router
 
 
 app = FastAPI(title="Knowledge Synthesis Worker", version="0.1.0")
@@ -106,3 +108,5 @@ app.include_router(export_router, prefix="/api/export", tags=["export"])
 app.include_router(manual_router, prefix="/api/manual", tags=["manual"])
 app.include_router(pathway_router, prefix="/api/pathway", tags=["pathway"]) 
 app.include_router(comments_router, tags=["comments"])
+app.include_router(discovery_router, prefix="/api/discovery", tags=["discovery"])
+app.include_router(discovery_ui_router, tags=["ui"])

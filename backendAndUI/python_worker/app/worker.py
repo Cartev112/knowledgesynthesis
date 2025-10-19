@@ -6,6 +6,7 @@ import logging
 import sys
 import io
 import hashlib
+import requests
 from pypdf import PdfReader
 from typing import Optional
 
@@ -153,7 +154,98 @@ class IngestionWorker:
         # Extract triplets
         result = extract_triplets(
             text_content,
-            max_triplets=job_data.get('max_relationships', 50)
+            max_triplets=job_data.get('max_relationships', 50),
+            extraction_context=job_data.get('extraction_context')
+        )
+        
+        logger.info(f"Job {job_id}: Extracted {len(result.triplets)} triplets")
+        
+        # Write to Neo4j
+        writes = write_triplets(
+            triplets=result.triplets,
+            document_id=document_id,
+            document_title=document_title,
+            user_id=job_data.get('user_id'),
+            user_first_name=job_data.get('user_first_name'),
+            user_last_name=job_data.get('user_last_name')
+        )
+        
+        return {
+            'document_id': document_id,
+            'document_title': document_title,
+            'triplets_extracted': len(result.triplets),
+            'triplets_written': writes.get('triplets_written', 0)
+        }
+    
+    def _process_pdf_url_job(self, job_data: dict) -> dict:
+        """Process a PDF URL ingestion job by downloading and extracting."""
+        job_id = job_data['job_id']
+        pdf_url = job_data['pdf_url']
+        
+        logger.info(f"Job {job_id}: Downloading PDF from {pdf_url}")
+        
+        # Download PDF from URL
+        try:
+            response = requests.get(pdf_url, timeout=60, stream=True)
+            response.raise_for_status()
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '').lower()
+            if 'pdf' not in content_type and not pdf_url.lower().endswith('.pdf'):
+                logger.warning(f"Job {job_id}: URL may not be a PDF (content-type: {content_type})")
+            
+            pdf_bytes = response.content
+            
+            # Check size (limit to 50MB)
+            max_size_mb = 50
+            if len(pdf_bytes) > max_size_mb * 1024 * 1024:
+                raise ValueError(f"PDF too large. Maximum size is {max_size_mb}MB")
+            
+            logger.info(f"Job {job_id}: Downloaded {len(pdf_bytes)} bytes")
+            
+        except requests.RequestException as e:
+            raise ValueError(f"Failed to download PDF: {str(e)}")
+        
+        # Extract text from PDF
+        try:
+            reader = PdfReader(io.BytesIO(pdf_bytes))
+            
+            pages_with_numbers = []
+            for page_num, page in enumerate(reader.pages, start=1):
+                page_text = page.extract_text() or ""
+                if page_text.strip():
+                    pages_with_numbers.append({
+                        "page_number": page_num,
+                        "text": page_text
+                    })
+            
+            # Combine text
+            full_text = "\n\n".join([p["text"] for p in pages_with_numbers])
+            if not full_text.strip():
+                raise ValueError("Could not extract any text from the PDF")
+            
+            logger.info(f"Job {job_id}: Extracted text from {len(pages_with_numbers)} pages")
+            
+        except Exception as e:
+            raise ValueError(f"Failed to extract text from PDF: {str(e)}")
+        
+        # Extract or use provided title
+        document_title = job_data.get('document_title')
+        if not document_title:
+            document_title = extract_title_with_llm(full_text)
+        
+        # Generate document_id from hash
+        sha256 = hashlib.sha256(pdf_bytes).hexdigest()
+        document_id = sha256
+        
+        logger.info(f"Job {job_id}: Processing PDF '{document_title}' ({len(pages_with_numbers)} pages)")
+        
+        # Extract triplets using AI
+        result = extract_triplets(
+            full_text,
+            max_triplets=job_data.get('max_relationships', 50),
+            pages=pages_with_numbers,
+            extraction_context=job_data.get('extraction_context')
         )
         
         logger.info(f"Job {job_id}: Extracted {len(result.triplets)} triplets")
@@ -193,10 +285,12 @@ class IngestionWorker:
             # Process based on job type
             if 'pdf_bytes' in job_data:
                 result = self._process_pdf_job(job_data)
+            elif 'pdf_url' in job_data:
+                result = self._process_pdf_url_job(job_data)
             elif 'text_content' in job_data:
                 result = self._process_text_job(job_data)
             else:
-                raise ValueError("Job must contain either 'pdf_bytes' or 'text_content'")
+                raise ValueError("Job must contain 'pdf_bytes', 'pdf_url', or 'text_content'")
             
             # Update job with results
             JobTracker.update_status(

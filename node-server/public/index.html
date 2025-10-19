@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/css/ingestion.css">
   <link rel="stylesheet" href="/static/css/viewing.css">
   <link rel="stylesheet" href="/static/css/query-builder.css">
+  <link rel="stylesheet" href="/static/css/discovery.css">
   <link rel="stylesheet" href="/static/css/modals.css">
   <link rel="stylesheet" href="/static/css/custom-classes.css">
   
@@ -31,6 +32,7 @@
   <div id="tabs">
     <div class="tab active" onclick="window.appManager.switchTab('ingestion')">📤 Ingestion</div>
     <div class="tab" onclick="window.appManager.switchTab('viewing')">🔍 Viewing</div>
+    <div class="tab" onclick="window.appManager.switchTab('discovery')">🔬 Discovery</div>
     <div class="tab" onclick="window.appManager.switchTab('query-builder')">🔎 Query Builder</div>
     <div class="tab" onclick="window.open('/review-ui', '_blank')">✅ Review Queue</div>
   </div>
@@ -486,6 +488,88 @@
     </div>
   </div>
   
+  <!-- DISCOVERY TAB -->
+  <div id="discovery-tab" class="tab-content">
+    <div class="discovery-container">
+      <div class="discovery-header">
+        <h2>🔬 Document Discovery</h2>
+        <p>Search PubMed, ArXiv, and Semantic Scholar for relevant research papers</p>
+      </div>
+      
+      <div class="discovery-search-panel">
+        <form class="discovery-search-form" id="discovery-search-form">
+          <div class="discovery-form-group">
+            <label for="discovery-query">Research Query</label>
+            <input 
+              type="text" 
+              id="discovery-query" 
+              placeholder="e.g., BRAF inhibitors in melanoma, machine learning protein folding"
+              required
+            />
+          </div>
+          
+          <div class="discovery-search-options">
+            <div class="discovery-form-group">
+              <label for="discovery-max-results">Max Results</label>
+              <input type="number" id="discovery-max-results" value="20" min="1" max="50" />
+            </div>
+            
+            <div class="discovery-form-group">
+              <label>Sources</label>
+              <div style="display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap;">
+                <div class="discovery-checkbox-group">
+                  <input type="checkbox" id="discovery-source-pubmed" checked />
+                  <label for="discovery-source-pubmed">PubMed</label>
+                </div>
+                <div class="discovery-checkbox-group">
+                  <input type="checkbox" id="discovery-source-arxiv" checked />
+                  <label for="discovery-source-arxiv">ArXiv</label>
+                </div>
+                <div class="discovery-checkbox-group">
+                  <input type="checkbox" id="discovery-source-semantic-scholar" checked />
+                  <label for="discovery-source-semantic-scholar">Semantic Scholar</label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="discovery-form-group">
+              <div class="discovery-checkbox-group">
+                <input type="checkbox" id="discovery-use-semantic-ranking" checked />
+                <label for="discovery-use-semantic-ranking">Use Semantic Ranking (AI-powered relevance)</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="discovery-button-group">
+            <button type="submit" class="discovery-btn discovery-btn-primary">🔍 Search Papers</button>
+            <button type="button" class="discovery-btn discovery-btn-secondary" onclick="window.discoveryManager?.searchWithGraphContext()">
+              🧠 Search with Graph Context
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="discovery-results-panel" id="discovery-results-panel">
+        <div class="discovery-results-header">
+          <h3>Search Results</h3>
+          <span class="discovery-results-count" id="discovery-results-count">0 papers found</span>
+        </div>
+        
+        <div id="discovery-results-container"></div>
+      </div>
+      
+      <div class="discovery-bulk-actions" id="discovery-bulk-actions">
+        <div>
+          <strong id="discovery-selected-count">0</strong> papers selected
+        </div>
+        <div class="discovery-button-group">
+          <button class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="window.discoveryManager?.clearSelection()">Clear Selection</button>
+          <button class="discovery-btn discovery-btn-primary discovery-btn-small" onclick="window.discoveryManager?.ingestSelected()">Ingest Selected Papers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- QUERY BUILDER TAB -->
   <div id="query-builder-tab" class="tab-content">
     <div id="query-builder-content">
@@ -494,6 +578,7 @@
   </div>
   
   <!-- JavaScript Modules (ES6 Modules) -->
+  <script src="/static/js/discovery/discovery.js"></script>
   <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>
