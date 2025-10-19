@@ -19,7 +19,7 @@ router = APIRouter(tags=["discovery"])
 
 # Initialize services
 discovery_service = DocumentDiscoveryService(
-    email=settings.email_sender,  # Reuse email from settings
+    email="knowledgesynthesis.noreply@gmail.com",  # Default email for API requests
     pubmed_api_key=None  # Can be added to settings later
 )
 semantic_ranker = SemanticRanker()
