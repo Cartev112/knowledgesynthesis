@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 import logging
 
-from ..services.neo4j_client import get_neo4j_client
+from ..services.neo4j_client import neo4j_client
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/relationships", tags=["comments"])
@@ -26,32 +26,26 @@ class Comment(BaseModel):
 async def add_comment(relationship_id: str, comment: CommentCreate):
     """Add a comment to a relationship"""
     try:
-        client = get_neo4j_client()
+        def work(tx):
+            query = """
+            MATCH ()-[r]->()
+            WHERE elementId(r) = $rel_id
+            CREATE (c:Comment {
+                text: $text,
+                author: $author,
+                created_at: datetime()
+            })
+            CREATE (r)-[:HAS_COMMENT]->(c)
+            RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
+            """
+            result = tx.run(query, rel_id=relationship_id, text=comment.text, author=comment.author)
+            return result.single()
         
-        # Create comment node and link to relationship
-        query = """
-        MATCH ()-[r]->()
-        WHERE elementId(r) = $rel_id
-        CREATE (c:Comment {
-            text: $text,
-            author: $author,
-            created_at: datetime()
-        })
-        CREATE (r)-[:HAS_COMMENT]->(c)
-        RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
-        """
+        record = neo4j_client.execute_write(work)
         
-        result = client.execute_query(
-            query,
-            rel_id=relationship_id,
-            text=comment.text,
-            author=comment.author
-        )
-        
-        if not result or len(result) == 0:
+        if not record:
             raise HTTPException(status_code=404, detail="Relationship not found")
         
-        record = result[0]
         return Comment(
             id=record["id"],
             text=record["text"],
@@ -68,27 +62,23 @@ async def add_comment(relationship_id: str, comment: CommentCreate):
 async def get_comments(relationship_id: str, skip: int = 0, limit: int = 10):
     """Get comments for a relationship with pagination"""
     try:
-        client = get_neo4j_client()
+        def work(tx):
+            query = """
+            MATCH ()-[r]->()
+            WHERE elementId(r) = $rel_id
+            MATCH (r)-[:HAS_COMMENT]->(c:Comment)
+            RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
+            ORDER BY c.created_at DESC
+            SKIP $skip
+            LIMIT $limit
+            """
+            result = tx.run(query, rel_id=relationship_id, skip=skip, limit=limit)
+            return list(result)
         
-        query = """
-        MATCH ()-[r]->()
-        WHERE elementId(r) = $rel_id
-        MATCH (r)-[:HAS_COMMENT]->(c:Comment)
-        RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
-        ORDER BY c.created_at DESC
-        SKIP $skip
-        LIMIT $limit
-        """
-        
-        result = client.execute_query(
-            query,
-            rel_id=relationship_id,
-            skip=skip,
-            limit=limit
-        )
+        records = neo4j_client.execute_write(work)
         
         comments = []
-        for record in result:
+        for record in records:
             comments.append(Comment(
                 id=record["id"],
                 text=record["text"],
@@ -107,18 +97,19 @@ async def get_comments(relationship_id: str, skip: int = 0, limit: int = 10):
 async def delete_comment(relationship_id: str, comment_id: str):
     """Delete a comment"""
     try:
-        client = get_neo4j_client()
+        def work(tx):
+            query = """
+            MATCH (c:Comment)
+            WHERE elementId(c) = $comment_id
+            DETACH DELETE c
+            RETURN count(c) as deleted
+            """
+            result = tx.run(query, comment_id=comment_id)
+            return result.single()
         
-        query = """
-        MATCH (c:Comment)
-        WHERE elementId(c) = $comment_id
-        DETACH DELETE c
-        RETURN count(c) as deleted
-        """
+        record = neo4j_client.execute_write(work)
         
-        result = client.execute_query(query, comment_id=comment_id)
-        
-        if not result or result[0]["deleted"] == 0:
+        if not record or record["deleted"] == 0:
             raise HTTPException(status_code=404, detail="Comment not found")
         
         return {"message": "Comment deleted successfully"}
