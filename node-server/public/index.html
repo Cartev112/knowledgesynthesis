@@ -550,23 +550,38 @@
       </div>
       
       <!-- RIGHT: Results -->
-      
       <div class="discovery-results-panel" id="discovery-results-panel">
         <div class="discovery-results-header">
           <h3>Search Results</h3>
-          <span class="discovery-results-count" id="discovery-results-count">0 papers found</span>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span class="discovery-results-count" id="discovery-results-count">0 papers found</span>
+            <button 
+              id="discovery-ingest-button" 
+              class="discovery-btn discovery-btn-primary discovery-btn-small" 
+              style="display: none;"
+              onclick="window.discoveryManager?.ingestSelected()">
+              ⚡ Ingest Selected (<span id="discovery-selected-count">0</span>)
+            </button>
+          </div>
         </div>
         
         <div id="discovery-results-container"></div>
       </div>
-      
-      <div class="discovery-bulk-actions" id="discovery-bulk-actions">
-        <div>
-          <strong id="discovery-selected-count">0</strong> papers selected
+    </div>
+    
+    <!-- Paper Detail Modal -->
+    <div class="discovery-modal-overlay" id="discovery-modal-overlay" onclick="window.discoveryManager?.closeModal(event)">
+      <div class="discovery-modal" onclick="event.stopPropagation()">
+        <div class="discovery-modal-header">
+          <h2 class="discovery-modal-title" id="discovery-modal-title"></h2>
+          <button class="discovery-modal-close" onclick="window.discoveryManager?.closeModal()">×</button>
         </div>
-        <div class="discovery-button-group">
-          <button class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="window.discoveryManager?.clearSelection()">Clear Selection</button>
-          <button class="discovery-btn discovery-btn-primary discovery-btn-small" onclick="window.discoveryManager?.ingestSelected()">Ingest Selected Papers</button>
+        <div class="discovery-modal-body" id="discovery-modal-body"></div>
+        <div class="discovery-modal-footer">
+          <button class="discovery-btn discovery-btn-secondary" onclick="window.discoveryManager?.closeModal()">Close</button>
+          <button class="discovery-btn discovery-btn-primary" id="discovery-modal-ingest-btn" onclick="window.discoveryManager?.ingestFromModal()">
+            ⚡ Ingest This Paper
+          </button>
         </div>
       </div>
     </div>

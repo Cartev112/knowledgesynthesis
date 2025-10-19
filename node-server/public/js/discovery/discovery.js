@@ -163,88 +163,156 @@ class DiscoveryManager {
     renderPaperCard(paper, index, ranked) {
         const source = paper.source || 'unknown';
         const title = paper.title || 'Untitled';
-        const abstract = paper.abstract || 'No abstract available';
-        const authors = paper.authors?.slice(0, 3).join(', ') || 'Unknown authors';
+        const authors = paper.authors?.slice(0, 2).join(', ') || 'Unknown';
         const year = paper.year || '';
         const score = ranked && paper.relevance_score ? paper.relevance_score : null;
         
-        // Semantic Scholar specific fields
+        // Citation info for display
         const citationCount = paper.citation_count || 0;
-        const influentialCount = paper.influential_citation_count || 0;
-        const venue = paper.venue || '';
-        
-        let citationInfo = '';
-        if (source === 'semantic_scholar' && citationCount > 0) {
-            citationInfo = `
-                <div class="discovery-citation-info">
-                    <span class="discovery-citation-badge">📚 ${citationCount} citations</span>
-                    ${influentialCount > 0 ? `<span class="discovery-influential-badge">⭐ ${influentialCount} influential</span>` : ''}
-                </div>
-            `;
-        }
         
         return `
-            <div class="discovery-paper-card" data-index="${index}" onclick="window.discoveryManager.togglePaperSelection(${index})">
-                <div class="discovery-paper-header">
+            <div class="discovery-paper-card" data-index="${index}">
+                <input 
+                    type="checkbox" 
+                    class="discovery-paper-checkbox" 
+                    data-index="${index}"
+                    onchange="window.discoveryManager.togglePaperSelection(${index})"
+                />
+                <div class="discovery-paper-content">
                     <div class="discovery-paper-title">${this.escapeHtml(title)}</div>
-                    ${score !== null ? `<div class="discovery-paper-score">${(score * 100).toFixed(0)}% match</div>` : ''}
+                    <div class="discovery-paper-meta">
+                        <span class="discovery-source-badge discovery-source-${source}">${source.replace('_', ' ')}</span>
+                        ${year ? `<span>📅 ${year}</span>` : ''}
+                        ${authors ? `<span>👥 ${this.escapeHtml(authors)}</span>` : ''}
+                        ${citationCount > 0 ? `<span>📚 ${citationCount}</span>` : ''}
+                        ${score !== null ? `<span class="discovery-paper-score">${(score * 100).toFixed(0)}%</span>` : ''}
+                    </div>
                 </div>
-                <div class="discovery-paper-meta">
-                    <span class="discovery-source-badge discovery-source-${source}">${source.replace('_', ' ')}</span>
-                    ${year ? `<span>📅 ${year}</span>` : ''}
-                    ${venue ? `<span>📖 ${this.escapeHtml(venue)}</span>` : ''}
-                    <span>👥 ${this.escapeHtml(authors)}</span>
-                </div>
-                ${citationInfo}
-                <div class="discovery-paper-abstract">${this.escapeHtml(abstract.substring(0, 300))}${abstract.length > 300 ? '...' : ''}</div>
-                <div class="discovery-paper-actions">
-                    <button class="discovery-btn discovery-btn-primary discovery-btn-small" onclick="event.stopPropagation(); window.discoveryManager.ingestSingle(${index})">
-                        ⚡ Ingest Now
-                    </button>
-                    ${paper.url ? `<a href="${paper.url}" target="_blank" class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="event.stopPropagation()">View Source</a>` : ''}
-                    ${paper.pdf_url ? `<a href="${paper.pdf_url}" target="_blank" class="discovery-btn discovery-btn-secondary discovery-btn-small" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
-                </div>
+                <a href="#" class="discovery-view-details" onclick="event.preventDefault(); window.discoveryManager.showPaperDetails(${index})">
+                    View Details →
+                </a>
             </div>
         `;
     }
 
     togglePaperSelection(index) {
-        const card = document.querySelector(`[data-index="${index}"]`);
+        const checkbox = document.querySelector(`.discovery-paper-checkbox[data-index="${index}"]`);
+        const card = document.querySelector(`.discovery-paper-card[data-index="${index}"]`);
         
-        if (this.selectedPapers.has(index)) {
-            this.selectedPapers.delete(index);
-            card?.classList.remove('selected');
-        } else {
+        if (checkbox.checked) {
             this.selectedPapers.add(index);
             card?.classList.add('selected');
+        } else {
+            this.selectedPapers.delete(index);
+            card?.classList.remove('selected');
         }
         
-        this.updateBulkActions();
+        this.updateIngestButton();
     }
 
-    updateBulkActions() {
-        const bulkActions = document.getElementById('discovery-bulk-actions');
+    updateIngestButton() {
+        const ingestButton = document.getElementById('discovery-ingest-button');
         const selectedCount = document.getElementById('discovery-selected-count');
         
         if (selectedCount) {
             selectedCount.textContent = this.selectedPapers.size;
         }
         
-        if (bulkActions) {
+        if (ingestButton) {
             if (this.selectedPapers.size > 0) {
-                bulkActions.classList.add('active');
+                ingestButton.style.display = 'block';
             } else {
-                bulkActions.classList.remove('active');
+                ingestButton.style.display = 'none';
             }
         }
     }
 
     clearSelection() {
         this.selectedPapers.clear();
+        document.querySelectorAll('.discovery-paper-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
         document.querySelectorAll('.discovery-paper-card.selected').forEach(card => {
             card.classList.remove('selected');
         });
-        this.updateBulkActions();
+        this.updateIngestButton();
+    }
+
+    showPaperDetails(index) {
+        const paper = this.searchResults[index];
+        if (!paper) return;
+        
+        this.currentModalPaper = index;
+        
+        const modal = document.getElementById('discovery-modal-overlay');
+        const title = document.getElementById('discovery-modal-title');
+        const body = document.getElementById('discovery-modal-body');
+        
+        title.textContent = paper.title || 'Untitled';
+        
+        // Build modal content
+        let content = '';
+        
+        // Authors
+        if (paper.authors && paper.authors.length > 0) {
+            content += `
+                <div class="discovery-modal-section">
+                    <div class="discovery-modal-section-title">Authors</div>
+                    <div class="discovery-modal-section-content">${this.escapeHtml(paper.authors.join(', '))}</div>
+                </div>
+            `;
+        }
+        
+        // Metadata
+        content += '<div class="discovery-modal-section"><div class="discovery-modal-section-title">Metadata</div><div class="discovery-modal-meta-grid">';
+        if (paper.year) content += `<div class="discovery-modal-meta-label">Year:</div><div class="discovery-modal-meta-value">${paper.year}</div>`;
+        if (paper.venue) content += `<div class="discovery-modal-meta-label">Venue:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.venue)}</div>`;
+        if (paper.journal) content += `<div class="discovery-modal-meta-label">Journal:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.journal)}</div>`;
+        content += `<div class="discovery-modal-meta-label">Source:</div><div class="discovery-modal-meta-value">${paper.source.replace('_', ' ')}</div>`;
+        if (paper.citation_count) content += `<div class="discovery-modal-meta-label">Citations:</div><div class="discovery-modal-meta-value">${paper.citation_count}</div>`;
+        if (paper.influential_citation_count) content += `<div class="discovery-modal-meta-label">Influential:</div><div class="discovery-modal-meta-value">${paper.influential_citation_count}</div>`;
+        if (paper.doi) content += `<div class="discovery-modal-meta-label">DOI:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.doi)}</div>`;
+        content += '</div></div>';
+        
+        // Abstract
+        if (paper.abstract) {
+            content += `
+                <div class="discovery-modal-section">
+                    <div class="discovery-modal-section-title">Abstract</div>
+                    <div class="discovery-modal-section-content">${this.escapeHtml(paper.abstract)}</div>
+                </div>
+            `;
+        }
+        
+        // Links
+        const links = [];
+        if (paper.url) links.push(`<a href="${paper.url}" target="_blank">View Source</a>`);
+        if (paper.pdf_url) links.push(`<a href="${paper.pdf_url}" target="_blank">Download PDF</a>`);
+        if (links.length > 0) {
+            content += `
+                <div class="discovery-modal-section">
+                    <div class="discovery-modal-section-title">Links</div>
+                    <div class="discovery-modal-section-content">${links.join(' • ')}</div>
+                </div>
+            `;
+        }
+        
+        body.innerHTML = content;
+        modal.classList.add('active');
+    }
+
+    closeModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('discovery-modal-overlay');
+        modal.classList.remove('active');
+        this.currentModalPaper = null;
+    }
+
+    ingestFromModal() {
+        if (this.currentModalPaper !== null) {
+            this.ingestSingle(this.currentModalPaper);
+            this.closeModal();
+        }
     }
 
     async ingestSingle(index) {
