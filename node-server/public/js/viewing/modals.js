@@ -15,6 +15,11 @@ export class ModalManager {
     const modal = document.getElementById('edge-modal-overlay');
     const content = document.getElementById('edge-modal-content');
     
+    // Store current relationship ID for comments
+    this.currentRelationshipId = data.id;
+    this.currentCommentPage = 1;
+    this.commentsPerPage = 3;
+    
     const sourceLabel = state.cy.getElementById(data.source).data().label;
     const targetLabel = state.cy.getElementById(data.target).data().label;
     
@@ -74,24 +79,50 @@ export class ModalManager {
       html += `</div></div>`;
     }
     
-    // Add comments section
-    const comments = data.comments || [];
+    // Add comments section with pagination
+    const allComments = this.getCommentsForRelationship(data.id);
+    const totalComments = allComments.length;
+    const totalPages = Math.ceil(totalComments / this.commentsPerPage);
+    const startIdx = (this.currentCommentPage - 1) * this.commentsPerPage;
+    const endIdx = startIdx + this.commentsPerPage;
+    const paginatedComments = allComments.slice(startIdx, endIdx);
+    
     html += `
       <div class="modal-section">
-        <div class="modal-section-title">Comments (${comments.length})</div>
+        <div class="modal-section-title">Comments (${totalComments})</div>
         <div class="modal-section-content">
           <div id="comments-list" class="comments-list">
-            ${comments.length === 0 ? '<div class="no-comments">No comments yet. Be the first to add one!</div>' : ''}
-            ${comments.map(comment => `
+            ${totalComments === 0 ? '<div class="no-comments">No comments yet. Be the first to add one!</div>' : ''}
+            ${paginatedComments.map(comment => `
               <div class="comment-item">
                 <div class="comment-header">
                   <span class="comment-author">${comment.author || 'Anonymous'}</span>
-                  <span class="comment-date">${comment.created_at ? new Date(comment.created_at).toLocaleDateString() : ''}</span>
+                  <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
                 </div>
                 <div class="comment-text">${comment.text}</div>
               </div>
             `).join('')}
           </div>
+          
+          ${totalPages > 1 ? `
+            <div class="pagination-controls">
+              <button 
+                class="pagination-btn" 
+                onclick="window.viewingManager.modalManager.changeCommentPage(-1)"
+                ${this.currentCommentPage === 1 ? 'disabled' : ''}
+              >
+                ← Previous
+              </button>
+              <span class="pagination-info">Page ${this.currentCommentPage} of ${totalPages}</span>
+              <button 
+                class="pagination-btn" 
+                onclick="window.viewingManager.modalManager.changeCommentPage(1)"
+                ${this.currentCommentPage === totalPages ? 'disabled' : ''}
+              >
+                Next →
+              </button>
+            </div>
+          ` : ''}
           
           <div class="add-comment-section">
             <textarea 
@@ -102,7 +133,7 @@ export class ModalManager {
             ></textarea>
             <button 
               class="comment-submit-btn" 
-              onclick="window.viewingManager.modalManager.submitComment('${data.id}')"
+              onclick="window.viewingManager.modalManager.submitComment()"
             >
               💬 Add Comment
             </button>
@@ -115,7 +146,25 @@ export class ModalManager {
     modal.classList.add('visible');
   }
   
-  async submitComment(relationshipId) {
+  getCommentsForRelationship(relationshipId) {
+    const storageKey = 'relationship_comments';
+    const allComments = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    return allComments[relationshipId] || [];
+  }
+  
+  saveComment(relationshipId, comment) {
+    const storageKey = 'relationship_comments';
+    const allComments = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    
+    if (!allComments[relationshipId]) {
+      allComments[relationshipId] = [];
+    }
+    
+    allComments[relationshipId].unshift(comment); // Add to beginning
+    localStorage.setItem(storageKey, JSON.stringify(allComments));
+  }
+  
+  submitComment() {
     const textarea = document.getElementById('new-comment-text');
     const commentText = textarea.value.trim();
     
@@ -124,36 +173,32 @@ export class ModalManager {
       return;
     }
     
-    try {
-      const response = await fetch(`/api/relationships/${relationshipId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: commentText,
-          author: 'Current User' // TODO: Get from auth
-        })
-      });
-      
-      if (!response.ok) throw new Error('Failed to add comment');
-      
-      // Clear textarea
-      textarea.value = '';
-      
-      // Refresh the modal to show new comment
-      const edge = state.cy.getElementById(relationshipId);
-      if (edge && edge.length > 0) {
-        // Refetch edge data with updated comments
-        const updatedResponse = await fetch(`/api/relationships/${relationshipId}`);
-        if (updatedResponse.ok) {
-          const updatedData = await updatedResponse.json();
-          this.showEdgeModal(updatedData);
-        }
-      }
-      
-      alert('✓ Comment added successfully!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      alert('Failed to add comment. Please try again.');
+    const comment = {
+      text: commentText,
+      author: 'Current User', // TODO: Get from auth
+      created_at: new Date().toISOString()
+    };
+    
+    // Save to local storage
+    this.saveComment(this.currentRelationshipId, comment);
+    
+    // Clear textarea
+    textarea.value = '';
+    
+    // Refresh the modal to show new comment
+    const edge = state.cy.getElementById(this.currentRelationshipId);
+    if (edge && edge.length > 0) {
+      this.showEdgeModal(edge.data());
+    }
+  }
+  
+  changeCommentPage(direction) {
+    this.currentCommentPage += direction;
+    
+    // Refresh modal with new page
+    const edge = state.cy.getElementById(this.currentRelationshipId);
+    if (edge && edge.length > 0) {
+      this.showEdgeModal(edge.data());
     }
   }
   
