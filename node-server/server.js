@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
-const port = process.env.NODE_PORT || 3000
+const port = process.env.PORT || 3000
 const fastapiBase = process.env.FASTAPI_BASE || 'http://127.0.0.1:8000'
 const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-change-me'
 const defaultUser = process.env.LOGIN_USER || 'admin'
