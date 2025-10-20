@@ -174,6 +174,7 @@
     flex-direction: column;
     min-height: 0;
     flex: 1;
+    overflow: hidden;
 }
 
 .discovery-results-panel.active {
@@ -209,12 +210,17 @@
     z-index: 10;
 }
 
+#discovery-results-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
 .discovery-paper-list {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    overflow-y: auto;
-    padding-right: 0.5rem;
 }
 
 .discovery-paper-card {
