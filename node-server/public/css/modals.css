@@ -174,7 +174,6 @@
   padding: 1.5rem;
 }
 
-
 #document-modal .modal-body, #legend-modal .modal-body, .modal-body {
   padding: 1.5rem;
   overflow-y: auto;
@@ -404,8 +403,6 @@
 .modal-main-content {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .modal-main-content > div:first-child {
@@ -416,7 +413,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid #e5e7eb;
+  border-right: 2px solid #e5e7eb;
 }
 
 #edge-modal.comments-expanded .modal-main-content > div:first-child {
@@ -436,7 +433,7 @@
 
 .modal-comments-panel.visible {
   width: 35rem;
-  border-left: 2px solid #e5e7eb;
+  border-left: none;
 }
 
 .comments-panel-header {
