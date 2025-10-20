@@ -60,9 +60,12 @@ html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, -apple
   display: none;
   height: calc(100vh - 6.5rem);
   overflow: hidden;
+  position: relative;
 }
 
-.tab-content.active { display: block; }
+.tab-content.active { 
+  display: block; 
+}
 
 /* === COMMON CARD STYLES === */
 .card {

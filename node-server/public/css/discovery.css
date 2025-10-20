@@ -2,11 +2,10 @@
 
 #discovery-tab {
     padding: 1.25rem;
-    height: calc(100vh - 6.5rem);
-    overflow: hidden;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .discovery-container {
