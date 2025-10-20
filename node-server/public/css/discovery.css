@@ -5,6 +5,9 @@
     height: calc(100vh - 6.5rem);
     overflow: hidden;
     box-sizing: border-box;
+}
+
+#discovery-tab.active {
     display: flex;
     flex-direction: column;
 }
