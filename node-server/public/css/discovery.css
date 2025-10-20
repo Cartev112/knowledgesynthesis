@@ -2,7 +2,7 @@
 
 #discovery-tab {
     padding: 1.25rem;
-    height: 100%;
+    height: calc(100vh - 6.5rem); /* Set explicit height */
     overflow: hidden;
     box-sizing: border-box;
 }
