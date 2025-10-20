@@ -2,6 +2,7 @@
 let allRelationships = [];
 let filteredRelationships = [];
 let currentEditId = null;
+let currentCommentRelId = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +23,49 @@ async function fetchStats() {
     document.getElementById('stat-incorrect').textContent = stats.incorrect || 0;
   } catch (error) {
     console.error('Error fetching stats:', error);
+  }
+}
+
+// Open comment modal
+function openCommentModal(relationshipId) {
+  currentCommentRelId = relationshipId;
+  document.getElementById('comment-text').value = '';
+  const modal = document.getElementById('comment-modal');
+  if (modal) modal.classList.add('visible');
+}
+
+// Close comment modal
+function closeCommentModal() {
+  const modal = document.getElementById('comment-modal');
+  if (modal) modal.classList.remove('visible');
+  currentCommentRelId = null;
+}
+
+// Submit comment: reuse edge modal endpoint, then auto-verify
+async function submitComment() {
+  if (!currentCommentRelId) return;
+  const text = document.getElementById('comment-text').value.trim();
+  if (!text) { showMessage('Please enter a comment', 'error'); return; }
+  try {
+    const res = await fetch(`/api/relationships/${encodeURIComponent(currentCommentRelId)}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, author: 'expert-user' })
+    });
+    if (!res.ok) throw new Error('Failed to add comment');
+    // Auto-verify
+    await fetch(`/review/${encodeURIComponent(currentCommentRelId)}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewer_id: 'expert-user', reviewer_first_name: '', reviewer_last_name: '' })
+    });
+    closeCommentModal();
+    showMessage('Comment added and relationship verified!', 'success');
+    fetchStats();
+    fetchRelationships();
+  } catch (err) {
+    console.error('Comment error:', err);
+    showMessage('Error adding comment', 'error');
   }
 }
 
@@ -162,16 +206,11 @@ function renderRelationships() {
       ` : ''}
       
       <div class="actions">
-        ${rel.status === 'unverified' ? `
-          <button class="action-btn btn-verify" onclick="confirmRelationship('${rel.relationship_id}')">
-            ✓ Confirm
-          </button>
-          <button class="action-btn btn-incorrect" onclick="flagRelationship('${rel.relationship_id}')">
-            ⚠ Flag as Incorrect
-          </button>
-        ` : ''}
         <button class="action-btn btn-edit" onclick="openEditModal('${rel.relationship_id}')">
           ✏️ Edit
+        </button>
+        <button class="action-btn btn-comment" onclick="openCommentModal('${rel.relationship_id}')">
+          💬 Add Comment
         </button>
       </div>
     </div>

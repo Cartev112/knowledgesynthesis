@@ -57,9 +57,9 @@ export class API {
     return this.get('/query/documents');
   }
   
-  static async getAllGraph() {
-    const timestamp = new Date().getTime();
-    return this.get(`/query/all?t=${timestamp}`);
+  static async getAllGraph(limit = 1000, page = 1) {
+    const timestamp = Date.now();
+    return this.get(`/query/all?limit=${encodeURIComponent(limit)}&page_number=${encodeURIComponent(page)}&t=${timestamp}`);
   }
   
   static async searchConcept(name, verifiedOnly = false) {

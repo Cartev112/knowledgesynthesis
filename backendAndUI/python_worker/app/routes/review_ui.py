@@ -213,6 +213,18 @@ HTML = """
       
       .btn-edit:hover { background: #d97706; }
       
+      .btn-comment {
+        background: #667eea;
+        color: white;
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      
+      .btn-comment:hover { background: #5568d3; }
+      
       .status-indicator {
         display: inline-block;
         padding: 4px 12px;
@@ -385,6 +397,22 @@ HTML = """
       
       #flag-modal.show { display: flex; }
       
+      /* Comment Modal */
+      #comment-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      #comment-modal.show { display: flex; }
+      
       .flag-comment-area {
         min-height: 120px;
         resize: vertical;
@@ -425,6 +453,30 @@ HTML = """
           <div class="stat-label">Flagged</div>
           <div class="stat-value" id="stat-incorrect">-</div>
         </div>
+      </div>
+    </div>
+    
+    <!-- === COMMENT MODAL === -->
+    <div id="comment-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>💬 Add Comment</h2>
+          <button class="modal-close" onclick="closeCommentModal()">×</button>
+        </div>
+        
+        <form id="comment-form" onsubmit="submitComment(event)">
+          <div class="form-group">
+            <label class="form-label">Your Comment</label>
+            <textarea id="comment-text" class="form-textarea" required placeholder="Share your reasoning, evidence, or context..."></textarea>
+          </div>
+          
+          <input type="hidden" id="comment-relationship-id" />
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-modal btn-cancel" onclick="closeCommentModal()">Cancel</button>
+            <button type="submit" class="btn-modal btn-save">Submit Comment</button>
+          </div>
+        </form>
       </div>
     </div>
     
@@ -668,14 +720,11 @@ HTML = """
             ` : ''}
             
             <div class="actions">
-              <button class="btn-confirm" onclick="confirmRelationship('${item.relationship_id}')">
-                ✓ Confirm
-              </button>
               <button class="btn-edit" onclick="editRelationship('${item.relationship_id}')">
                 ✎ Edit
               </button>
-              <button class="btn-flag" onclick="flagRelationship('${item.relationship_id}')">
-                ⚠ Flag as Incorrect
+              <button class="btn-comment" onclick="addComment('${item.relationship_id}')">
+                💬 Add Comment
               </button>
             </div>
           </div>
@@ -830,6 +879,51 @@ HTML = """
           
           closeEditModal();
           showMessage('Relationship updated successfully!', 'success');
+          await fetchQueue();
+          await fetchStats();
+        } catch (e) {
+          showMessage('Error: ' + e.message, 'error');
+        }
+      }
+
+      // ==========================================
+      // COMMENT MODAL & ACTIONS
+      // ==========================================
+      function addComment(relId) {
+        document.getElementById('comment-relationship-id').value = relId;
+        document.getElementById('comment-modal').classList.add('show');
+        document.getElementById('comment-text').focus();
+      }
+
+      function closeCommentModal() {
+        document.getElementById('comment-modal').classList.remove('show');
+        document.getElementById('comment-form').reset();
+      }
+
+      async function submitComment(event) {
+        event.preventDefault();
+        const relId = document.getElementById('comment-relationship-id').value;
+        const text = document.getElementById('comment-text').value.trim();
+        if (!text) { showMessage('Please enter a comment', 'error'); return; }
+        try {
+          const res = await fetch(`/api/relationships/${encodeURIComponent(relId)}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, author: currentUser?.email || currentUser?.user_id || 'expert-user' })
+          });
+          if (!res.ok) throw new Error('Failed to add comment');
+          // Auto-confirm after comment
+          await fetch(`/review/${encodeURIComponent(relId)}/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reviewer_id: currentUser?.email || currentUser?.user_id || 'expert-user',
+              reviewer_first_name: currentUser?.first_name || '',
+              reviewer_last_name: currentUser?.last_name || ''
+            })
+          });
+          closeCommentModal();
+          showMessage('Comment added and relationship verified!', 'success');
           await fetchQueue();
           await fetchStats();
         } catch (e) {

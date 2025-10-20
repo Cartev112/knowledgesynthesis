@@ -27,15 +27,16 @@ async def add_comment(relationship_id: str, comment: CommentCreate):
     """Add a comment to a relationship"""
     try:
         def work(tx):
+            # Store relationship reference on the comment node (relationships cannot connect to relationships)
             query = """
             MATCH ()-[r]->()
             WHERE elementId(r) = $rel_id
             CREATE (c:Comment {
                 text: $text,
                 author: $author,
-                created_at: datetime()
+                created_at: datetime(),
+                rel_id: $rel_id
             })
-            CREATE (r)-[:HAS_COMMENT]->(c)
             RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
             """
             result = tx.run(query, rel_id=relationship_id, text=comment.text, author=comment.author)
@@ -63,10 +64,10 @@ async def get_comments(relationship_id: str, skip: int = 0, limit: int = 10):
     """Get comments for a relationship with pagination"""
     try:
         def work(tx):
+            # Fetch comments by stored rel_id property
             query = """
-            MATCH ()-[r]->()
-            WHERE elementId(r) = $rel_id
-            MATCH (r)-[:HAS_COMMENT]->(c:Comment)
+            MATCH (c:Comment)
+            WHERE c.rel_id = $rel_id
             RETURN elementId(c) as id, c.text as text, c.author as author, c.created_at as created_at
             ORDER BY c.created_at DESC
             SKIP $skip

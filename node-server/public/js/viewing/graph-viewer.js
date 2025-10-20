@@ -151,23 +151,36 @@ export class GraphViewer {
   
   async loadAllData() {
     try {
-      const data = await API.getAllGraph();
+      // Fetch all pages to avoid missing newly ingested items due to pagination
+      const pageSize = 1000;
+      let page = 1;
+      const nodesMap = new Map();
+      const relsMap = new Map();
       
-      const nodeCount = (data.nodes || []).length;
-      const edgeCount = (data.relationships || []).length;
+      while (true) {
+        const data = await API.getAllGraph(pageSize, page);
+        const nodes = data.nodes || [];
+        const rels = data.relationships || [];
+        nodes.forEach(n => nodesMap.set(n.id, n));
+        rels.forEach(r => relsMap.set(r.id, r));
+        if (nodes.length < pageSize) break;
+        page++;
+      }
       
-      if (nodeCount === 0 && edgeCount === 0) {
+      const allNodes = Array.from(nodesMap.values());
+      const allRels = Array.from(relsMap.values());
+      
+      if (allNodes.length === 0 && allRels.length === 0) {
         alert('No data in the knowledge graph yet. Upload a document in the Ingestion tab to get started!');
         return;
       }
       
-      if (nodeCount > 200) {
+      if (allNodes.length > 200) {
         console.log('Large graph detected, enabling viewport-based loading');
         this.viewportMode = true;
-        // For now, just render everything - viewport loading can be added later
       }
       
-      this.renderGraph(data);
+      this.renderGraph({ nodes: allNodes, relationships: allRels });
     } catch (e) {
       console.error('Failed to load all data:', e);
       alert('Failed to load graph data: ' + e.message);

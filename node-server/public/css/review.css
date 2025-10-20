@@ -213,6 +213,16 @@ button:hover {
   background: #e5e7eb;
 }
 
+/* New comment action */
+.btn-comment {
+  background: #667eea;
+  color: white;
+}
+
+.btn-comment:hover {
+  background: #5568d3;
+}
+
 /* Modal */
 .modal-overlay {
   display: none;
