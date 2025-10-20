@@ -65,6 +65,16 @@ export class GraphViewer {
         }
       });
     }
+    const edgeReadMoreBtn = document.getElementById('tooltip-read-more');
+    if (edgeReadMoreBtn) {
+      edgeReadMoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.currentHoveredEdge) {
+          this.hideEdgeTooltip();
+          this.showEdgeModal(this.currentHoveredEdge.data());
+        }
+      });
+    }
     
     // Node click handler with multi-select support
     cy.on('tap', 'node', (evt) => {
@@ -339,6 +349,7 @@ export class GraphViewer {
     if (!tooltip) return;
     
     const data = edge.data();
+    this.currentHoveredEdge = edge;
     const sourceNode = state.cy.getElementById(data.source);
     const targetNode = state.cy.getElementById(data.target);
     
