@@ -85,6 +85,10 @@ class AppManager {
         }, 150);
       });
     } else if (state.cy) {
+      // Reload graph data to show newly ingested documents
+      console.log('Reloading graph data...');
+      await this.graphViewer.loadAllData();
+      
       requestAnimationFrame(() => {
         state.cy.resize();
         state.cy.fit(undefined, 20);
