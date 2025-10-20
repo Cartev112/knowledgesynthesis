@@ -8,13 +8,10 @@
 }
 
 .discovery-container {
-    max-width: 100%;
-    margin: 0;
     display: grid;
     grid-template-columns: 25rem 1fr;
-    grid-template-rows: auto 1fr;
     gap: 1.25rem;
-    height: calc(100vh - 6.5rem - 2.5rem);
+    height: 100%;
     overflow: hidden;
 }
 
