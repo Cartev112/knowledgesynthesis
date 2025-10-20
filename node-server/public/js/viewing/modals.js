@@ -82,7 +82,9 @@ export class ModalManager {
     
     content.innerHTML = `
       <div class="modal-main-content">
-        ${html}
+        <div>
+          ${html}
+        </div>
         <button class="toggle-comments-btn" id="toggle-comments-btn" onclick="window.viewingManager.modalManager.toggleComments()">
           💬 Comments
         </button>
