@@ -473,9 +473,6 @@
   transition: all 0.2s;
   width: 100%;
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
 }
 
 .toggle-comments-btn:hover {
