@@ -250,52 +250,55 @@ class DiscoveryManager {
         
         title.textContent = paper.title || 'Untitled';
         
-        // Build modal content
-        let content = '';
+        let leftContent = '';
+        let rightContent = '';
         
-        // Authors
         if (paper.authors && paper.authors.length > 0) {
-            content += `
-                <div class="discovery-modal-section">
-                    <div class="discovery-modal-section-title">Authors</div>
-                    <div class="discovery-modal-section-content">${this.escapeHtml(paper.authors.join(', '))}</div>
-                </div>
-            `;
+          leftContent += `
+            <div class="discovery-modal-section">
+              <div class="discovery-modal-section-title">Authors</div>
+              <div class="discovery-modal-section-content">${this.escapeHtml(paper.authors.join(', '))}</div>
+            </div>
+          `;
         }
         
-        // Metadata
-        content += '<div class="discovery-modal-section"><div class="discovery-modal-section-title">Metadata</div><div class="discovery-modal-meta-grid">';
-        if (paper.year) content += `<div class="discovery-modal-meta-label">Year:</div><div class="discovery-modal-meta-value">${paper.year}</div>`;
-        if (paper.venue) content += `<div class="discovery-modal-meta-label">Venue:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.venue)}</div>`;
-        if (paper.journal) content += `<div class="discovery-modal-meta-label">Journal:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.journal)}</div>`;
-        content += `<div class="discovery-modal-meta-label">Source:</div><div class="discovery-modal-meta-value">${paper.source.replace('_', ' ')}</div>`;
-        if (paper.citation_count) content += `<div class="discovery-modal-meta-label">Citations:</div><div class="discovery-modal-meta-value">${paper.citation_count}</div>`;
-        if (paper.influential_citation_count) content += `<div class="discovery-modal-meta-label">Influential:</div><div class="discovery-modal-meta-value">${paper.influential_citation_count}</div>`;
-        if (paper.doi) content += `<div class="discovery-modal-meta-label">DOI:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.doi)}</div>`;
-        content += '</div></div>';
+        leftContent += '<div class="discovery-modal-section"><div class="discovery-modal-section-title">Metadata</div><div class="discovery-modal-meta-grid">';
+        if (paper.year) leftContent += `<div class="discovery-modal-meta-label">Year:</div><div class="discovery-modal-meta-value">${paper.year}</div>`;
+        if (paper.venue) leftContent += `<div class="discovery-modal-meta-label">Venue:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.venue)}</div>`;
+        if (paper.journal) leftContent += `<div class="discovery-modal-meta-label">Journal:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.journal)}</div>`;
+        leftContent += `<div class="discovery-modal-meta-label">Source:</div><div class="discovery-modal-meta-value">${paper.source.replace('_', ' ')}</div>`;
+        if (paper.citation_count) leftContent += `<div class="discovery-modal-meta-label">Citations:</div><div class="discovery-modal-meta-value">${paper.citation_count}</div>`;
+        if (paper.influential_citation_count) leftContent += `<div class="discovery-modal-meta-label">Influential:</div><div class="discovery-modal-meta-value">${paper.influential_citation_count}</div>`;
+        if (paper.doi) leftContent += `<div class="discovery-modal-meta-label">DOI:</div><div class="discovery-modal-meta-value">${this.escapeHtml(paper.doi)}</div>`;
+        leftContent += '</div></div>';
         
-        // Abstract
         if (paper.abstract) {
-            content += `
-                <div class="discovery-modal-section">
-                    <div class="discovery-modal-section-title">Abstract</div>
-                    <div class="discovery-modal-section-content">${this.escapeHtml(paper.abstract)}</div>
-                </div>
-            `;
+          rightContent += `
+            <div class="discovery-modal-section">
+              <div class="discovery-modal-section-title">Abstract</div>
+              <div class="discovery-modal-section-content">${this.escapeHtml(paper.abstract)}</div>
+            </div>
+          `;
         }
         
-        // Links
         const links = [];
         if (paper.url) links.push(`<a href="${paper.url}" target="_blank">View Source</a>`);
         if (paper.pdf_url) links.push(`<a href="${paper.pdf_url}" target="_blank">Download PDF</a>`);
         if (links.length > 0) {
-            content += `
-                <div class="discovery-modal-section">
-                    <div class="discovery-modal-section-title">Links</div>
-                    <div class="discovery-modal-section-content">${links.join(' • ')}</div>
-                </div>
-            `;
+          rightContent += `
+            <div class="discovery-modal-section">
+              <div class="discovery-modal-section-title">Links</div>
+              <div class="discovery-modal-section-content">${links.join(' • ')}</div>
+            </div>
+          `;
         }
+        
+        const content = `
+          <div class="discovery-modal-two-col">
+            <div class="discovery-modal-col">${leftContent}</div>
+            <div class="discovery-modal-col">${rightContent}</div>
+          </div>
+        `;
         
         body.innerHTML = content;
         modal.classList.add('active');

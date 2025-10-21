@@ -9,6 +9,7 @@ import hashlib
 import requests
 from pypdf import PdfReader
 from typing import Optional
+from pdfminer.high_level import extract_text as pdfminer_extract_text
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -186,13 +187,27 @@ class IngestionWorker:
         
         # Download PDF from URL
         try:
-            response = requests.get(pdf_url, timeout=60, stream=True)
+            response = requests.get(
+                pdf_url,
+                timeout=60,
+                stream=True,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+                    "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8"
+                },
+                allow_redirects=True
+            )
             response.raise_for_status()
             
             # Check content type
             content_type = response.headers.get('content-type', '').lower()
-            if 'pdf' not in content_type and not pdf_url.lower().endswith('.pdf'):
-                logger.warning(f"Job {job_id}: URL may not be a PDF (content-type: {content_type})")
+            content_disp = (response.headers.get('content-disposition') or '').lower()
+            is_pdf = ('pdf' in content_type) or pdf_url.lower().endswith('.pdf') or ('.pdf' in content_disp)
+            if not is_pdf:
+                logger.warning(
+                    f"Job {job_id}: URL may not be a PDF (content-type: {content_type}, content-disposition: {content_disp}). Aborting."
+                )
+                raise ValueError("Provided URL does not appear to be a PDF. Please provide a direct PDF link.")
             
             pdf_bytes = response.content
             
@@ -221,10 +236,32 @@ class IngestionWorker:
             
             # Combine text
             full_text = "\n\n".join([p["text"] for p in pages_with_numbers])
+            primary_chars = len(full_text)
+            logger.info(
+                f"Job {job_id}: PyPDF extracted {primary_chars} chars from {len(pages_with_numbers)} pages"
+            )
+            
+            # If extraction seems too small, try pdfminer as a fallback
+            need_fallback = (primary_chars < 800 and len(pages_with_numbers) >= 1)
+            if need_fallback:
+                try:
+                    miner_text = pdfminer_extract_text(io.BytesIO(pdf_bytes)) or ""
+                    miner_pages_raw = [seg.strip() for seg in miner_text.split('\f')]
+                    miner_pages = [seg for seg in miner_pages_raw if seg]
+                    if miner_pages:
+                        pages_with_numbers = [
+                            {"page_number": i + 1, "text": t} for i, t in enumerate(miner_pages)
+                        ]
+                        full_text = "\n\n".join(miner_pages)
+                    fallback_chars = len(full_text)
+                    logger.info(
+                        f"Job {job_id}: pdfminer fallback extracted {fallback_chars} chars from {len(pages_with_numbers)} pages"
+                    )
+                except Exception as fe:
+                    logger.warning(f"Job {job_id}: pdfminer fallback failed: {fe}")
+            
             if not full_text.strip():
                 raise ValueError("Could not extract any text from the PDF")
-            
-            logger.info(f"Job {job_id}: Extracted text from {len(pages_with_numbers)} pages")
             
         except Exception as e:
             raise ValueError(f"Failed to extract text from PDF: {str(e)}")
@@ -238,7 +275,9 @@ class IngestionWorker:
         sha256 = hashlib.sha256(pdf_bytes).hexdigest()
         document_id = sha256
         
-        logger.info(f"Job {job_id}: Processing PDF '{document_title}' ({len(pages_with_numbers)} pages)")
+        logger.info(
+            f"Job {job_id}: Processing PDF '{document_title}' with {len(pages_with_numbers)} pages and {len(full_text)} chars"
+        )
         
         # Extract triplets using AI
         result = extract_triplets(

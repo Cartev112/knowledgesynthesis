@@ -8,4 +8,4 @@ remove merge feature + implement compare feature
 
 documents ingested via discovery are not visible in graph
 
-
+verify shortest path feature
