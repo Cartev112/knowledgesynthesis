@@ -162,6 +162,26 @@ export class IndexPanelManager {
       li.className = 'index-item';
       li.innerHTML = `${node.label}<span class="index-item-type">${node.type}</span>`;
       li.onclick = () => this.highlightAndZoomToNode(node.id);
+      li.onmouseenter = () => {
+        // 2D hover highlight
+        if (state.cy) {
+          const n = state.cy.getElementById(node.id);
+          if (n && n.length) n.addClass('highlighted');
+        }
+        // 3D hover highlight
+        if (window.appManager?.is3D && window.appManager?.graph3D) {
+          window.appManager.graph3D.highlightNodeById(node.id, true);
+        }
+      };
+      li.onmouseleave = () => {
+        if (state.cy) {
+          const n = state.cy.getElementById(node.id);
+          if (n && n.length) n.removeClass('highlighted');
+        }
+        if (window.appManager?.is3D && window.appManager?.graph3D) {
+          window.appManager.graph3D.highlightNodeById(node.id, false);
+        }
+      };
       conceptsList.appendChild(li);
     });
     
@@ -239,6 +259,10 @@ export class IndexPanelManager {
         }
       }
     });
+    // 3D equivalent
+    if (window.appManager?.is3D && window.appManager?.graph3D) {
+      window.appManager.graph3D.highlightDocumentEntities(docId, highlight);
+    }
   }
   
   toggleDocument(docId) {
@@ -249,6 +273,9 @@ export class IndexPanelManager {
     }
     
     this.applyDocumentFilter();
+    if (window.appManager?.is3D && window.appManager?.graph3D) {
+      window.appManager.graph3D.applyDocumentFilter3D();
+    }
     this.renderIndexItems();
   }
   
@@ -289,30 +316,32 @@ export class IndexPanelManager {
   }
   
   highlightAndZoomToNode(nodeId) {
-    if (!state.cy) return;
-    
-    const node = state.cy.getElementById(nodeId);
-    if (!node || node.length === 0) return;
-    
-    // Clear previous highlights
-    this.clearAllHighlights();
-    
-    // Highlight in index
-    const items = document.querySelectorAll('.index-item');
-    items.forEach(item => {
-      if (item.textContent.includes(node.data().label)) {
-        item.classList.add('highlighted');
+    if (state.cy) {
+      const node = state.cy.getElementById(nodeId);
+      if (node && node.length !== 0) {
+        // Clear previous highlights
+        this.clearAllHighlights();
+        // Highlight in index
+        const items = document.querySelectorAll('.index-item');
+        items.forEach(item => {
+          if (item.textContent.includes(node.data().label)) {
+            item.classList.add('highlighted');
+          }
+        });
+        // Highlight and zoom in graph
+        state.cy.elements().removeClass('highlighted');
+        node.addClass('highlighted');
+        state.cy.animate({
+          center: { eles: node },
+          zoom: 2,
+          duration: 500
+        });
       }
-    });
-    
-    // Highlight and zoom in graph
-    state.cy.elements().removeClass('highlighted');
-    node.addClass('highlighted');
-    state.cy.animate({
-      center: { eles: node },
-      zoom: 2,
-      duration: 500
-    });
+    }
+    // 3D zoom as well
+    if (window.appManager?.is3D && window.appManager?.graph3D) {
+      window.appManager.graph3D.focusNodeById(nodeId);
+    }
   }
   
   highlightAndZoomToEdge(edgeId) {

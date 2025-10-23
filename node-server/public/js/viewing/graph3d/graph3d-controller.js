@@ -1,6 +1,5 @@
 // High-level controller for the 3D graph viewer (P0)
 import * as THREE from 'https://esm.sh/three@0.160.0';
-import { Text } from 'https://esm.sh/troika-three-text@0.49.0?deps=three@0.160.0';
 import { RenderEngine3D } from './render-engine.js';
 import { state } from '../../state.js';
 
@@ -22,12 +21,12 @@ export class Graph3D {
     this.raycaster.params.Points = { threshold: 6 };
     this.mouseNDC = new THREE.Vector2();
     this._interactionsSetup = false;
-    this.labelMeshes = new Map();
     this._frameCount = 0;
     this._rafId = null;
     this._fogEnabled = !!(config.render && config.render.fogEnabled);
     this.layoutWorker = null;
     this.forceLayoutRunning = false;
+    this._lastCamQuat = new THREE.Quaternion();
     if (this.engine && typeof this.engine.setOnFrame === 'function') {
       this.engine.setOnFrame(() => this._onFrame());
     } else {
@@ -83,12 +82,6 @@ export class Graph3D {
   }
 
   destroy() {
-    // Dispose labels
-    for (const m of this.labelMeshes.values()) {
-      if (m && m.parent) m.parent.remove(m);
-      if (m && m.dispose) m.dispose();
-    }
-    this.labelMeshes.clear();
     if (this._rafId) cancelAnimationFrame(this._rafId);
     this._rafId = null;
     this.engine.dispose();
@@ -278,6 +271,9 @@ export class Graph3D {
       this.hoverIndex = newHover;
       if (this.hoverIndex !== -1 && !this.selected.has(this.hoverIndex)) {
         highlight(this.hoverIndex, hoverColor);
+        this._showNodeTooltip3D(this.hoverIndex, e);
+      } else {
+        this._hideNodeTooltip3D();
       }
     };
     const onLeave = () => {
@@ -285,6 +281,7 @@ export class Graph3D {
         highlight(this.hoverIndex, baseColor);
       }
       this.hoverIndex = -1;
+      this._hideNodeTooltip3D();
     };
     const onClick = (e) => {
       getNDC(e);
@@ -301,6 +298,9 @@ export class Graph3D {
         highlight(idx, selectColor);
       }
       this._sync2DSelectionFromSet();
+      // Zoom to clicked node
+      const id = this.data.nodes?.[idx]?.id;
+      if (id != null) this.focusNodeById(id);
     };
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
@@ -328,63 +328,144 @@ export class Graph3D {
     }
   }
 
-  _ensureLabel(idx) {
-    if (this.labelMeshes.has(idx)) return this.labelMeshes.get(idx);
-    const nodes = this.data.nodes || [];
-    const n = nodes[idx];
-    const text = (n && (n.label || n.name || String(n.id))) || String(idx);
-    const label = new Text();
-    label.text = text;
-    label.fontSize = 3.5;
-    label.color = 0xffffff;
-    label.outlineWidth = 0.5;
-    label.outlineColor = 0x000000;
-    label.anchorX = 'left';
-    label.anchorY = 'bottom';
-    label.sync();
-    this.engine.labelsGroup.add(label);
-    this.labelMeshes.set(idx, label);
-    return label;
-  }
-
   _onFrame() {
     if (!this.positions) return;
     this._frameCount++;
-    const camQ = this.engine.camera.quaternion;
+    // No per-frame label updates; 3D uses the same DOM tooltips as 2D
+  }
 
-    // Hover label
-    if (this.hoverIndex !== -1) {
-      const li = this._ensureLabel(this.hoverIndex);
-      const i = this.hoverIndex;
-      li.position.set(
-        this.positions[i * 3 + 0] + 1.5,
-        this.positions[i * 3 + 1] + 1.5,
-        this.positions[i * 3 + 2]
-      );
-      li.quaternion.copy(camQ);
-      li.visible = true;
+  // --- Tooltips (reuse 2D DOM) ---
+  _showNodeTooltip3D(idx, evt) {
+    const tooltip = document.getElementById('node-tooltip');
+    if (!tooltip) return;
+    const n = this.data.nodes?.[idx];
+    if (!n) return;
+    const labelEl = document.getElementById('node-tooltip-label');
+    const typeEl = document.getElementById('node-tooltip-type');
+    const sigEl = document.getElementById('node-tooltip-significance');
+    if (labelEl) labelEl.textContent = n.label || n.id;
+    if (typeEl) typeEl.textContent = `Type: ${n.type || 'N/A'}`;
+    if (sigEl) sigEl.textContent = n.significance ? `Significance: ${n.significance}/5` : '';
+    const offset = 15;
+    let left = (evt.clientX || 0) + offset;
+    let top = (evt.clientY || 0) + offset;
+    if (left + 300 > window.innerWidth) left = (evt.clientX || 0) - 300 - offset;
+    if (top + 150 > window.innerHeight) top = (evt.clientY || 0) - 150 - offset;
+    tooltip.style.left = Math.max(10, left) + 'px';
+    tooltip.style.top = Math.max(10, top) + 'px';
+    tooltip.classList.remove('hidden');
+    tooltip.classList.add('visible');
+    if (window.viewingManager) {
+      // So the existing Read More button wiring works in 3D as well
+      window.viewingManager.currentHoveredNode = n;
     }
+  }
 
-    // Selected labels
-    for (const i of this.selected) {
-      const li = this._ensureLabel(i);
-      li.position.set(
-        this.positions[i * 3 + 0] + 1.5,
-        this.positions[i * 3 + 1] + 1.5,
-        this.positions[i * 3 + 2]
-      );
-      li.quaternion.copy(camQ);
-      li.visible = true;
-    }
+  _hideNodeTooltip3D() {
+    const tooltip = document.getElementById('node-tooltip');
+    if (tooltip) tooltip.classList.remove('visible');
+  }
 
-    // Hide labels that are neither hovered nor selected every few frames
-    if (this._frameCount % 10 === 0) {
-      for (const [idx, mesh] of this.labelMeshes.entries()) {
-        if (idx !== this.hoverIndex && !this.selected.has(idx)) {
-          mesh.visible = false;
-        }
+  // --- Index wiring equivalents ---
+  highlightNodeById(nodeId, highlight) {
+    if (!this.colors || !this.data?.nodes) return;
+    const idx = this.nodeIndexById.get(nodeId);
+    if (idx == null) return;
+    if (this.selected.has(idx)) return; // don't override selected color
+    const baseColor = new THREE.Color(0x9aa6ff);
+    const hoverColor = new THREE.Color(0xf59e0b);
+    const c = highlight ? hoverColor : baseColor;
+    this.colors[idx*3+0] = c.r;
+    this.colors[idx*3+1] = c.g;
+    this.colors[idx*3+2] = c.b;
+    if (this.pointsMesh) this.pointsMesh.geometry.attributes.color.needsUpdate = true;
+  }
+  highlightDocumentEntities(docId, highlight) {
+    if (!this.colors || !this.data?.nodes) return;
+    const baseColor = new THREE.Color(0x9aa6ff);
+    const highlightColor = new THREE.Color(0x60a5fa);
+    for (let i = 0; i < this.data.nodes.length; i++) {
+      const n = this.data.nodes[i];
+      const sources = n.sources || [];
+      const hasDoc = sources.some(s => (typeof s === 'object' ? s.id : s) === docId);
+      if (hasDoc) {
+        const c = highlight ? highlightColor : baseColor;
+        this.colors[i*3+0] = c.r;
+        this.colors[i*3+1] = c.g;
+        this.colors[i*3+2] = c.b;
       }
     }
+    if (this.pointsMesh) this.pointsMesh.geometry.attributes.color.needsUpdate = true;
+  }
+
+  applyDocumentFilter3D() {
+    if (!this.positions || !this.initialPositions || !this.data?.nodes) return;
+    const invisible = new Set();
+    const allDocs = (state.indexData?.documents || []).length;
+    const showAll = state.activeDocuments.size === allDocs;
+    for (let i = 0; i < this.data.nodes.length; i++) {
+      const n = this.data.nodes[i];
+      const sources = n.sources || [];
+      const hasActiveDoc = sources.some(s => state.activeDocuments.has(typeof s === 'object' ? s.id : s));
+      const visible = showAll || hasActiveDoc;
+      if (!visible) invisible.add(i);
+    }
+    for (let i = 0; i < this.data.nodes.length; i++) {
+      const p = i*3;
+      if (invisible.has(i)) {
+        this.positions[p] = 1e6;
+        this.positions[p+1] = 1e6;
+        this.positions[p+2] = 1e6;
+      } else {
+        this.positions[p]   = this.initialPositions[p];
+        this.positions[p+1] = this.initialPositions[p+1];
+        this.positions[p+2] = this.initialPositions[p+2];
+      }
+    }
+    this.engine.updateNodePositions(this.positions);
+    const segs = this._recomputeEdgeSegmentsFromPositionsWithVisibility(this.positions, invisible);
+    this.engine.updateEdgesSegments(segs);
+  }
+
+  _recomputeEdgeSegmentsFromPositionsWithVisibility(pos, invisibleSet) {
+    const rels = this.data.relationships || [];
+    const segs = new Float32Array(rels.length * 2 * 3);
+    let k = 0;
+    for (const r of rels) {
+      const si = this.nodeIndexById.get(r.source);
+      const ti = this.nodeIndexById.get(r.target);
+      if (si == null || ti == null) continue;
+      if (invisibleSet.has(si) || invisibleSet.has(ti)) continue;
+      segs[k++] = pos[si * 3 + 0];
+      segs[k++] = pos[si * 3 + 1];
+      segs[k++] = pos[si * 3 + 2];
+      segs[k++] = pos[ti * 3 + 0];
+      segs[k++] = pos[ti * 3 + 1];
+      segs[k++] = pos[ti * 3 + 2];
+    }
+    return k === segs.length ? segs : segs.slice(0, k);
+  }
+
+  focusNodeById(nodeId) {
+    const idx = this.nodeIndexById.get(nodeId);
+    if (idx == null || !this.positions) return;
+    const x = this.positions[idx*3], y = this.positions[idx*3+1], z = this.positions[idx*3+2];
+    const target = new THREE.Vector3(x, y, z);
+    this.engine.controls.target.copy(target);
+    const cam = this.engine.camera;
+    const dir = new THREE.Vector3().subVectors(cam.position, this.engine.controls.target).normalize();
+    const distance = 60; // a comfortable distance
+    cam.position.copy(target).addScaledVector(dir, distance);
+  }
+
+  toggleFog() {
+    this._fogEnabled = !this._fogEnabled;
+    this.engine.setFogEnabled(this._fogEnabled, this.config?.render || {});
+  }
+
+  setPointSize(size) {
+    const s = Number(size);
+    if (!isNaN(s)) this.engine.setPointSize(s);
   }
 }
 

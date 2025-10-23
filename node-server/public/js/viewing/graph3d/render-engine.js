@@ -171,7 +171,7 @@ export class RenderEngine3D {
   updateEdgesSegments(segments) {
     for (const child of this.edgesGroup.children) {
       if (child.geometry && child.geometry.setPositions) {
-        child.geometry.setPositions(Array.from(segments));
+        child.geometry.setPositions(segments);
         if (child.computeLineDistances) child.computeLineDistances();
       }
     }
