@@ -4,7 +4,7 @@
 import { AuthManager } from './auth.js';
 import { IngestionManager } from './ingestion/ingestion.js';
 import { GraphViewer } from './viewing/graph-viewer.js';
-import { QueryBuilder } from './query-builder/query-builder.js';
+import { AIQuery } from './ai-query/ai-query.js';
 import { state } from './state.js';
 import { API } from './utils/api.js';
 
@@ -13,7 +13,7 @@ class AppManager {
     this.authManager = new AuthManager();
     this.ingestionManager = new IngestionManager();
     this.graphViewer = new GraphViewer();
-    this.queryBuilder = new QueryBuilder();
+    this.aiQuery = new AIQuery();
     this.currentTab = 'ingestion';
     // 3D viewer state (lazy-loaded)
     this.graph3D = null;
@@ -66,8 +66,8 @@ class AppManager {
     // Initialize tab-specific functionality
     if (tabName === 'viewing') {
       this.initViewingTab();
-    } else if (tabName === 'query-builder') {
-      this.initQueryBuilderTab();
+    } else if (tabName === 'ai-query') {
+      this.initAIQueryTab();
     }
     
     // Update UI visibility
@@ -103,10 +103,10 @@ class AppManager {
     }
   }
   
-  async initQueryBuilderTab() {
-    if (!window.queryBuilderInitialized) {
-      await this.queryBuilder.init();
-      window.queryBuilderInitialized = true;
+  async initAIQueryTab() {
+    if (!window.aiQueryInitialized) {
+      await this.aiQuery.init();
+      window.aiQueryInitialized = true;
     }
   }
   
