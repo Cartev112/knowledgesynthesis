@@ -94,6 +94,9 @@ export class GraphViewer {
         
         // Update FAB visibility
         this.updateFabVisibility();
+        if (window.onSelectionChanged) {
+          window.onSelectionChanged(Array.from(state.selectedNodes));
+        }
       } else {
         // Regular click - show details
         this.showNodeModal(node.data());
@@ -447,6 +450,9 @@ export class GraphViewer {
       state.cy.nodes().removeClass('multi-selected');
     }
     this.updateFabVisibility();
+    if (window.onSelectionChanged) {
+      window.onSelectionChanged([]);
+    }
   }
   
   clearAllHighlights() {

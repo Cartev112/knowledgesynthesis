@@ -168,7 +168,15 @@ class AppManager {
       // Lazy load Graph3D controller
       if (!this.graph3D) {
         const mod = await import('./viewing/graph3d/graph3d-controller.js');
-        this.graph3D = mod.initGraph3D(container3d, null, {});
+        this.graph3D = mod.initGraph3D(container3d, null, { render: { fogEnabled: true } });
+        // Expose simple controls once
+        if (!window.toggle3DFog) window.toggle3DFog = () => this.graph3D.toggleFog();
+        if (!window.set3DPointSize) window.set3DPointSize = (s) => this.graph3D.setPointSize(Number(s));
+        if (!window.toggle3DLayout) window.toggle3DLayout = () => this.graph3D.toggleForceLayout();
+        // Route 2D selection events into 3D
+        window.onSelectionChanged = (ids) => {
+          if (this.graph3D) this.graph3D.applySelection(ids);
+        };
       }
 
       // Load data once for 3D (paginate like 2D)
@@ -198,6 +206,10 @@ class AppManager {
 
       if (this._graphDataFor3D) {
         this.graph3D.setData(this._graphDataFor3D);
+        // Apply current 2D selection into 3D on first load
+        if (state.selectedNodes && state.selectedNodes.size > 0) {
+          this.graph3D.applySelection(Array.from(state.selectedNodes));
+        }
       }
 
       this.is3D = true;

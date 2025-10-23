@@ -2,6 +2,7 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { Text } from 'https://esm.sh/troika-three-text@0.49.0?deps=three@0.160.0';
 import { RenderEngine3D } from './render-engine.js';
+import { state } from '../../state.js';
 
 export class Graph3D {
   constructor(container, config = {}) {
@@ -24,6 +25,9 @@ export class Graph3D {
     this.labelMeshes = new Map();
     this._frameCount = 0;
     this._rafId = null;
+    this._fogEnabled = !!(config.render && config.render.fogEnabled);
+    this.layoutWorker = null;
+    this.forceLayoutRunning = false;
     if (this.engine && typeof this.engine.setOnFrame === 'function') {
       this.engine.setOnFrame(() => this._onFrame());
     } else {
@@ -45,6 +49,29 @@ export class Graph3D {
   setConfig(config) {
     this.config = { ...this.config, ...config };
     // Future: apply runtime render/layout changes
+  }
+
+  applySelection(ids) {
+    const baseColor = new THREE.Color(0x9aa6ff);
+    const selectColor = new THREE.Color(0x10b981);
+    this.selected.clear();
+    if (Array.isArray(ids)) {
+      for (const id of ids) {
+        const idx = this.nodeIndexById.get(id);
+        if (idx != null) this.selected.add(idx);
+      }
+    }
+    if (this.colors && this.pointsMesh) {
+      const N = this.colors.length / 3;
+      for (let i = 0; i < N; i++) {
+        const col = this.selected.has(i) ? selectColor : baseColor;
+        this.colors[i * 3 + 0] = col.r;
+        this.colors[i * 3 + 1] = col.g;
+        this.colors[i * 3 + 2] = col.b;
+      }
+      this.pointsMesh.geometry.attributes.color.needsUpdate = true;
+    }
+    this._sync2DSelectionFromSet();
   }
 
   animateToView(view) {
@@ -127,6 +154,88 @@ export class Graph3D {
     }
   }
 
+  _computeEdgeIndexPairs() {
+    const rels = this.data.relationships || [];
+    const pairs = [];
+    for (const r of rels) {
+      const si = this.nodeIndexById.get(r.source);
+      const ti = this.nodeIndexById.get(r.target);
+      if (si == null || ti == null) continue;
+      pairs.push(si, ti);
+    }
+    return new Uint32Array(pairs);
+  }
+
+  _recomputeEdgeSegmentsFromPositions(pos) {
+    const rels = this.data.relationships || [];
+    const segs = new Float32Array(rels.length * 2 * 3);
+    let k = 0;
+    for (const r of rels) {
+      const si = this.nodeIndexById.get(r.source);
+      const ti = this.nodeIndexById.get(r.target);
+      if (si == null || ti == null) continue;
+      segs[k++] = pos[si * 3 + 0];
+      segs[k++] = pos[si * 3 + 1];
+      segs[k++] = pos[si * 3 + 2];
+      segs[k++] = pos[ti * 3 + 0];
+      segs[k++] = pos[ti * 3 + 1];
+      segs[k++] = pos[ti * 3 + 2];
+    }
+    return k === segs.length ? segs : segs.slice(0, k);
+  }
+
+  toggleForceLayout() {
+    if (this.forceLayoutRunning) {
+      this.stopForceLayout();
+    } else {
+      this.startForceLayout();
+    }
+  }
+
+  startForceLayout() {
+    if (!this.positions || this.forceLayoutRunning) return;
+    const N = (this.positions.length / 3) | 0;
+    const edges = this._computeEdgeIndexPairs();
+    const workerUrl = '/static/js/viewing/graph3d/layout-worker.js';
+    this.layoutWorker = new Worker(workerUrl, { type: 'module' });
+    this.forceLayoutRunning = true;
+
+    this.layoutWorker.onmessage = (e) => {
+      const msg = e.data;
+      if (!msg) return;
+      if (msg.type === 'tick' || msg.type === 'done') {
+        // Update internal positions and engine
+        this.positions.set(msg.positions);
+        this.engine.updateNodePositions(this.positions);
+        const segs = this._recomputeEdgeSegmentsFromPositions(this.positions);
+        this.engine.updateEdgesSegments(segs);
+        if (msg.type === 'done') {
+          this.forceLayoutRunning = false;
+          this.layoutWorker.terminate();
+          this.layoutWorker = null;
+        }
+      }
+    };
+
+    const config = { iterations: 800, batch: 3, step: 0.02, repulsion: 180, spring: 0.01, restLength: 42, damping: 0.9 };
+    this.layoutWorker.postMessage({
+      type: 'start',
+      nodes: N,
+      positions: this.positions,
+      edges,
+      config
+    });
+  }
+
+  stopForceLayout() {
+    if (this.layoutWorker) {
+      this.layoutWorker.postMessage({ type: 'stop' });
+      this.layoutWorker.terminate();
+      this.layoutWorker = null;
+    }
+    this.forceLayoutRunning = false;
+  }
+
   _setupInteractions() {
     if (!this.pointsMesh) return;
     if (this._interactionsSetup) return;
@@ -181,11 +290,32 @@ export class Graph3D {
         this.selected.add(idx);
         highlight(idx, selectColor);
       }
+      this._sync2DSelectionFromSet();
     };
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
     canvas.addEventListener('click', onClick);
     this._interactionsSetup = true;
+  }
+
+  _sync2DSelectionFromSet() {
+    const ids = [];
+    const nodes = this.data.nodes || [];
+    for (const idx of this.selected) {
+      const id = nodes[idx]?.id;
+      if (id != null) ids.push(id);
+    }
+    state.selectedNodes = new Set(ids);
+    if (state.cy) {
+      state.cy.nodes().removeClass('multi-selected');
+      ids.forEach(id => {
+        const n = state.cy.getElementById(id);
+        if (n && n.length) n.addClass('multi-selected');
+      });
+    }
+    if (window.viewingManager && window.viewingManager.updateFabVisibility) {
+      window.viewingManager.updateFabVisibility();
+    }
   }
 
   _ensureLabel(idx) {

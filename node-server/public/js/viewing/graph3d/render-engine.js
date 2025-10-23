@@ -25,6 +25,12 @@ export class RenderEngine3D {
     this.scene = new THREE.Scene();
     const bg = (config.render && config.render.background) || '#0b1020';
     this.scene.background = new THREE.Color(bg);
+    if (config.render && config.render.fogEnabled) {
+      const fogColor = new THREE.Color(bg);
+      const fogNear = (config.render && config.render.fogNear) || 60;
+      const fogFar = (config.render && config.render.fogFar) || 400;
+      this.scene.fog = new THREE.Fog(fogColor, fogNear, fogFar);
+    }
 
     // Camera
     const fov = (config.camera && config.camera.fov) || 55;
@@ -66,6 +72,27 @@ export class RenderEngine3D {
     this.start();
   }
 
+  setFogEnabled(enabled, params = {}) {
+    const bg = this.scene.background || new THREE.Color('#0b1020');
+    if (enabled) {
+      const color = params.color ? new THREE.Color(params.color) : bg;
+      const near = params.near || 60;
+      const far = params.far || 400;
+      this.scene.fog = new THREE.Fog(color, near, far);
+    } else {
+      this.scene.fog = null;
+    }
+  }
+
+  setPointSize(size) {
+    for (const child of this.nodesGroup.children) {
+      if (child.isPoints && child.material) {
+        child.material.size = size;
+        child.material.needsUpdate = true;
+      }
+    }
+  }
+
   start() {
     if (this._raf) return;
     const loop = () => {
@@ -100,7 +127,7 @@ export class RenderEngine3D {
     if (colors) geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 1.8,
+      size: 1.6,
       color: 0x9aa6ff,
       vertexColors: !!colors,
       sizeAttenuation: true
@@ -127,6 +154,27 @@ export class RenderEngine3D {
     line.computeLineDistances();
     this.edgesGroup.add(line);
     return line;
+  }
+
+  updateNodePositions(positions) {
+    for (const child of this.nodesGroup.children) {
+      if (child.isPoints && child.geometry && child.geometry.attributes.position) {
+        const attr = child.geometry.getAttribute('position');
+        if (attr.count * 3 === positions.length) {
+          attr.array.set(positions);
+          attr.needsUpdate = true;
+        }
+      }
+    }
+  }
+
+  updateEdgesSegments(segments) {
+    for (const child of this.edgesGroup.children) {
+      if (child.geometry && child.geometry.setPositions) {
+        child.geometry.setPositions(Array.from(segments));
+        if (child.computeLineDistances) child.computeLineDistances();
+      }
+    }
   }
 
   resize() {
