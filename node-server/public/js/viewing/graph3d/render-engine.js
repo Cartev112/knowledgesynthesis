@@ -2,6 +2,9 @@
 // ESM imports pinned to specific versions (esm.sh rewrites bare imports)
 import * as THREE from 'https://esm.sh/three@0.160.0';
 import { OrbitControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { Line2 } from 'https://esm.sh/three@0.160.0/examples/jsm/lines/Line2.js';
+import { LineMaterial } from 'https://esm.sh/three@0.160.0/examples/jsm/lines/LineMaterial.js';
+import { LineGeometry } from 'https://esm.sh/three@0.160.0/examples/jsm/lines/LineGeometry.js';
 
 export class RenderEngine3D {
   constructor(container, config = {}) {
@@ -104,12 +107,35 @@ export class RenderEngine3D {
     return points;
   }
 
+  addEdges(positions, color = 0x9aa6ff, width = 1.2, transparent = true, opacity = 0.25) {
+    const geom = new LineGeometry();
+    geom.setPositions(Array.from(positions));
+    const material = new LineMaterial({
+      color,
+      linewidth: width,
+      transparent,
+      opacity,
+      depthTest: true,
+      depthWrite: true
+    });
+    material.resolution.set(this.container.clientWidth, this.container.clientHeight);
+    const line = new Line2(geom, material);
+    line.computeLineDistances();
+    this.edgesGroup.add(line);
+    return line;
+  }
+
   resize() {
     const w = Math.max(this.container.clientWidth, 1);
     const h = Math.max(this.container.clientHeight, 1);
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    for (const child of this.edgesGroup.children) {
+      if (child.material && child.material.resolution) {
+        child.material.resolution.set(w, h);
+      }
+    }
   }
 
   dispose() {
