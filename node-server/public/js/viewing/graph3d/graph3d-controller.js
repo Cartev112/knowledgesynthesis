@@ -1,5 +1,6 @@
 // High-level controller for the 3D graph viewer (P0)
 import * as THREE from 'https://esm.sh/three@0.160.0';
+import { Text } from 'https://esm.sh/troika-three-text@0.49.0';
 import { RenderEngine3D } from './render-engine.js';
 
 export class Graph3D {
@@ -20,6 +21,9 @@ export class Graph3D {
     this.raycaster.params.Points = { threshold: 6 };
     this.mouseNDC = new THREE.Vector2();
     this._interactionsSetup = false;
+    this.labelMeshes = new Map();
+    this._frameCount = 0;
+    this.engine.setOnFrame(() => this._onFrame());
   }
 
   setData(data) {
@@ -43,6 +47,12 @@ export class Graph3D {
   }
 
   destroy() {
+    // Dispose labels
+    for (const m of this.labelMeshes.values()) {
+      if (m && m.parent) m.parent.remove(m);
+      if (m && m.dispose) m.dispose();
+    }
+    this.labelMeshes.clear();
     this.engine.dispose();
   }
 
@@ -165,6 +175,65 @@ export class Graph3D {
     canvas.addEventListener('mouseleave', onLeave);
     canvas.addEventListener('click', onClick);
     this._interactionsSetup = true;
+  }
+
+  _ensureLabel(idx) {
+    if (this.labelMeshes.has(idx)) return this.labelMeshes.get(idx);
+    const nodes = this.data.nodes || [];
+    const n = nodes[idx];
+    const text = (n && (n.label || n.name || String(n.id))) || String(idx);
+    const label = new Text();
+    label.text = text;
+    label.fontSize = 3.5;
+    label.color = 0xffffff;
+    label.outlineWidth = 0.5;
+    label.outlineColor = 0x000000;
+    label.anchorX = 'left';
+    label.anchorY = 'bottom';
+    label.sync();
+    this.engine.labelsGroup.add(label);
+    this.labelMeshes.set(idx, label);
+    return label;
+  }
+
+  _onFrame() {
+    if (!this.positions) return;
+    this._frameCount++;
+    const camQ = this.engine.camera.quaternion;
+
+    // Hover label
+    if (this.hoverIndex !== -1) {
+      const li = this._ensureLabel(this.hoverIndex);
+      const i = this.hoverIndex;
+      li.position.set(
+        this.positions[i * 3 + 0] + 1.5,
+        this.positions[i * 3 + 1] + 1.5,
+        this.positions[i * 3 + 2]
+      );
+      li.quaternion.copy(camQ);
+      li.visible = true;
+    }
+
+    // Selected labels
+    for (const i of this.selected) {
+      const li = this._ensureLabel(i);
+      li.position.set(
+        this.positions[i * 3 + 0] + 1.5,
+        this.positions[i * 3 + 1] + 1.5,
+        this.positions[i * 3 + 2]
+      );
+      li.quaternion.copy(camQ);
+      li.visible = true;
+    }
+
+    // Hide labels that are neither hovered nor selected every few frames
+    if (this._frameCount % 10 === 0) {
+      for (const [idx, mesh] of this.labelMeshes.entries()) {
+        if (idx !== this.hoverIndex && !this.selected.has(idx)) {
+          mesh.visible = false;
+        }
+      }
+    }
   }
 }
 

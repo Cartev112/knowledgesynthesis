@@ -51,8 +51,10 @@ export class RenderEngine3D {
     this.root = new THREE.Group();
     this.nodesGroup = new THREE.Group();
     this.edgesGroup = new THREE.Group();
+    this.labelsGroup = new THREE.Group();
     this.root.add(this.edgesGroup);
     this.root.add(this.nodesGroup);
+    this.root.add(this.labelsGroup);
     this.scene.add(this.root);
 
     // Resize handling
@@ -60,6 +62,7 @@ export class RenderEngine3D {
     window.addEventListener('resize', this._onResize);
 
     this._raf = null;
+    this._onFrame = null;
     this.start();
   }
 
@@ -68,6 +71,7 @@ export class RenderEngine3D {
     const loop = () => {
       this._raf = requestAnimationFrame(loop);
       this.controls.update();
+      if (this._onFrame) this._onFrame();
       this.renderer.render(this.scene, this.camera);
     };
     loop();
