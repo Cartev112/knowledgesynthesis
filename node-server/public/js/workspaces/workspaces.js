@@ -30,7 +30,7 @@ class WorkspacesManager {
 
   async checkAuth() {
     try {
-      const response = await API.get('/api/auth/me');
+      const response = await API.get('/api/me');
       this.currentUser = response.user;
       
       // Update UI with user info
@@ -39,7 +39,7 @@ class WorkspacesManager {
     } catch (error) {
       console.error('Not authenticated:', error);
       // Redirect to login
-      window.location.href = '/api/auth/login';
+      window.location.href = '/login';
     }
   }
 
