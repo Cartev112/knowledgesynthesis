@@ -1,7 +1,7 @@
 // Minimal Three.js render engine for 3D graph viewer (P0)
-// ESM imports pinned to specific versions
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+// ESM imports pinned to specific versions (esm.sh rewrites bare imports)
+import * as THREE from 'https://esm.sh/three@0.160.0';
+import { OrbitControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
 export class RenderEngine3D {
   constructor(container, config = {}) {
