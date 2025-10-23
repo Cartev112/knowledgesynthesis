@@ -114,6 +114,11 @@ export class AIQuery {
     
     if (!question || this.isProcessing) return;
 
+    // Ensure we have a conversation before adding messages
+    if (!this.currentConversationId) {
+      await this.createNewConversation();
+    }
+
     // Add user message
     this.addMessage('user', question);
     input.value = '';
@@ -599,7 +604,8 @@ export class AIQuery {
 
   async saveMessageToConversation(role, content, metadata = {}) {
     if (!this.currentConversationId) {
-      await this.createNewConversation();
+      console.error('No active conversation to save message to');
+      return;
     }
 
     try {
@@ -609,8 +615,8 @@ export class AIQuery {
         metadata
       });
       
-      // Update conversation in list
-      await this.loadConversations();
+      // Update conversation in list (don't await to avoid blocking)
+      this.loadConversations();
     } catch (error) {
       console.error('Failed to save message:', error);
     }

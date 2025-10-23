@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -8,6 +8,20 @@ router = APIRouter()
 
 # In-memory storage (replace with database in production)
 conversations_db = {}
+
+# Import sessions from auth module
+from .auth import sessions
+
+
+def get_current_user_from_request(request: Request) -> str:
+    """Get current user from session cookie."""
+    session_id = request.cookies.get("session_id")
+    
+    if not session_id or session_id not in sessions:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user_data = sessions[session_id]
+    return user_data.get("username", "anonymous")
 
 
 class Message(BaseModel):
@@ -36,10 +50,13 @@ class AddMessageRequest(BaseModel):
 
 
 @router.get("/conversations")
-def list_conversations():
-    """List all conversations, sorted by most recent"""
-    conversations = list(conversations_db.values())
-    conversations.sort(key=lambda x: x["updated_at"], reverse=True)
+def list_conversations(request: Request):
+    """List all conversations for current user, sorted by most recent"""
+    username = get_current_user_from_request(request)
+    
+    # Filter conversations by user
+    user_conversations = [c for c in conversations_db.values() if c.get("user_id") == username]
+    user_conversations.sort(key=lambda x: x["updated_at"], reverse=True)
     
     # Return summary without full messages
     return {
@@ -51,19 +68,22 @@ def list_conversations():
                 "updated_at": c["updated_at"],
                 "message_count": len(c["messages"])
             }
-            for c in conversations
+            for c in user_conversations
         ]
     }
 
 
 @router.post("/conversations")
-def create_conversation(payload: CreateConversationRequest):
-    """Create a new conversation"""
+def create_conversation(request: Request, payload: CreateConversationRequest):
+    """Create a new conversation for current user"""
+    username = get_current_user_from_request(request)
+    
     conversation_id = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
     
     conversation = {
         "id": conversation_id,
+        "user_id": username,
         "title": payload.title,
         "created_at": now,
         "updated_at": now,
@@ -75,21 +95,35 @@ def create_conversation(payload: CreateConversationRequest):
 
 
 @router.get("/conversations/{conversation_id}")
-def get_conversation(conversation_id: str):
+def get_conversation(request: Request, conversation_id: str):
     """Get a specific conversation with all messages"""
-    if conversation_id not in conversations_db:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    username = get_current_user_from_request(request)
     
-    return conversations_db[conversation_id]
-
-
-@router.post("/conversations/{conversation_id}/messages")
-def add_message(conversation_id: str, payload: AddMessageRequest):
-    """Add a message to a conversation"""
     if conversation_id not in conversations_db:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
     conversation = conversations_db[conversation_id]
+    
+    # Verify user owns this conversation
+    if conversation.get("user_id") != username:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return conversation
+
+
+@router.post("/conversations/{conversation_id}/messages")
+def add_message(request: Request, conversation_id: str, payload: AddMessageRequest):
+    """Add a message to a conversation"""
+    username = get_current_user_from_request(request)
+    
+    if conversation_id not in conversations_db:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    conversation = conversations_db[conversation_id]
+    
+    # Verify user owns this conversation
+    if conversation.get("user_id") != username:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     message = {
         "role": payload.role,
@@ -110,26 +144,42 @@ def add_message(conversation_id: str, payload: AddMessageRequest):
 
 
 @router.delete("/conversations/{conversation_id}")
-def delete_conversation(conversation_id: str):
+def delete_conversation(request: Request, conversation_id: str):
     """Delete a conversation"""
+    username = get_current_user_from_request(request)
+    
     if conversation_id not in conversations_db:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    conversation = conversations_db[conversation_id]
+    
+    # Verify user owns this conversation
+    if conversation.get("user_id") != username:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     del conversations_db[conversation_id]
     return {"success": True}
 
 
 @router.put("/conversations/{conversation_id}/title")
-def update_title(conversation_id: str, payload: dict):
+def update_title(request: Request, conversation_id: str, payload: dict):
     """Update conversation title"""
+    username = get_current_user_from_request(request)
+    
     if conversation_id not in conversations_db:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    conversation = conversations_db[conversation_id]
+    
+    # Verify user owns this conversation
+    if conversation.get("user_id") != username:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     title = payload.get("title", "").strip()
     if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
     
-    conversations_db[conversation_id]["title"] = title
-    conversations_db[conversation_id]["updated_at"] = datetime.utcnow().isoformat()
+    conversation["title"] = title
+    conversation["updated_at"] = datetime.utcnow().isoformat()
     
     return {"success": True, "title": title}
