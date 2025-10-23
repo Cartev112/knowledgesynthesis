@@ -70,8 +70,29 @@ def invoke_aura_agent(input_text: str, body: Optional[Dict[str, Any]] = None) ->
     try:
         with httpx.Client(timeout=60.0) as client:
             resp = client.post(settings.aura_agent_endpoint_url, headers=headers, json=payload)
+            
+            # Log response details for debugging
+            logger.info(f"Aura Agent response status: {resp.status_code}")
+            
+            if resp.status_code == 500:
+                # Neo4j's agent API returned 500 - log details
+                try:
+                    error_body = resp.json()
+                    logger.error(f"Aura Agent 500 error details: {error_body}")
+                except:
+                    logger.error(f"Aura Agent 500 error body: {resp.text[:500]}")
+                raise httpx.HTTPStatusError(
+                    f"Aura Agent API returned 500 Internal Server Error. This is a Neo4j service issue. "
+                    f"Try again in a few moments or check Neo4j Aura console for agent status.",
+                    request=resp.request,
+                    response=resp
+                )
+            
             resp.raise_for_status()
             return resp.json()
+    except httpx.HTTPStatusError as http_exc:
+        logger.error(f"Aura Agent HTTP error: {http_exc}")
+        raise
     except Exception as exc:
-        logger.error(f"Aura Agent invocation failed: {exc}")
+        logger.error(f"Aura Agent invocation failed: {type(exc).__name__}: {exc}")
         raise

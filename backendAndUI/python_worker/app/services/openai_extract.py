@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import List
 
 from fastapi import HTTPException
@@ -107,7 +108,6 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
 
     try:
         # Lazy import to avoid hard dependency if not used
-        import os
         import httpx
         from openai import OpenAI
         import logging
@@ -135,8 +135,9 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
         # Honor proxy environment variables without using unsupported kwargs
         proxy_url = os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY") or os.getenv("OPENAI_PROXY")
         
-        # Set reasonable timeout (5 minutes for large documents)
-        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "300"))
+        # Set reasonable timeout (10 minutes for large documents)
+        # Can be overridden with OPENAI_TIMEOUT_SECONDS environment variable
+        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "600"))
         
         http_client = None
         if proxy_url:
@@ -334,7 +335,7 @@ def extract_title_with_llm(text: str) -> str:
     
     try:
         # Use OpenAI to extract title with timeout
-        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "300"))
+        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "600"))
         client = openai.OpenAI(api_key=settings.openai_api_key, timeout=timeout_seconds)
         
         response = client.chat.completions.create(

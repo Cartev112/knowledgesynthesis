@@ -146,7 +146,19 @@ export class AIQuery {
     } catch (error) {
       console.error('AI Query error:', error);
       this.hideLoading();
-      this.addMessage('assistant', 'Sorry, I encountered an error processing your question. Please try again.', {
+      
+      // Provide more specific error messages
+      let errorMessage = 'Sorry, I encountered an error processing your question. Please try again.';
+      
+      if (error.message && error.message.includes('500')) {
+        errorMessage = '⚠️ The AI agent service is temporarily unavailable (Neo4j Aura Agent returned 500 error). This is a service issue on Neo4j\'s end. Please try again in a few moments.';
+      } else if (error.message && error.message.includes('timeout')) {
+        errorMessage = '⏱️ The query took too long to process. Try asking a simpler question or try again later.';
+      } else if (error.message && error.message.includes('401') || error.message.includes('403')) {
+        errorMessage = '🔒 Authentication failed. Please check your Aura Agent credentials.';
+      }
+      
+      this.addMessage('assistant', errorMessage, {
         error: true,
         errorMessage: error.message
       });
