@@ -23,7 +23,16 @@ export class Graph3D {
     this._interactionsSetup = false;
     this.labelMeshes = new Map();
     this._frameCount = 0;
-    this.engine.setOnFrame(() => this._onFrame());
+    this._rafId = null;
+    if (this.engine && typeof this.engine.setOnFrame === 'function') {
+      this.engine.setOnFrame(() => this._onFrame());
+    } else {
+      const tick = () => {
+        this._onFrame();
+        this._rafId = requestAnimationFrame(tick);
+      };
+      this._rafId = requestAnimationFrame(tick);
+    }
   }
 
   setData(data) {
@@ -53,6 +62,8 @@ export class Graph3D {
       if (m && m.dispose) m.dispose();
     }
     this.labelMeshes.clear();
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+    this._rafId = null;
     this.engine.dispose();
   }
 
