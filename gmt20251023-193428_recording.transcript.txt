@@ -1,0 +1,419 @@
+K. Selcuk Candan: I would be…
+
+K. Selcuk Candan: I would ping them again. Just ping them again, right? So with that affiliation, you should have access, because if you are visiting
+
+K. Selcuk Candan: researchers, right? That's your, basically, affiliation, right? So, at ASU, you need to access ASU resources, right? So, that's an ASU resource. So, I think the way they set it up is probably not correct, and maybe that's why they are basically trying, but I will ping them again.
+
+K. Selcuk Candan: And then ask, basically, what specific affiliation you are. You can actually say that, basically, the… my colleagues, in the… in Sky are asking so that they can set it up, because this is blocking my progress. Okay? Right, so just… just put it on there, on them. Is that okay? Alright?
+
+Carter Whitworth: Yeah, so the problem with ChatGPT EDU is that it doesn't offer API access, as I said in my email, and for this platform, we need API access.
+
+K. Selcuk Candan: So, but we used API access before. We actually, with ChatGPT, EDU, unless they change the policy, we actually use API access. We have actually benefited, from API access. Are you sure it doesn't provide API access? I mean, that's…
+
+K. Selcuk Candan: Because.
+
+Carter Whitworth: I mean, when I did my research, that's what it said, but I just don't know, like…
+
+Carter Whitworth: I mean, how many… does it give you just, like, unlimited credits, or, like, unlimited token usage, or…
+
+Carter Whitworth: I don't really.
+
+K. Selcuk Candan: I don't recall, actually. Can we check that with… please send an email to…
+
+K. Selcuk Candan: Abhinav, and check with Abhinav, okay, right?
+
+Carter Whitworth: Sure.
+
+K. Selcuk Candan: Of course, if there's no API access, then it's not useful, because at the end, we need, we need, we need API access, right? I mean, one way to…
+
+K. Selcuk Candan: One way to go around that, right, so could be to implement GPT.
+
+K. Selcuk Candan: and then basically, I mean, pose the questions, right? So, not through an API, but basically through the, through the GPT interface, right? So, SAN basically, but, but that's not the most, that's not, that's not the most…
+
+K. Selcuk Candan: effective way of developing this, right? So, let's… send an email to Abhinav and double-check with him. Is that okay?
+
+Carter Whitworth: Yeah.
+
+Carter Whitworth: So, so in terms of the cost, right now, it's about $1.20 for about 1,000 papers. So, it's very cheap right now, but I don't know if we want to ingest, you know, a million papers, or…
+
+K. Selcuk Candan: Well, it's not a million papers, but maybe, basically, the input tokens might be larger, right? So we might start using, basically, larger inputs, right? Or we might basically want to have larger outputs, because we are outputting, say, 10 concepts, but maybe, basically, paper can have 100 concepts and all these relationships, right? So that the graphs might be larger.
+
+K. Selcuk Candan: Right? Yeah. So… so the cost might…
+
+K. Selcuk Candan: increase because we are doing more processing out of each paper, right?
+
+K. Selcuk Candan: So… and we don't want you to pay. Even if it's a $1, why should you pay for it, right? So it doesn't make sense, right? I mean, if it is around $1 level, we can buy you a coffee at some point, right? Or something, we can basically figure it out a way to do it, right? But you shouldn't have to, so that's the point.
+
+K. Selcuk Candan: Okay? Yeah, so, again, I apologize, I didn't read your email, because I was not aware of the email, right? Now that I am aware of it, I will basically go and…
+
+K. Selcuk Candan: And basically read carefully and provide feedback. I just noticed that there are some questions there, so I will basically reply. But yeah, but you can still provide an update, Kartush. Please go ahead.
+
+Carter Whitworth: Let me go ahead and, share my screen.
+
+Belinda Akpa: And you are getting paid now, I presume, so I didn't.
+
+Carter Whitworth: Yes.
+
+Belinda Akpa: To improve your hours.
+
+Carter Whitworth: Yes.
+
+Carter Whitworth: Okay, can you see my screen?
+
+K. Selcuk Candan: Yes.
+
+Carter Whitworth: So, one of the questions I had, which I said in my email, is…
+
+Carter Whitworth: So, in terms of extracting relationships, do we want GPT to focus more on extracting, essentially, neighborhoods of concepts that are, you know, very interlinked, you have, you know, a lot of, like, transitive, you know, A to B to C to B to A, or do we want those more isolated triplets?
+
+Carter Whitworth: Instead of more interconnected concepts. Because I can see the benefits for both, but I wanted your opinion on that.
+
+K. Selcuk Candan: Okay, so the way we are extracting right now is agnostic to the connectivity. Am I correct? Yes, it's agnostic to the connectivity. We are not doing some kind of a centrality analysis, right, or click analysis, right, so to decide what to extract. So, do you propose to…
+
+K. Selcuk Candan: Do you propose to make it so? Do you propose to basically rank the concepts, or agents based on their centrality, and use them essentially as the, sort of the anchors for the extraction? Is that what you are proposing? Again, this is because I didn't read the email, right? So maybe if I read the email.
+
+K. Selcuk Candan: Okay, I would, understand it better, the context of the question.
+
+K. Selcuk Candan: Right? So, is that what you are proposing?
+
+Carter Whitworth: Yes, we could do it, it just depends on the goal of this system, is do we want to be extracting and synthesizing information that has
+
+Carter Whitworth: You know, essentially more direct relationships, or more complex relationships, where you have many concepts that are interacting with each other.
+
+K. Selcuk Candan: Right, so I think we don't know of that, right? So, that may depend on the user, right? So, that's why, basically, so at the beginning, right, so we… that's why, basically, we said, let's have this query context, right, so where the user can basically provide
+
+K. Selcuk Candan: Okay, right, so a description of basically what they are, trying to extract, okay, right? And, and, yeah, so it might be…
+
+K. Selcuk Candan: Right, so that's, we have basically another checkmark here, right? So that says, basically, okay, seek diversity.
+
+K. Selcuk Candan: Versus basically seek, centrality.
+
+K. Selcuk Candan: Okay, maybe it's an option, okay, right? And then it's basically user selects and centrality, right? Or connectedness, right? So things that are extracted are basically more connected, also with the things that already exist.
+
+K. Selcuk Candan: Okay, right, so now maybe, basically, if diverse is selected, right, so you basically start, basically, extracting things that are sort of more diverse and doesn't necessarily relate to things that have already been extracted. I can see that happening, but I don't think that, basically, at this point, we have a…
+
+K. Selcuk Candan: specific…
+
+K. Selcuk Candan: sort of goal. I mean, Belinda might basically have a different opinion, I don't know, but I don't have, basically, because I can see, as you say, Carter, both of them might basically be…
+
+K. Selcuk Candan: desirable, right? So, in different use contexts, right? So, because I say, okay, so… So, for example.
+
+K. Selcuk Candan: So I already have a graph.
+
+K. Selcuk Candan: and then I basically give a new paper, and I want to see how the new paper relates, right, so to things that I already have, right? So that may be one thing that I want. Or, I have a new paper, and I want to see how basically my new paper differs
+
+K. Selcuk Candan: Right, so from things that I've already extracted, right? So what basically things that are not part of this that are… that are there, right? So I can see both of them happening. And if you want to enrich the interface, okay, right now we didn't give you any sort of specification in that direction.
+
+K. Selcuk Candan: If you want to enrich, yeah, you can basically make it essentially as part of the extraction process, right? So when a paper is given, and when the graph is given.
+
+K. Selcuk Candan: Right? It can basically say, okay, so seek diversity, right? Basically, explore as much as possible, right? Or seek, sort of some kind of a connectedness, right? So, more exploit what you already have, basically.
+
+Carter Whitworth: Okay, so essentially the user will have most of the control over those parameters.
+
+K. Selcuk Candan: expect, so if you are going to… if you don't have that option, then…
+
+K. Selcuk Candan: But if basically we want to have that, the user should have that, that thing, and we shouldn't basically presume what the user will want.
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: If it makes sense to you.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Hi, Abinel, how are you doing?
+
+Abhinav Gorantla: I'm good, Dr. Cannon, sorry for being late.
+
+K. Selcuk Candan: No problem, just a second.
+
+Carter Whitworth: Moving on, I decided to play around with this idea of a 3D graph. So maybe it's a little bit of a gimmick, and it doesn't provide that much use, but I just wanted to see what it would be like to have a 3D graph.
+
+Carter Whitworth: So essentially, this is what we have, where I have it…
+
+Carter Whitworth: Kind of arranged in a sphere right now, but then we can press this little button and…
+
+Carter Whitworth: Spread all the nodes out.
+
+Carter Whitworth: But I just think it's kind of interesting. I thought, you know, I mean, it has the same functionality here, as opposed to the 2D graph.
+
+Carter Whitworth: It might look a lot more interesting when we have a lot more data in, but I just wanted to know your opinion on this whole idea of, like, a 3D graph.
+
+K. Selcuk Candan: I don't have any strong opinion either way. I prefer simpler, right? So, because this basically gives one… I mean, it gives one more level of flexibility, you are right, but it also gives one more level of complexity, right? So, for the end users, so that's why I don't have any strong opinion either way.
+
+K. Selcuk Candan: I don't know, Belinda, Abhina, what do you guys think?
+
+Belinda Akpa: I mean, it'd be fun to play with, but yes, it is a level of complexity, and I think some of these questions are just going to be easier for me to answer in a way that's productive for you, Carter, once I can play with it and load.
+
+K. Selcuk Candan: Exactly.
+
+Belinda Akpa: I… I care about.
+
+Carter Whitworth: Yes. Here, let me go… the whole thing is online right now, so I'm just gonna.
+
+Carter Whitworth: Share the link with you guys in the chat.
+
+K. Selcuk Candan: Dad, please, please, please.
+
+Carter Whitworth: So there you go.
+
+Belinda Akpa: Nice!
+
+Belinda Akpa: Also, I gave a talk at a workshop this week, and I… one of my last slides, I kind of mentioned
+
+Belinda Akpa: how slow it is to build the kinds of models that we build, because the knowledge integration part is a challenge, and so I just talked a little bit about APEX and how we're trying to tackle this.
+
+Belinda Akpa: Very, very quickly, but there was somebody in the audience who immediately shared
+
+Belinda Akpa: this preprint of their work, which I haven't had a chance to read yet.
+
+Belinda Akpa: Where they claimed they're doing something similar, integrated with Cytoscape.
+
+Belinda Akpa: Which is another, sort of, network.
+
+Belinda Akpa: visualization tool. I suspect this is much more limited, because it's specifically a biology audience, so I note that it says they use biological expression language.
+
+Belinda Akpa: as one of their extraction tools.
+
+Belinda Akpa: But I thought I would share it just in case it's worth looking at to see.
+
+Belinda Akpa: what they've done.
+
+K. Selcuk Candan: Let me just get a copy of this as well.
+
+K. Selcuk Candan: Okay, yeah, that's, that's cool, yeah. Yeah, yeah, that's something, something to definitely, look and play with. So, I just logged in.
+
+K. Selcuk Candan: Okay, so I am basically viewing this one shared thing, right? So, right now, so whatever I basically create, and it will go to this one shared… because I… although I just logged in, I'm able to see the same graph as you are… that… that you are seeing, I guess.
+
+Carter Whitworth: Yes, it's one unit photograph.
+
+K. Selcuk Candan: Okay, alright.
+
+K. Selcuk Candan: I see, okay, alright, I see that we are down…
+
+K. Selcuk Candan: The read more, you're basically hover over, right, so you are able to hover over.
+
+K. Selcuk Candan: I'm able to hover over on both the nodes, as well as on the… on the… on the graphs, sorry, on the… on the edges.
+
+K. Selcuk Candan: and their significance, and I can read it better. This is… this is very cool. Okay, so Carter, I mean, I think this is great. So, let's do like this. I mean, it's a bit, unless you have specific questions right now, right? Maybe we can play, and then we can basically have a better interaction next week.
+
+K. Selcuk Candan: Right, so because I think, as Professor Akba mentioned, right, so we need to play with it, right, so to give you.
+
+Carter Whitworth: Yeah.
+
+K. Selcuk Candan: Right, so these things basically seem to work, these things basically, it's not as convenient, and so on. And how do we switch between the two visualizations?
+
+Carter Whitworth: On the…
+
+K. Selcuk Candan: There's 11…
+
+Carter Whitworth: little bar here, and it'll say, 3D…
+
+K. Selcuk Candan: 3D, I see that. Okay, so that's a toggle.
+
+K. Selcuk Candan: Okay, alright.
+
+K. Selcuk Candan: Fine, yes, it starts. Okay, alright, yeah, we'll… we will play with it, and then we'll give you feedback. Is that okay? And then I will also… I will also basically… I mean…
+
+K. Selcuk Candan: Read your, read your,
+
+K. Selcuk Candan: I will read your email, okay, right? So again, I apologize for not noticing it earlier, right? And then we'll provide, feedback, okay?
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: I mean, the question for you.
+
+K. Selcuk Candan: Chatgpt EDU.
+
+K. Selcuk Candan: Carter says that they don't provide APIs.
+
+K. Selcuk Candan: Is that correct? I thought that, basically, we were also getting API keys for ChatGPT EDU access.
+
+K. Selcuk Candan: We had API keys that we had obtained.
+
+K. Selcuk Candan: For, for, for example, what Tastema was doing, and so on. And I thought that ChatGPT, that the ChatGPT EDU was actually about the API keys.
+
+Abhinav Gorantla: I… I haven't tried getting an API key, but I will look into it and see.
+
+K. Selcuk Candan: Can you check? Because if it is not the case, I can't ask specifically for an API key.
+
+Abhinav Gorantla: Yes.
+
+K. Selcuk Candan: There's a way to request API key, I have a connection, right, so I think I can basically go and ask for an API key specifically for this.
+
+K. Selcuk Candan: Okay? I can also check, basically, if our API key is being used right now, if the API key that we have is still valid, and if it is not used, I can basically pass it along to Carter, okay, so for him to use it.
+
+Abhinav Gorantla: Okay.
+
+K. Selcuk Candan: Okay, could, could you, could you check.
+
+Abhinav Gorantla: Yes, I will check and I'll let you know.
+
+K. Selcuk Candan: Okay, thanks a lot. Yeah, just let us know, okay? All right, I guess with that, Carter, do you have any specific questions? Otherwise, we'll play with this, okay? That's the fun part, and we'll actually get to play with the toy.
+
+Carter Whitworth: No, I don't have any other questions, but I do have another feature I added, which is basically this discovery tab.
+
+K. Selcuk Candan: Okay.
+
+Carter Whitworth: basically a quicker way to ingest documents. So you have… you take your query, and you search, and it's automatically connected to ArcCiv and PubMed right now, and you can go ahead and select,
+
+Carter Whitworth: select any of these items, and it will automatically ingest. If there's no PDF that's directly accessible, then it'll just tell you that it's not gonna work.
+
+K. Selcuk Candan: Perfect.
+
+Carter Whitworth: But eventually, I was kind of thinking, you know, this is like a basic,
+
+Carter Whitworth: Basic form of this, but would we want to implement some kind of auto-ingestion system where the system is automatically ingesting research, but to find.
+
+K. Selcuk Candan: Why not? It will be costly. It will be costly, right? So we probably basically want to, have a…
+
+K. Selcuk Candan: some kind of oversight, right? So, given that there's some costs associated with it. Even it's cheap, but then if it goes and suddenly you get, basically, a huge bill, right, at the end of the month, okay, because you auto-ingested some, basically, the entire, the entire Library of Congress, right? Yeah, so…
+
+K. Selcuk Candan: Why not, right? So we can think about maybe, basically, auto-invest, basically, with some limit threshold or whatever, right? So, certainly, basically, that may be possible, Carter, right? So, that's, let's say, good. But let's play with it and give you the feedback, okay? This looks very good, okay? Yeah, that's appealing, but I also think that one of the.
+
+Belinda Akpa: beauties of what we're doing is it's expert curated, right?
+
+Belinda Akpa: Somebody who's an expert in the domain says, these are important references that I would like to represent so that I can begin to have productive conversations across domains.
+
+K. Selcuk Candan: Yeah, I fully agree. I fully agree. I don't think that, basically, we should fully automate everything, basically, in the process, okay? Carter, one quick question. Is the email stopped working? So, basically, when? Because now, basically, I can ingest many things, right?
+
+Carter Whitworth: The email system is not working just yet, but I will have it working.
+
+K. Selcuk Candan: So, what will happen now if I select 4 things, and then if I basically press ingest, so what's going to happen?
+
+Carter Whitworth: It should show you a little, like, modal that has, like, a progress bar, and it'll… it should tell you when it's done.
+
+K. Selcuk Candan: Okay, so if I, if I basically, if I close my window while it's working, what happens? It still processes?
+
+Carter Whitworth: So yes, it'll just keep processing.
+
+K. Selcuk Candan: So it's still at the back. Okay, alright, fine. All right, cool, that's fine. Thanks a lot, Carter, yeah, so we'll play with it, and next time, next week, basically, we can have a more informative dialogue, okay?
+
+Carter Whitworth: Right.
+
+Belinda Akpa: Question. If it says, files processed successfully, 31 relationships extracted, where do I go to actually see it? Because when I go to viewing, it's giving me…
+
+Belinda Akpa: the information from… oh, okay. I think it's added the information you already had, and it's put on top of it the new PDF.
+
+Carter Whitworth: Is it showing the new nodes and the new relationship from whatever you just suggested, or is it not.
+
+Belinda Akpa: It is, but it's also showing me the brain signaling stuff from the paper that you were.
+
+Carter Whitworth: Yes, because it's one unified graph, so you can't toggle those out with the index.
+
+Belinda Akpa: Oh, so if we're going to be looking at different problem spaces that have nothing to do with each other.
+
+K. Selcuk Candan: So the way basically what will happen is that we, first of all, should have a user. So, it is one big graph, but as we said, Carter, last time, that's what I want to play with, right? So there should be a way of filtering based on user, right? So say, basically, it is… it goes to the whole graph, right? So, but I want to filter only mine.
+
+K. Selcuk Candan: Right? Or I want to basically filter mine and Billing does, right? Because we are collaborating, right? So, and I basically create a group, and then basically… so we need to have some kind of a user management, basically, right? So everything goes to the one big graph, but then visualization might be limited.
+
+K. Selcuk Candan: riser to… I should be able to basically create, sort of, slices, right, so of this. And I think UVIN doesn't have that yet.
+
+K. Selcuk Candan: Can I… can, for example, I say I want to see everything that I created, or can I say everything that Belinda has created?
+
+Carter Whitworth: Yes, that can be implemented, and originally I was planning on creating some way of defining, like, a space where you can invite, you know, users, and then you have one… it's like an isolated part of the database.
+
+K. Selcuk Candan: Yeah, it doesn't need to be isolated, it can be still the full database, but basically, from a viewing perspective, it's just a projection, right? So I project, basically.
+
+K. Selcuk Candan: Only… okay, right, so the… I filter, right, so only the things that are basically in my, in my, in billing doesn't mine.
+
+K. Selcuk Candan: Right? So, just basically, I put those two users, and other things are not basically… even if they are dashed, it is… it is not shown to me, right? So only the edges that I have contributed to, I have annotated, or I have extracted are shown, right? So you might want to…
+
+Belinda Akpa: to go beyond user, though. So, for example, I just loaded up a PDF on a plant biology topic.
+
+Belinda Akpa: But I also have a project on engineering immune cells. Like, I want to be able to have a scope
+
+Belinda Akpa: Yeah.
+
+K. Selcuk Candan: I think that's going to be for the querying, right? So that's going to… so we will need to… we will need to have that basically… we will need to have that, that sort of created, right? So somehow we will need to basically slice and dice, right? So this one big graph, right, so into…
+
+Belinda Akpa: Yeah.
+
+K. Selcuk Candan: Into parts that are… That are relevant. That's cool.
+
+Belinda Akpa: So I've got little subnetworks extracted from the.
+
+K. Selcuk Candan: Yeah, yeah, yeah, that's very good. I mean, I think it is nice, right? So I think as we play, we'll basically see all of these things, and that's why we'll give you basically more feedback. But Carter, while waiting for the feedback, you might want, if it's not implemented, you might want to basically implement that user-oriented
+
+K. Selcuk Candan: view, right? Yeah. At least a user-oriented view, at least me as a user, right? So, and then when I… when I basically start, maybe by default, you just show me mine.
+
+K. Selcuk Candan: And then I can expand. So, for example, when building the extracts.
+
+K. Selcuk Candan: Okay, the default might, the default thing that she sees.
+
+K. Selcuk Candan: are the only ones that basically are extracted. Still the full graph, but only one that are extracted by her, and then she can expand on it.
+
+K. Selcuk Candan: So maybe, basically, we do it that way, right? So that basically… so that Belinda doesn't get lost, or doesn't get lost, right? So when it's extracted, right? So… so extracted information, the first thing that I see are what has been extracted, and then I can expand on it.
+
+K. Selcuk Candan: Does that make sense?
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Okay? Right, so if you can basically approach it that way, I think that's going to have a much, much… you will… the user will be less lost.
+
+K. Selcuk Candan: Okay? Alright.
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: Excellent, excellent, great.
+
+Carter Whitworth: So, regarding, querying, so Neo4j actually has a beta feature called Agents, and it's essentially a graph rag agent. So what I've done is I've defined one, and you can assign it tools.
+
+Carter Whitworth: So right now, I have essentially three tools. One would be a text-to-cypher, so it's gonna take your query and generate a cipher command that, is aligned with your query. And then we have two, RAG, SimSearch
+
+Carter Whitworth: tools. One for the document embeddings themselves, and ones for the relationship embeddings. So right now, I have it generating embeddings for both the documents and the entities, but would you rather just be one or the other, or would you have it be both?
+
+K. Selcuk Candan: Tell me again, I want to make sure that I understand the question, and I can basically give a better answer. Ask me the question again.
+
+Carter Whitworth: So right now, we have it to where the system, when it ingests a document and all of its information, is going to create embeddings of the document itself and the relationships of the graph. Makes sense. So we could use the agent to query and search through the document embeddings and the graph, or both, or either.
+
+K. Selcuk Candan: So you create a separate document embedding, that's what you are saying.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Is the graph embedding, or is it a document embedding on the… as a separate vector, vector embedding for the document?
+
+Carter Whitworth: The document embeddings are separate from the triplet embeddings.
+
+K. Selcuk Candan: Okay, so it is not a graph embedding, because we can also say that a document is a collection of triplets, and you extract… okay, so this document, similar to search, I think it's a different functionality. I can see it basically being useful. It's a different function, it doesn't mean that it's not useful, okay, right?
+
+K. Selcuk Candan: But it is not the primary… primary…
+
+K. Selcuk Candan: our primary focus, okay? It may be good to have, right? Okay, what are the similar documents to this? Okay, right? So, and then things, so… but it is not…
+
+K. Selcuk Candan: the focus.
+
+K. Selcuk Candan: Alright? It would be a nice orthogonal add-on, okay? Right? I think the key thing that we should, focus on are the
+
+K. Selcuk Candan: Node embeddings.
+
+K. Selcuk Candan: Okay, right, so which way, which way we will use as a… as an anchor, right, so when we query.
+
+K. Selcuk Candan: Okay, right, so because when we are querying, we are querying the graph.
+
+K. Selcuk Candan: And then when we are querying the graph, right, we will use node embedding associated constraints or anchors, right, so to basically, contextualize the extraction process.
+
+K. Selcuk Candan: So I would basically primarily focus on… again, it's not to discourage you, okay? You can export it, and maybe you can add a nice functionality for that, okay? Right? So that's perfectly…
+
+K. Selcuk Candan: nice, okay, nice to have, right? But that's not the primary focus.
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: Doesn't that make sense?
+
+Carter Whitworth: Yes, so I've gone ahead and added another tab for this agent. It's not currently working now, but I should have it functional by next week, so you can play around with that.
+
+K. Selcuk Candan: Okay, great. Perfect. Yeah, looking good. Looking forward to enjoying, I mean, playing with this. This is coming along as a nice tool, and we should make it public soon, I think, so that basically more people can benefit from that.
+
+K. Selcuk Candan: And that, basically, we need to make sure that it is not on your credit card, so that you don't basically end up paying for everybody's.
+
+Belinda Akpa: So, are you now seeing the stuff that I've added? It looks like you might be, yeah.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Yeah, yeah, yeah, yeah, it is, it is, it is growing, indeed. I'm also seeing on this side. Nice! Okay, beautiful!
+
+K. Selcuk Candan: Fun, right? Okay.
+
+K. Selcuk Candan: That's great. Okay, thanks a lot, Carter. Thank you so much. This is coming along very beautifully, okay? Right. Bye, guys. Bye, everyone. Bye-bye. Bye-bye.
+
+Carter Whitworth: Right.

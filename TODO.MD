@@ -1,11 +1,4 @@
 TODO.MD
 
-quality assure create relationship feature
+fix index dropdown buttons
 
-fix edge "read more" button
-
-remove merge feature + implement compare feature
-
-documents ingested via discovery are not visible in graph
-
-verify shortest path feature

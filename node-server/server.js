@@ -8,6 +8,7 @@ import session from 'express-session'
 import FormData from 'form-data'
 import { fileURLToPath } from 'url'
 import { ensureAdminFromEnv, createUser, verifyUser, getUserByEmail } from './users.js'
+import { initializeDatabase } from './db.js'
 
 dotenv.config()
 
@@ -37,7 +38,10 @@ const upload = multer({ storage })
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(session({ secret: sessionSecret, resave: false, saveUninitialized: false }))
-ensureAdminFromEnv()
+
+// Initialize database and admin user
+await initializeDatabase()
+await ensureAdminFromEnv()
 
 function requireAuth(req, res, next) {
   if (req.session && req.session.user) return next()
@@ -132,9 +136,9 @@ app.get('/login', (req, res) => {
   </html>`)
 })
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, password } = req.body || {}
-  let user = verifyUser(email, password)
+  let user = await verifyUser(email, password)
   
   // Fallback to default credentials (support both email and legacy username)
   if (!user && (email === defaultUser || email === `${defaultUser}@admin.local`) && password === defaultPass) {
@@ -244,16 +248,16 @@ app.get('/signup', (req, res) => {
   </html>`)
 })
 
-app.post('/signup', (req, res) => {
+app.post('/signup', async (req, res) => {
   const { first_name, last_name, email, password, username } = req.body || {}
   try {
     // Support both old (username) and new (email) formats
     if (email && first_name && last_name && password) {
-      createUser(first_name, last_name, email, password)
+      await createUser(first_name, last_name, email, password)
       res.redirect('/login')
     } else if (username && password) {
       // Legacy support
-      createUser('User', 'Name', username, password)
+      await createUser('User', 'Name', username, password)
       res.redirect('/login')
     } else {
       throw new Error('Missing required fields')
@@ -268,9 +272,9 @@ app.post('/logout', (req, res) => {
 })
 
 // API endpoints for Python backend integration
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body || {}
-  const user = verifyUser(email, password)
+  const user = await verifyUser(email, password)
   if (user) {
     req.session.user = user
     return res.json({ success: true, user })
@@ -278,11 +282,11 @@ app.post('/api/login', (req, res) => {
   res.status(401).json({ error: 'Invalid credentials' })
 })
 
-app.post('/api/signup', (req, res) => {
+app.post('/api/signup', async (req, res) => {
   const { first_name, last_name, email, password } = req.body || {}
   try {
     if (!first_name || !last_name || !email || !password) throw new Error('Missing required fields')
-    createUser(first_name, last_name, email, password)
+    await createUser(first_name, last_name, email, password)
     res.status(201).json({ success: true, message: 'Account created' })
   } catch (e) {
     res.status(400).json({ error: e.message })

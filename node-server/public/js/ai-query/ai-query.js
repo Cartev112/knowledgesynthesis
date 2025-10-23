@@ -139,6 +139,26 @@ export class AIQuery {
           input: question,
           body: {}
         });
+        
+        // Debug: Log what Aura Agent returned
+        console.log('Aura Agent response:', JSON.stringify(response, null, 2));
+        
+        // Check if agent returned insufficient data
+        if (response.content) {
+          const textContent = response.content.find(item => item.type === 'text');
+          if (textContent && textContent.text && 
+              (textContent.text.includes("don't have enough information") ||
+               textContent.text.includes("not enough information") ||
+               textContent.text.includes("only returned the titles"))) {
+            console.warn('Aura Agent returned insufficient data, falling back to GraphRAG');
+            useGraphRAG = true;
+            response = await API.post('/api/graphrag/ask', {
+              question: question,
+              k: 10,
+              scope: 'hybrid'
+            });
+          }
+        }
       } catch (auraError) {
         // Fallback to GraphRAG if Aura Agent fails
         console.warn('Aura Agent failed, falling back to GraphRAG:', auraError);

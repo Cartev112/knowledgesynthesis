@@ -1,0 +1,196 @@
+/* Workspace Switcher Component Styles */
+
+.workspace-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.workspace-switcher-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: #111827;
+}
+
+.workspace-switcher-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.workspace-switcher-button .workspace-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.workspace-switcher-button .workspace-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-switcher-button .dropdown-arrow {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.workspace-switcher-button:hover .dropdown-arrow {
+  color: #6b7280;
+}
+
+/* Dropdown */
+.workspace-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 280px;
+  max-width: 320px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+}
+
+.workspace-dropdown.show {
+  display: block;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-section {
+  padding: 0.5rem;
+}
+
+.dropdown-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.dropdown-item:hover {
+  background: #f3f4f6;
+}
+
+.dropdown-item.active {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.dropdown-item.current {
+  font-weight: 600;
+}
+
+.dropdown-item .item-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dropdown-item .item-name {
+  flex: 1;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-item .check-icon {
+  color: #3b82f6;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.dropdown-item .shared-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.dropdown-item.action {
+  color: #6b7280;
+}
+
+.dropdown-item.action:hover {
+  color: #111827;
+  background: #f9fafb;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.5rem 0;
+}
+
+/* Scrollbar styling */
+.workspace-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.workspace-dropdown::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.workspace-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.workspace-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .workspace-switcher-button .workspace-name {
+    max-width: 120px;
+  }
+
+  .workspace-dropdown {
+    min-width: 240px;
+  }
+}

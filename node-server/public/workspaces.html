@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspaces - Knowledge Synthesis</title>
+  <link rel="stylesheet" href="css/workspaces.css">
+</head>
+<body>
+  <div class="workspaces-container">
+    <!-- Header -->
+    <header class="workspaces-header">
+      <div class="header-content">
+        <h1>Knowledge Synthesis</h1>
+        <div class="header-actions">
+          <div class="user-menu">
+            <button class="user-button" id="user-button">
+              <span class="user-avatar">👤</span>
+              <span class="user-name" id="user-name">User</span>
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="user-dropdown" id="user-dropdown">
+              <a href="#" id="logout-link">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="workspaces-main">
+      <div class="workspaces-section">
+        <h2>Your Workspaces</h2>
+        
+        <!-- Loading State -->
+        <div class="loading-state" id="loading-state">
+          <div class="spinner"></div>
+          <p>Loading workspaces...</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="error-state" id="error-state" style="display: none;">
+          <p class="error-message" id="error-message"></p>
+          <button class="retry-button" id="retry-button">Retry</button>
+        </div>
+
+        <!-- Workspaces Grid -->
+        <div class="workspaces-grid" id="workspaces-grid">
+          <!-- Workspace cards will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Global View Section -->
+      <div class="global-view-section">
+        <div class="global-view-card">
+          <div class="global-view-icon">🌐</div>
+          <h3>Global View</h3>
+          <p>View all content across all workspaces</p>
+          <div class="global-view-stats" id="global-stats">
+            <span>Loading...</span>
+          </div>
+          <button class="global-view-button" id="global-view-button">
+            Explore Global Graph
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="recent-activity-section">
+        <h3>Recent Activity</h3>
+        <div class="activity-list" id="activity-list">
+          <p class="no-activity">No recent activity</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Workspace Modal -->
+  <div class="modal" id="create-workspace-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New Workspace</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <form id="create-workspace-form">
+        <div class="form-group">
+          <label for="workspace-name">Workspace Name *</label>
+          <input type="text" id="workspace-name" required maxlength="100" 
+                 placeholder="e.g., Immune Cell Engineering">
+        </div>
+
+        <div class="form-group">
+          <label for="workspace-description">Description (optional)</label>
+          <textarea id="workspace-description" rows="3" maxlength="500"
+                    placeholder="Brief description of this workspace..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Icon & Color</label>
+          <div class="icon-selector">
+            <button type="button" class="icon-option" data-icon="📊">📊</button>
+            <button type="button" class="icon-option" data-icon="🧬">🧬</button>
+            <button type="button" class="icon-option" data-icon="🔬">🔬</button>
+            <button type="button" class="icon-option" data-icon="🧪">🧪</button>
+            <button type="button" class="icon-option" data-icon="💉">💉</button>
+            <button type="button" class="icon-option" data-icon="🌱">🌱</button>
+            <button type="button" class="icon-option" data-icon="🔭">🔭</button>
+            <button type="button" class="icon-option" data-icon="⚗️">⚗️</button>
+            <button type="button" class="icon-option" data-icon="🧫">🧫</button>
+            <button type="button" class="icon-option" data-icon="📚">📚</button>
+          </div>
+          <input type="hidden" id="workspace-icon" value="📊">
+          
+          <div class="color-selector">
+            <button type="button" class="color-option" data-color="#3B82F6" style="background: #3B82F6;"></button>
+            <button type="button" class="color-option" data-color="#10B981" style="background: #10B981;"></button>
+            <button type="button" class="color-option" data-color="#F59E0B" style="background: #F59E0B;"></button>
+            <button type="button" class="color-option" data-color="#EF4444" style="background: #EF4444;"></button>
+            <button type="button" class="color-option" data-color="#8B5CF6" style="background: #8B5CF6;"></button>
+            <button type="button" class="color-option" data-color="#EC4899" style="background: #EC4899;"></button>
+          </div>
+          <input type="hidden" id="workspace-color" value="#3B82F6">
+        </div>
+
+        <div class="form-group">
+          <label>Privacy</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="privacy" value="private" checked>
+              <span>Private (only you)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="privacy" value="shared">
+              <span>Shared (invite collaborators)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="button button-secondary" id="cancel-button">Cancel</button>
+          <button type="submit" class="button button-primary" id="submit-button">Create Workspace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/workspaces/workspaces.js"></script>
+</body>
+</html>

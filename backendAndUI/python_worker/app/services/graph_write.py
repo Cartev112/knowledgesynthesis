@@ -127,7 +127,7 @@ def _write_single(tx, triplet: Triplet, document_id: str, document_title: Option
     }
 
 
-def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title: Optional[str] = None, user_id: Optional[str] = None, user_first_name: Optional[str] = None, user_last_name: Optional[str] = None, consolidate_entities: bool = True) -> list[dict]:
+def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title: Optional[str] = None, user_id: Optional[str] = None, user_first_name: Optional[str] = None, user_last_name: Optional[str] = None, workspace_id: Optional[str] = None, consolidate_entities: bool = True) -> list[dict]:
     """
     Write triplets to the graph and optionally consolidate identical entities.
     
@@ -138,6 +138,7 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
         user_id: Optional user ID
         user_first_name: Optional user first name
         user_last_name: Optional user last name
+        workspace_id: Optional workspace ID to associate document with
         consolidate_entities: Whether to run APOC consolidation after writing
         
     Returns:
@@ -148,7 +149,19 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
         for t in triplets:
             outputs.append(_write_single(tx, t, document_id, document_title, user_id, user_first_name, user_last_name))
         
-        # User information is now set directly in the main Cypher query above
+        # Associate document with workspace if provided
+        if workspace_id:
+            tx.run(
+                """
+                MATCH (d:Document {document_id: $document_id})
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                MERGE (d)-[:BELONGS_TO]->(w)
+                """,
+                document_id=document_id,
+                workspace_id=workspace_id
+            )
+            logger.info(f"Associated document {document_id} with workspace {workspace_id}")
+        
         return outputs
 
     # Write triplets first
