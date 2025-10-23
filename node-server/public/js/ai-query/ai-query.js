@@ -130,18 +130,34 @@ export class AIQuery {
     this.showLoading();
 
     try {
-      // Call Aura Agent endpoint
-      const response = await API.post('/api/agent/invoke', {
-        input: question,
-        body: {
-          // Additional parameters can be passed here if needed
-        }
-      });
+      // Try Aura Agent first
+      let response;
+      let useGraphRAG = false;
+      
+      try {
+        response = await API.post('/api/agent/invoke', {
+          input: question,
+          body: {}
+        });
+      } catch (auraError) {
+        // Fallback to GraphRAG if Aura Agent fails
+        console.warn('Aura Agent failed, falling back to GraphRAG:', auraError);
+        useGraphRAG = true;
+        response = await API.post('/api/graphrag/ask', {
+          question: question,
+          k: 10,
+          scope: 'hybrid'
+        });
+      }
 
       this.hideLoading();
 
       // Parse and display response
-      this.handleAgentResponse(response, question);
+      if (useGraphRAG) {
+        this.handleGraphRAGResponse(response, question);
+      } else {
+        this.handleAgentResponse(response, question);
+      }
 
     } catch (error) {
       console.error('AI Query error:', error);
@@ -233,6 +249,23 @@ export class AIQuery {
       sources,
       retrievedContext,
       thinkingTraces,
+      question
+    });
+  }
+
+  handleGraphRAGResponse(response, question) {
+    // GraphRAG response format
+    let answerText = response.answer || 'No answer generated.';
+    let sources = [];
+    let retrievedContext = {
+      entities: response.entities || [],
+      documents: response.documents || []
+    };
+
+    // Add assistant message
+    this.addMessage('assistant', answerText, {
+      sources,
+      retrievedContext,
       question
     });
   }
