@@ -217,6 +217,8 @@
 .ai-query-message-body {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .ai-query-message.user .ai-query-message-body {
@@ -248,15 +250,14 @@
 
 .ai-query-message-content {
   max-width: 70%;
+  min-width: 100px;
   background: #f9fafb;
   border-radius: 1rem;
   padding: 1rem 1.25rem;
   line-height: 1.6;
   font-size: 0.9375rem;
-  width: fit-content;
-  display: inline-block;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .ai-query-message.user .ai-query-message-content {
