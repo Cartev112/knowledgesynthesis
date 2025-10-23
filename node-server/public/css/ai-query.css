@@ -10,7 +10,7 @@
 /* Header Section */
 .ai-query-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1.5rem 2rem;
+  padding: 0.8rem;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
@@ -18,7 +18,7 @@
 
 .ai-query-header h2 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -27,7 +27,7 @@
 
 .ai-query-header p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.8rem;
   opacity: 0.95;
   line-height: 1.5;
 }
@@ -191,6 +191,7 @@
   gap: 0.75rem;
   animation: slideIn 0.3s ease-out;
   align-items: flex-start;
+  width: 100%;
 }
 
 @keyframes slideIn {
@@ -212,6 +213,20 @@
 .ai-query-message.assistant {
   flex-direction: row;
   justify-content: flex-start;
+}
+
+/* Message body wrapper aligns bubble + metadata to the side */
+.ai-query-message-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-query-message.user .ai-query-message-body {
+  align-items: flex-end;
+}
+
+.ai-query-message.assistant .ai-query-message-body {
+  align-items: flex-start;
 }
 
 .ai-query-message-avatar {
@@ -241,6 +256,9 @@
   line-height: 1.6;
   font-size: 0.9375rem;
   width: fit-content;
+  display: inline-block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .ai-query-message.user .ai-query-message-content {

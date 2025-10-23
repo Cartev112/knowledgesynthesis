@@ -262,6 +262,7 @@ export class AIQuery {
     avatar.textContent = message.role === 'user' ? '👤' : '🤖';
 
     const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'ai-query-message-body';
 
     const content = document.createElement('div');
     content.className = 'ai-query-message-content';
@@ -523,7 +524,8 @@ export class AIQuery {
   }
 
   formatTime(date) {
-    return date.toLocaleTimeString('en-US', { 
+    const d = (date instanceof Date) ? date : new Date(date);
+    return d.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',
       hour12: true 
