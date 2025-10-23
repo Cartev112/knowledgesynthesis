@@ -8,16 +8,15 @@ export class AIQuery {
   constructor() {
     this.messages = [];
     this.isProcessing = false;
-    this.settings = {
-      scope: 'hybrid',
-      k: 8
-    };
+    this.conversations = [];
+    this.currentConversationId = null;
   }
 
   async init() {
     console.log('AI Query initialized');
     this.renderUI();
     this.attachEventListeners();
+    await this.loadConversations();
   }
 
   renderUI() {
@@ -36,24 +35,19 @@ export class AIQuery {
 
       <!-- Main Content -->
       <div class="ai-query-main">
-        <!-- Left Sidebar -->
+        <!-- Left Sidebar - Conversations -->
         <div class="ai-query-sidebar">
-          <div class="ai-query-settings">
-            <div class="ai-query-section-title">Search Settings</div>
-            
-            <div class="ai-query-setting-group">
-              <label for="ai-query-scope">Search Scope</label>
-              <select id="ai-query-scope">
-                <option value="hybrid">Hybrid (Entities + Documents)</option>
-                <option value="entity">Entities Only</option>
-                <option value="document">Documents Only</option>
-              </select>
+          <div class="ai-query-sidebar-header">
+            <div class="ai-query-sidebar-title">
+              <span>💬 Conversations</span>
             </div>
-
-            <div class="ai-query-setting-group">
-              <label for="ai-query-k">Top K Results</label>
-              <input type="number" id="ai-query-k" min="1" max="20" value="8" />
-            </div>
+            <button class="ai-query-new-chat-btn" id="ai-query-new-chat-btn">
+              <span>➕</span>
+              <span>New Chat</span>
+            </button>
+          </div>
+          <div class="ai-query-conversations-list" id="ai-query-conversations-list">
+            <div class="ai-query-conversations-empty">No conversations yet</div>
           </div>
         </div>
 
@@ -89,13 +83,9 @@ export class AIQuery {
   }
 
   attachEventListeners() {
-    // Settings
-    document.getElementById('ai-query-scope')?.addEventListener('change', (e) => {
-      this.settings.scope = e.target.value;
-    });
-
-    document.getElementById('ai-query-k')?.addEventListener('change', (e) => {
-      this.settings.k = parseInt(e.target.value) || 8;
+    // New chat button
+    document.getElementById('ai-query-new-chat-btn')?.addEventListener('click', () => {
+      this.createNewConversation();
     });
 
     // Send button
@@ -253,6 +243,9 @@ export class AIQuery {
 
     // Scroll to bottom
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // Save to backend
+    this.saveMessageToConversation(role, content, metadata);
   }
 
   createMessageElement(message) {
@@ -547,5 +540,137 @@ export class AIQuery {
         </div>
       `;
     }
+  }
+
+  // Conversation Management
+  async loadConversations() {
+    try {
+      const response = await API.get('/api/conversations');
+      this.conversations = response.conversations || [];
+      this.renderConversationsList();
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  }
+
+  async createNewConversation() {
+    try {
+      const response = await API.post('/api/conversations', { title: 'New Conversation' });
+      this.currentConversationId = response.id;
+      this.conversations.unshift(response);
+      this.clearMessages();
+      this.renderConversationsList();
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+    }
+  }
+
+  async loadConversation(conversationId) {
+    try {
+      const response = await API.get(`/api/conversations/${conversationId}`);
+      this.currentConversationId = conversationId;
+      this.messages = response.messages || [];
+      this.renderMessages();
+      this.renderConversationsList();
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
+  }
+
+  async deleteConversation(conversationId, event) {
+    event.stopPropagation();
+    
+    if (!confirm('Delete this conversation?')) return;
+    
+    try {
+      await API.delete(`/api/conversations/${conversationId}`);
+      this.conversations = this.conversations.filter(c => c.id !== conversationId);
+      
+      if (this.currentConversationId === conversationId) {
+        this.currentConversationId = null;
+        this.clearMessages();
+      }
+      
+      this.renderConversationsList();
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  }
+
+  async saveMessageToConversation(role, content, metadata = {}) {
+    if (!this.currentConversationId) {
+      await this.createNewConversation();
+    }
+
+    try {
+      await API.post(`/api/conversations/${this.currentConversationId}/messages`, {
+        role,
+        content,
+        metadata
+      });
+      
+      // Update conversation in list
+      await this.loadConversations();
+    } catch (error) {
+      console.error('Failed to save message:', error);
+    }
+  }
+
+  renderConversationsList() {
+    const container = document.getElementById('ai-query-conversations-list');
+    if (!container) return;
+
+    if (this.conversations.length === 0) {
+      container.innerHTML = '<div class="ai-query-conversations-empty">No conversations yet</div>';
+      return;
+    }
+
+    container.innerHTML = this.conversations.map(conv => `
+      <div class="ai-query-conversation-item ${conv.id === this.currentConversationId ? 'active' : ''}" 
+           onclick="window.appManager.aiQuery.loadConversation('${conv.id}')">
+        <div class="ai-query-conversation-title">${this.escapeHtml(conv.title)}</div>
+        <div class="ai-query-conversation-meta">
+          <span>${conv.message_count || 0} messages</span>
+          <button class="ai-query-conversation-delete" 
+                  onclick="window.appManager.aiQuery.deleteConversation('${conv.id}', event)"
+                  title="Delete conversation">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderMessages() {
+    const messagesContainer = document.getElementById('ai-query-messages');
+    if (!messagesContainer) return;
+
+    messagesContainer.innerHTML = '';
+
+    if (this.messages.length === 0) {
+      messagesContainer.innerHTML = `
+        <div class="ai-query-empty-state">
+          <div class="ai-query-empty-icon">💬</div>
+          <div class="ai-query-empty-title">Start a Conversation</div>
+          <div class="ai-query-empty-text">
+            Ask me anything about your knowledge graph. I'll search through entities and documents to provide accurate, cited answers.
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    this.messages.forEach(message => {
+      const messageEl = this.createMessageElement(message);
+      messagesContainer.appendChild(messageEl);
+    });
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }
