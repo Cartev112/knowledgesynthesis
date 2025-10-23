@@ -38,27 +38,6 @@ export class AIQuery {
       <div class="ai-query-main">
         <!-- Left Sidebar -->
         <div class="ai-query-sidebar">
-          <div>
-            <div class="ai-query-section-title">Example Questions</div>
-            <div class="ai-query-examples">
-              <button class="ai-query-example-btn" data-question="What drugs target BRAF mutations?">
-                What drugs target BRAF mutations?
-              </button>
-              <button class="ai-query-example-btn" data-question="Show me negative relationships involving protein inhibition">
-                Show me negative relationships involving protein inhibition
-              </button>
-              <button class="ai-query-example-btn" data-question="What are the most significant findings about cancer treatment?">
-                What are the most significant findings about cancer treatment?
-              </button>
-              <button class="ai-query-example-btn" data-question="Find contradictions in the knowledge graph">
-                Find contradictions in the knowledge graph
-              </button>
-              <button class="ai-query-example-btn" data-question="What documents discuss drug resistance mechanisms?">
-                What documents discuss drug resistance mechanisms?
-              </button>
-            </div>
-          </div>
-
           <div class="ai-query-settings">
             <div class="ai-query-section-title">Search Settings</div>
             
@@ -110,15 +89,6 @@ export class AIQuery {
   }
 
   attachEventListeners() {
-    // Example question buttons
-    document.querySelectorAll('.ai-query-example-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const question = btn.getAttribute('data-question');
-        document.getElementById('ai-query-input').value = question;
-        this.sendQuery();
-      });
-    });
-
     // Settings
     document.getElementById('ai-query-scope')?.addEventListener('change', (e) => {
       this.settings.scope = e.target.value;
@@ -195,6 +165,7 @@ export class AIQuery {
     // Extract answer from Aura Agent response
     let answerText = '';
     let sources = [];
+    let thinkingTraces = [];
     let retrievedContext = {
       entities: [],
       documents: []
@@ -202,6 +173,10 @@ export class AIQuery {
 
     // Parse the Aura Agent response structure
     if (response.content && Array.isArray(response.content)) {
+      // Extract thinking traces
+      const thinkingItems = response.content.filter(item => item.type === 'thinking');
+      thinkingTraces = thinkingItems.map(item => item.thinking);
+
       // Find text content
       const textContent = response.content.find(item => item.type === 'text');
       if (textContent) {
@@ -250,6 +225,7 @@ export class AIQuery {
     this.addMessage('assistant', answerText || 'I received your question but could not generate an answer.', {
       sources,
       retrievedContext,
+      thinkingTraces,
       question
     });
   }
@@ -297,6 +273,12 @@ export class AIQuery {
     content.innerHTML = this.formatMessageContent(message.content);
 
     contentWrapper.appendChild(content);
+
+    // Add thinking traces if available (for assistant messages)
+    if (message.role === 'assistant' && message.metadata.thinkingTraces && message.metadata.thinkingTraces.length > 0) {
+      const thinkingEl = this.createThinkingElement(message.metadata.thinkingTraces);
+      content.appendChild(thinkingEl);
+    }
 
     // Add sources if available
     if (message.metadata.sources && message.metadata.sources.length > 0) {
@@ -383,6 +365,48 @@ export class AIQuery {
     }
 
     return result.join('<br>');
+  }
+
+  createThinkingElement(thinkingTraces) {
+    const div = document.createElement('div');
+    div.className = 'ai-query-thinking';
+
+    const title = document.createElement('div');
+    title.className = 'ai-query-thinking-title';
+    title.innerHTML = '<span>💭</span><span>Agent Thinking</span>';
+    div.appendChild(title);
+
+    const content = document.createElement('div');
+    content.className = 'ai-query-thinking-content';
+    
+    // Show first thinking trace by default, hide rest
+    if (thinkingTraces.length > 0) {
+      content.textContent = thinkingTraces[0];
+      
+      // If there are more traces, add a toggle button
+      if (thinkingTraces.length > 1) {
+        const toggle = document.createElement('button');
+        toggle.className = 'ai-query-thinking-toggle';
+        toggle.textContent = `Show ${thinkingTraces.length - 1} more thinking step${thinkingTraces.length > 2 ? 's' : ''}`;
+        
+        let expanded = false;
+        toggle.addEventListener('click', () => {
+          expanded = !expanded;
+          if (expanded) {
+            content.textContent = thinkingTraces.join('\n\n---\n\n');
+            toggle.textContent = 'Show less';
+          } else {
+            content.textContent = thinkingTraces[0];
+            toggle.textContent = `Show ${thinkingTraces.length - 1} more thinking step${thinkingTraces.length > 2 ? 's' : ''}`;
+          }
+        });
+        
+        div.appendChild(toggle);
+      }
+    }
+
+    div.appendChild(content);
+    return div;
   }
 
   createSourcesElement(sources) {
