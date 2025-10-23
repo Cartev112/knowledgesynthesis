@@ -304,6 +304,10 @@ app.post('/api/logout', (req, res) => {
 // Serve static files from public directory
 app.use('/static', express.static(path.join(__dirname, 'public')))
 
+// Also serve CSS, JS, and other assets directly (for workspaces page)
+app.use('/css', express.static(path.join(__dirname, 'public', 'css')))
+app.use('/js', express.static(path.join(__dirname, 'public', 'js')))
+
 // Proxy /query requests to Python backend (no /api prefix)
 app.use('/query', (req, res, next) => {
   const url = `${fastapiBase}/query${req.url}`
