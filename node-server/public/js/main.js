@@ -153,12 +153,14 @@ class AppManager {
 
     const cyEl = document.getElementById('cy');
     const container3d = document.getElementById('graph3d-container');
+    const ui3d = document.getElementById('graph3d-ui');
     if (!cyEl || !container3d) return;
 
     // Toggling to 3D
     if (!this.is3D) {
       cyEl.classList.add('hidden');
       container3d.classList.remove('hidden');
+      if (ui3d) ui3d.classList.remove('hidden');
       // Hide 2D tooltips if visible
       const edgeTip = document.getElementById('edge-tooltip');
       const nodeTip = document.getElementById('node-tooltip');
@@ -173,6 +175,7 @@ class AppManager {
         if (!window.toggle3DFog) window.toggle3DFog = () => this.graph3D.toggleFog();
         if (!window.set3DPointSize) window.set3DPointSize = (s) => this.graph3D.setPointSize(Number(s));
         if (!window.toggle3DLayout) window.toggle3DLayout = () => this.graph3D.toggleForceLayout();
+        if (!window.reset3DLayout) window.reset3DLayout = () => this.graph3D.resetLayout();
         // Route 2D selection events into 3D
         window.onSelectionChanged = (ids) => {
           if (this.graph3D) this.graph3D.applySelection(ids);
@@ -217,6 +220,7 @@ class AppManager {
       // Back to 2D
       container3d.classList.add('hidden');
       cyEl.classList.remove('hidden');
+      if (ui3d) ui3d.classList.add('hidden');
       this.is3D = false;
       if (state.cy) {
         requestAnimationFrame(() => {

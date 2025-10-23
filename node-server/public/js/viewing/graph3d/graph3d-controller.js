@@ -126,6 +126,7 @@ export class Graph3D {
     }
 
     this.positions = positions;
+    this.initialPositions = positions.slice(0);
     this.colors = colors;
     this.pointsMesh = this.engine.addPoints(positions, colors);
   }
@@ -234,6 +235,15 @@ export class Graph3D {
       this.layoutWorker = null;
     }
     this.forceLayoutRunning = false;
+  }
+
+  resetLayout() {
+    this.stopForceLayout();
+    if (!this.positions || !this.initialPositions) return;
+    this.positions.set(this.initialPositions);
+    this.engine.updateNodePositions(this.positions);
+    const segs = this._recomputeEdgeSegmentsFromPositions(this.positions);
+    this.engine.updateEdgesSegments(segs);
   }
 
   _setupInteractions() {
