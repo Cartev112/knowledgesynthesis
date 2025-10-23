@@ -181,16 +181,22 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
                 logger.info("Added user extraction context to prompt")
         
         logger.info(f"Calling OpenAI model: {settings.openai_model} (timeout: {timeout_seconds}s)")
-        response = client.chat.completions.create(
-            model=settings.openai_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text_to_send},
-            ],
-            temperature=0,
-            response_format={"type": "json_object"},
-        )
-        logger.info("OpenAI API call completed successfully")
+        logger.info(f"Request size: {len(text_to_send)} characters")
+        
+        try:
+            response = client.chat.completions.create(
+                model=settings.openai_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": text_to_send},
+                ],
+                temperature=0,
+                response_format={"type": "json_object"},
+            )
+            logger.info("OpenAI API call completed successfully")
+        except Exception as api_error:
+            logger.error(f"OpenAI API call failed: {type(api_error).__name__}: {api_error}")
+            raise
         content = response.choices[0].message.content
         data = json.loads(content)
         raw_triplets = data.get("triplets", [])
