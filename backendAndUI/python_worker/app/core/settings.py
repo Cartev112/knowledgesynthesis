@@ -25,6 +25,18 @@ class Settings:
         self.openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
         self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.openai_dry_run: bool = os.getenv("OPENAI_DRY_RUN", "false").lower() == "true"
+        # OpenAI Embeddings
+        # Default to text-embedding-3-small (1536 dims) if not provided
+        self.openai_embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+        try:
+            self.openai_embedding_dim: int = int(os.getenv("OPENAI_EMBEDDING_DIM", "1536"))
+        except ValueError:
+            self.openai_embedding_dim = 1536
+
+        # Neo4j Aura Agent
+        self.aura_agent_client_id: str | None = os.getenv("AURA_AGENT_CLIENT_ID")
+        self.aura_agent_client_secret: str | None = os.getenv("AURA_AGENT_CLIENT_SECRET")
+        self.aura_agent_endpoint_url: str | None = os.getenv("AURA_AGENT_ENDPOINT_URL")
 
 
 settings = Settings()
@@ -34,5 +46,3 @@ def reload_settings() -> Settings:
     global settings
     settings = Settings()
     return settings
-
-

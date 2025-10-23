@@ -12,5 +12,4 @@ redis==5.0.1
 python-multipart==0.0.20
 requests==2.31.0
 numpy==1.26.4
-pdfminer.six==20221105
-pdfminer
+pdfminer.six==20231228

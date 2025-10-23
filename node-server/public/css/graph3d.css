@@ -1,0 +1,13 @@
+/* Minimal styles for 3D graph container */
+.graph3d-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+canvas.graph3d-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

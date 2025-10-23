@@ -9,6 +9,7 @@ from typing import List, Dict, Optional
 import logging
 from datetime import datetime
 import re
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -168,14 +169,17 @@ class PubMedSearcher:
             pub_date = article.find(".//PubDate")
             year = pub_date.find("Year").text if pub_date is not None and pub_date.find("Year") is not None else ""
             
-            # DOI
+            # DOI / PMCID
             doi = None
+            pmcid = None
             for article_id in article_elem.findall(".//ArticleId"):
-                if article_id.get("IdType") == "doi":
+                id_type = article_id.get("IdType")
+                if id_type == "doi" and not doi:
                     doi = article_id.text
-                    break
+                elif id_type == "pmc" and not pmcid:
+                    pmcid = article_id.text
             
-            return {
+            result = {
                 "pmid": pmid,
                 "title": title,
                 "abstract": abstract,
@@ -186,6 +190,14 @@ class PubMedSearcher:
                 "source": "pubmed",
                 "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else None
             }
+
+            # Add PMC PDF URL if available
+            if pmcid:
+                # PMCID often includes prefix like PMC1234567
+                pmc_id_clean = pmcid.strip()
+                result["pdf_url"] = f"https://pmc.ncbi.nlm.nih.gov/{pmc_id_clean}/pdf"
+
+            return result
             
         except Exception as e:
             logger.warning(f"Failed to extract paper info: {e}")
@@ -419,6 +431,45 @@ class DocumentDiscoveryService:
         self.pubmed = PubMedSearcher(email=email, api_key=pubmed_api_key)
         self.arxiv = ArXivSearcher()
         self.semantic_scholar = SemanticScholarSearcher(api_key=semantic_scholar_api_key)
+        # Use UNPAYWALL_EMAIL if provided, otherwise fall back to given email
+        self.unpaywall_email = os.getenv("UNPAYWALL_EMAIL") or email or "knowledgesynthesis.noreply@gmail.com"
+
+    def _resolve_unpaywall_pdf(self, doi: str) -> Optional[str]:
+        try:
+            if not doi:
+                return None
+            # Normalize DOI
+            doi_norm = doi.strip()
+            url = f"https://api.unpaywall.org/v2/{doi_norm}?email={self.unpaywall_email}"
+            resp = requests.get(url, timeout=8)
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            # Prefer best_oa_location.url_for_pdf
+            best = data.get("best_oa_location") or {}
+            pdf = best.get("url_for_pdf") or None
+            if pdf:
+                return pdf
+            # Fallback: search oa_locations
+            for loc in data.get("oa_locations", []) or []:
+                if loc.get("url_for_pdf"):
+                    return loc["url_for_pdf"]
+            return None
+        except Exception:
+            return None
+
+    def _enrich_with_open_access(self, papers: List[Dict]) -> List[Dict]:
+        enriched = []
+        for p in papers or []:
+            try:
+                if not p.get("pdf_url") and p.get("doi"):
+                    resolved = self._resolve_unpaywall_pdf(p["doi"])
+                    if resolved:
+                        p["pdf_url"] = resolved
+                enriched.append(p)
+            except Exception:
+                enriched.append(p)
+        return enriched
     
     def search_all(self, query: str, max_results_per_source: int = 10) -> Dict[str, List[Dict]]:
         """
@@ -437,6 +488,7 @@ class DocumentDiscoveryService:
         try:
             pmids = self.pubmed.search(query, max_results=max_results_per_source)
             pubmed_papers = self.pubmed.get_paper_details(pmids)
+            pubmed_papers = self._enrich_with_open_access(pubmed_papers)
             results["pubmed"] = pubmed_papers
         except Exception as e:
             logger.error(f"PubMed search failed: {e}")
@@ -445,6 +497,8 @@ class DocumentDiscoveryService:
         # Search ArXiv
         try:
             arxiv_papers = self.arxiv.search(query, max_results=max_results_per_source)
+            # ArXiv usually includes direct PDF; still run enrichment in case of DOI-only items
+            arxiv_papers = self._enrich_with_open_access(arxiv_papers)
             results["arxiv"] = arxiv_papers
         except Exception as e:
             logger.error(f"ArXiv search failed: {e}")
@@ -453,6 +507,7 @@ class DocumentDiscoveryService:
         # Search Semantic Scholar
         try:
             semantic_scholar_papers = self.semantic_scholar.search(query, max_results=max_results_per_source)
+            semantic_scholar_papers = self._enrich_with_open_access(semantic_scholar_papers)
             results["semantic_scholar"] = semantic_scholar_papers
         except Exception as e:
             logger.error(f"Semantic Scholar search failed: {e}")

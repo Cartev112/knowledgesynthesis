@@ -18,6 +18,11 @@ from app.models.job import JobStatus
 from app.services.job_tracker import JobTracker
 from app.services.openai_extract import extract_triplets, extract_title_with_llm
 from app.services.graph_write import write_triplets
+from app.services.graph_embeddings import (
+    ensure_vector_indexes,
+    upsert_document_embedding,
+    upsert_entity_embeddings_for_document,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -130,6 +135,14 @@ class IngestionWorker:
             user_first_name=job_data.get('user_first_name'),
             user_last_name=job_data.get('user_last_name')
         )
+        
+        # Generate and store embeddings
+        try:
+            ensure_vector_indexes()
+            upsert_document_embedding(document_id, document_title, result.triplets)
+            upsert_entity_embeddings_for_document(document_id)
+        except Exception as emb_exc:
+            logger.warning(f"Embedding generation failed for job {job_id}: {emb_exc}")
         
         return {
             'document_id': document_id,

@@ -15,6 +15,10 @@ class AppManager {
     this.graphViewer = new GraphViewer();
     this.queryBuilder = new QueryBuilder();
     this.currentTab = 'ingestion';
+    // 3D viewer state (lazy-loaded)
+    this.graph3D = null;
+    this.is3D = false;
+    this._graphDataFor3D = null;
   }
   
   async init() {
@@ -141,6 +145,76 @@ class AppManager {
     });
   }
   
+  async toggle3D() {
+    // Ensure we're on the viewing tab
+    if (this.currentTab !== 'viewing') {
+      this.switchTab('viewing');
+    }
+
+    const cyEl = document.getElementById('cy');
+    const container3d = document.getElementById('graph3d-container');
+    if (!cyEl || !container3d) return;
+
+    // Toggling to 3D
+    if (!this.is3D) {
+      cyEl.classList.add('hidden');
+      container3d.classList.remove('hidden');
+      // Hide 2D tooltips if visible
+      const edgeTip = document.getElementById('edge-tooltip');
+      const nodeTip = document.getElementById('node-tooltip');
+      if (edgeTip) edgeTip.classList.add('hidden');
+      if (nodeTip) nodeTip.classList.add('hidden');
+
+      // Lazy load Graph3D controller
+      if (!this.graph3D) {
+        const mod = await import('./viewing/graph3d/graph3d-controller.js');
+        this.graph3D = mod.initGraph3D(container3d, null, {});
+      }
+
+      // Load data once for 3D (paginate like 2D)
+      if (!this._graphDataFor3D) {
+        try {
+          const pageSize = 1000;
+          let page = 1;
+          const nodesMap = new Map();
+          const relsMap = new Map();
+          while (true) {
+            const data = await API.getAllGraph(pageSize, page);
+            const nodes = data.nodes || [];
+            const rels = data.relationships || [];
+            nodes.forEach(n => nodesMap.set(n.id, n));
+            rels.forEach(r => relsMap.set(r.id, r));
+            if (nodes.length < pageSize) break;
+            page++;
+          }
+          this._graphDataFor3D = {
+            nodes: Array.from(nodesMap.values()),
+            relationships: Array.from(relsMap.values())
+          };
+        } catch (e) {
+          console.error('Failed to load graph data for 3D:', e);
+        }
+      }
+
+      if (this._graphDataFor3D) {
+        this.graph3D.setData(this._graphDataFor3D);
+      }
+
+      this.is3D = true;
+    } else {
+      // Back to 2D
+      container3d.classList.add('hidden');
+      cyEl.classList.remove('hidden');
+      this.is3D = false;
+      if (state.cy) {
+        requestAnimationFrame(() => {
+          state.cy.resize();
+          state.cy.fit(undefined, 20);
+        });
+      }
+    }
+  }
+
   // FAB Actions for 2-Node Selection
   createRelationship() {
     if (state.selectedNodes.size !== 2) {
@@ -312,6 +386,7 @@ window.authManager = appManager.authManager;
 window.ingestionManager = appManager.ingestionManager;
 window.viewingManager = appManager.graphViewer;
 window.queryBuilderManager = appManager.queryBuilder;
+window.getSelectedNodeCount = () => state.selectedNodes?.size || 0;
 
 // Expose specific functions for HTML onclick handlers
 window.toggleIndex = () => appManager.graphViewer.toggleIndex();
@@ -336,3 +411,6 @@ window.closeDocumentModal = () => {
     }
   }
 };
+
+// 3D toggle
+window.toggle3D = () => appManager.toggle3D();

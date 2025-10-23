@@ -34,6 +34,8 @@ from .routes.pathway import router as pathway_router
 from .routes.comments import router as comments_router
 from .routes.discovery import router as discovery_router
 from .routes.discovery_ui import router as discovery_ui_router
+from .routes.graphrag import router as graphrag_router
+from .routes.aura_agent import router as aura_agent_router
 
 
 app = FastAPI(title="Knowledge Synthesis Worker", version="0.1.0")
@@ -110,3 +112,5 @@ app.include_router(pathway_router, prefix="/api/pathway", tags=["pathway"])
 app.include_router(comments_router, tags=["comments"])
 app.include_router(discovery_router, prefix="/api/discovery", tags=["discovery"])
 app.include_router(discovery_ui_router, tags=["ui"])
+app.include_router(graphrag_router, prefix="/api/graphrag", tags=["graphrag"])
+app.include_router(aura_agent_router, prefix="/api/agent", tags=["aura-agent"])
