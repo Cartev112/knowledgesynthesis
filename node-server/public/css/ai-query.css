@@ -240,6 +240,7 @@
   padding: 1rem 1.25rem;
   line-height: 1.6;
   font-size: 0.9375rem;
+  width: fit-content;
 }
 
 .ai-query-message.user .ai-query-message-content {

@@ -262,7 +262,6 @@ export class AIQuery {
     avatar.textContent = message.role === 'user' ? '👤' : '🤖';
 
     const contentWrapper = document.createElement('div');
-    contentWrapper.style.flex = '1';
 
     const content = document.createElement('div');
     content.className = 'ai-query-message-content';
