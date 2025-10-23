@@ -1,6 +1,6 @@
 // High-level controller for the 3D graph viewer (P0)
 import * as THREE from 'https://esm.sh/three@0.160.0';
-import { Text } from 'https://esm.sh/troika-three-text@0.49.0';
+import { Text } from 'https://esm.sh/troika-three-text@0.49.0?deps=three@0.160.0';
 import { RenderEngine3D } from './render-engine.js';
 
 export class Graph3D {
