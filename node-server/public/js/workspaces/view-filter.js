@@ -3,7 +3,7 @@
  * Handles filtering graph view by users, entity types, dates, etc.
  */
 
-import API from '../utils/api.js';
+import { API } from '../utils/api.js';
 
 class ViewFilter {
   constructor(containerId) {

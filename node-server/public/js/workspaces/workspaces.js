@@ -3,10 +3,11 @@
  * Handles workspace listing, creation, and navigation
  */
 
-import API from '../utils/api.js';
+import { API } from '../utils/api.js';
 
 class WorkspacesManager {
   constructor() {
+    console.log('🚀 WorkspacesManager constructor called');
     this.workspaces = [];
     this.currentUser = null;
     this.selectedIcon = '📊';
@@ -16,6 +17,7 @@ class WorkspacesManager {
   }
 
   async init() {
+    console.log('🔧 Initializing WorkspacesManager');
     // Check authentication
     await this.checkAuth();
     
