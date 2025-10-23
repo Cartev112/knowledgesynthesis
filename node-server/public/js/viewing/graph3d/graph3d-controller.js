@@ -18,7 +18,7 @@ export class Graph3D {
     this.hoverIndex = -1;
     this.selected = new Set();
     this.raycaster = new THREE.Raycaster();
-    this.raycaster.params.Points = { threshold: 6 };
+    this.raycaster.params.Points = { threshold: 1.2 };
     this.mouseNDC = new THREE.Vector2();
     this._interactionsSetup = false;
     this._frameCount = 0;
@@ -40,6 +40,16 @@ export class Graph3D {
 
   setData(data) {
     this.data = data || { nodes: [], relationships: [] };
+    // Map 2D node 'sources' into 3D data so document interactions work
+    if (state.cy && this.data.nodes?.length) {
+      const map = new Map();
+      state.cy.nodes().forEach(n => {
+        map.set(n.id(), n.data()?.sources || []);
+      });
+      for (const n of this.data.nodes) {
+        if (n && n.id != null) n.sources = map.get(n.id) || n.sources || [];
+      }
+    }
     this._renderNodesAsPoints();
     this._renderEdges();
     this._setupInteractions();
@@ -264,13 +274,16 @@ export class Graph3D {
       this.raycaster.setFromCamera(this.mouseNDC, this.engine.camera);
       const isects = this.raycaster.intersectObject(this.pointsMesh, false);
       const newHover = isects.length ? isects[0].index : -1;
-      if (newHover === this.hoverIndex) return;
-      if (this.hoverIndex !== -1 && !this.selected.has(this.hoverIndex)) {
-        highlight(this.hoverIndex, baseColor);
+      if (newHover !== this.hoverIndex) {
+        if (this.hoverIndex !== -1 && !this.selected.has(this.hoverIndex)) {
+          highlight(this.hoverIndex, baseColor);
+        }
+        this.hoverIndex = newHover;
+        if (this.hoverIndex !== -1 && !this.selected.has(this.hoverIndex)) {
+          highlight(this.hoverIndex, hoverColor);
+        }
       }
-      this.hoverIndex = newHover;
-      if (this.hoverIndex !== -1 && !this.selected.has(this.hoverIndex)) {
-        highlight(this.hoverIndex, hoverColor);
+      if (this.hoverIndex !== -1) {
         this._showNodeTooltip3D(this.hoverIndex, e);
       } else {
         this._hideNodeTooltip3D();
@@ -289,11 +302,24 @@ export class Graph3D {
       const isects = this.raycaster.intersectObject(this.pointsMesh, false);
       if (!isects.length) return;
       const idx = isects[0].index;
-      if (this.selected.has(idx)) {
-        this.selected.delete(idx);
-        const col = (this.hoverIndex === idx) ? hoverColor : baseColor;
-        highlight(idx, col);
+      if (e.shiftKey) {
+        // Multi-select toggle
+        if (this.selected.has(idx)) {
+          this.selected.delete(idx);
+          const col = (this.hoverIndex === idx) ? hoverColor : baseColor;
+          highlight(idx, col);
+        } else {
+          this.selected.add(idx);
+          highlight(idx, selectColor);
+        }
       } else {
+        // Single select only
+        const baseWas = Array.from(this.selected);
+        this.selected.clear();
+        // reset colors of previously selected
+        for (const si of baseWas) {
+          if (si !== idx) highlight(si, baseColor);
+        }
         this.selected.add(idx);
         highlight(idx, selectColor);
       }
@@ -346,13 +372,17 @@ export class Graph3D {
     if (labelEl) labelEl.textContent = n.label || n.id;
     if (typeEl) typeEl.textContent = `Type: ${n.type || 'N/A'}`;
     if (sigEl) sigEl.textContent = n.significance ? `Significance: ${n.significance}/5` : '';
-    const offset = 15;
-    let left = (evt.clientX || 0) + offset;
-    let top = (evt.clientY || 0) + offset;
-    if (left + 300 > window.innerWidth) left = (evt.clientX || 0) - 300 - offset;
-    if (top + 150 > window.innerHeight) top = (evt.clientY || 0) - 150 - offset;
-    tooltip.style.left = Math.max(10, left) + 'px';
-    tooltip.style.top = Math.max(10, top) + 'px';
+    const offset = 10;
+    const container = document.getElementById('cy-container') || this.container;
+    const rect = container.getBoundingClientRect();
+    let left = (evt.clientX ?? 0) - rect.left + offset;
+    let top = (evt.clientY ?? 0) - rect.top + offset;
+    const maxLeft = Math.max(0, rect.width - 320);
+    const maxTop = Math.max(0, rect.height - 180);
+    left = Math.min(Math.max(8, left), maxLeft);
+    top = Math.min(Math.max(8, top), maxTop);
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
     tooltip.classList.remove('hidden');
     tooltip.classList.add('visible');
     if (window.viewingManager) {
@@ -383,7 +413,7 @@ export class Graph3D {
   highlightDocumentEntities(docId, highlight) {
     if (!this.colors || !this.data?.nodes) return;
     const baseColor = new THREE.Color(0x9aa6ff);
-    const highlightColor = new THREE.Color(0x60a5fa);
+    const highlightColor = new THREE.Color(0xf59e0b);
     for (let i = 0; i < this.data.nodes.length; i++) {
       const n = this.data.nodes[i];
       const sources = n.sources || [];
@@ -456,6 +486,35 @@ export class Graph3D {
     const dir = new THREE.Vector3().subVectors(cam.position, this.engine.controls.target).normalize();
     const distance = 60; // a comfortable distance
     cam.position.copy(target).addScaledVector(dir, distance);
+  }
+
+  resetView() {
+    if (!this.positions || this.positions.length === 0) return;
+    // Compute center and radius of visible nodes (ignore hidden sentinels)
+    const center = new THREE.Vector3(0,0,0);
+    let count = 0;
+    for (let i = 0; i < this.positions.length; i += 3) {
+      const x = this.positions[i], y = this.positions[i+1], z = this.positions[i+2];
+      if (x > 1e5 || y > 1e5 || z > 1e5) continue;
+      center.x += x; center.y += y; center.z += z; count++;
+    }
+    if (count === 0) return;
+    center.multiplyScalar(1 / count);
+    let maxR2 = 0;
+    for (let i = 0; i < this.positions.length; i += 3) {
+      const x = this.positions[i], y = this.positions[i+1], z = this.positions[i+2];
+      if (x > 1e5 || y > 1e5 || z > 1e5) continue;
+      const dx = x - center.x, dy = y - center.y, dz = z - center.z;
+      const r2 = dx*dx + dy*dy + dz*dz;
+      if (r2 > maxR2) maxR2 = r2;
+    }
+    const radius = Math.sqrt(maxR2) || 50;
+    this.engine.controls.target.copy(center);
+    const cam = this.engine.camera;
+    // Position camera back along current view direction
+    const dir = new THREE.Vector3().subVectors(cam.position, this.engine.controls.target).normalize();
+    const distance = Math.max(radius * 2.2, 120);
+    cam.position.copy(center).addScaledVector(dir, distance);
   }
 
   toggleFog() {

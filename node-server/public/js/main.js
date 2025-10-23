@@ -133,6 +133,15 @@ class AppManager {
           this.graphViewer.clearSelection();
         }
         this.graphViewer.clearAllHighlights();
+        // 3D: reset view and hide tooltip
+        if (this.is3D && this.graph3D) {
+          this.graph3D.resetView();
+          const tip = document.getElementById('node-tooltip');
+          if (tip) tip.classList.remove('visible');
+        } else if (state.cy) {
+          // 2D: reset zoom/fit
+          state.cy.fit(undefined, 20);
+        }
       }
     });
     

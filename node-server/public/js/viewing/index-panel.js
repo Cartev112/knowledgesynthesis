@@ -245,20 +245,19 @@ export class IndexPanelManager {
   }
   
   highlightDocumentElements(docId, highlight) {
-    if (!state.cy) return;
-    
-    state.cy.elements().forEach(el => {
-      const sources = el.data().sources || [];
-      const hasDoc = sources.some(s => (typeof s === 'object' ? s.id : s) === docId);
-      
-      if (hasDoc) {
-        if (highlight) {
-          el.addClass('highlighted');
-        } else {
-          el.removeClass('highlighted');
+    if (state.cy) {
+      state.cy.elements().forEach(el => {
+        const sources = el.data().sources || [];
+        const hasDoc = sources.some(s => (typeof s === 'object' ? s.id : s) === docId);
+        if (hasDoc) {
+          if (highlight) {
+            el.addClass('highlighted');
+          } else {
+            el.removeClass('highlighted');
+          }
         }
-      }
-    });
+      });
+    }
     // 3D equivalent
     if (window.appManager?.is3D && window.appManager?.graph3D) {
       window.appManager.graph3D.highlightDocumentEntities(docId, highlight);
