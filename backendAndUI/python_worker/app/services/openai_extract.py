@@ -134,18 +134,20 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
 
         # Honor proxy environment variables without using unsupported kwargs
         proxy_url = os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY") or os.getenv("OPENAI_PROXY")
+        
+        # Set reasonable timeout (5 minutes for large documents)
+        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "300"))
+        
         http_client = None
         if proxy_url:
-            # No timeout - let it take as long as needed
-            http_client = httpx.Client(proxies=proxy_url, timeout=None)
-            logger.info(f"Using proxy: {proxy_url}")
+            http_client = httpx.Client(proxies=proxy_url, timeout=timeout_seconds)
+            logger.info(f"Using proxy: {proxy_url} with {timeout_seconds}s timeout")
 
-        # Create client with NO timeout
+        # Create client with timeout
         if http_client:
-            client = OpenAI(api_key=settings.openai_api_key, http_client=http_client, timeout=None)
+            client = OpenAI(api_key=settings.openai_api_key, http_client=http_client, timeout=timeout_seconds)
         else:
-            # No timeout - let OpenAI take as long as needed
-            client = OpenAI(api_key=settings.openai_api_key, timeout=None)
+            client = OpenAI(api_key=settings.openai_api_key, timeout=timeout_seconds)
         
         # Build system prompt with optional extraction context
         system_prompt = _create_prompt(max_triplets)
@@ -178,7 +180,7 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
                 system_prompt = context_prefix + system_prompt
                 logger.info("Added user extraction context to prompt")
         
-        logger.info(f"Calling OpenAI model: {settings.openai_model} (NO TIMEOUT)")
+        logger.info(f"Calling OpenAI model: {settings.openai_model} (timeout: {timeout_seconds}s)")
         response = client.chat.completions.create(
             model=settings.openai_model,
             messages=[
@@ -187,7 +189,6 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
             ],
             temperature=0,
             response_format={"type": "json_object"},
-            # No timeout parameter - let it run as long as needed
         )
         logger.info("OpenAI API call completed successfully")
         content = response.choices[0].message.content
@@ -326,8 +327,9 @@ def extract_title_with_llm(text: str) -> str:
         return "Untitled Document"
     
     try:
-        # Use OpenAI to extract title
-        client = openai.OpenAI(api_key=settings.openai_api_key)
+        # Use OpenAI to extract title with timeout
+        timeout_seconds = int(os.getenv("OPENAI_TIMEOUT_SECONDS", "300"))
+        client = openai.OpenAI(api_key=settings.openai_api_key, timeout=timeout_seconds)
         
         response = client.chat.completions.create(
             model=settings.openai_model,

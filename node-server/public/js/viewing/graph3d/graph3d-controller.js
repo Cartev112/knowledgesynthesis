@@ -364,6 +364,12 @@ export class Graph3D {
   _showNodeTooltip3D(idx, evt) {
     const tooltip = document.getElementById('node-tooltip');
     if (!tooltip) return;
+    
+    // Don't update position if user is hovering over the tooltip (to allow clicking buttons)
+    if (tooltip.matches(':hover')) {
+      return;
+    }
+    
     const n = this.data.nodes?.[idx];
     if (!n) return;
     const labelEl = document.getElementById('node-tooltip-label');

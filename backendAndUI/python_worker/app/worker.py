@@ -23,6 +23,8 @@ from app.services.graph_embeddings import (
     upsert_document_embedding,
     upsert_entity_embeddings_for_document,
 )
+from app.services.email_service import send_upload_notification
+import asyncio
 
 # Configure logging
 logging.basicConfig(
@@ -355,6 +357,26 @@ class IngestionWorker:
             )
             
             logger.info(f"Job {job_id} completed successfully")
+            
+            # Send email notification if user email is provided
+            user_email = job_data.get('user_email')
+            if user_email:
+                try:
+                    user_first_name = job_data.get('user_first_name', '')
+                    user_last_name = job_data.get('user_last_name', '')
+                    user_name = f"{user_first_name} {user_last_name}".strip() or "User"
+                    
+                    # Run async email send in sync context
+                    asyncio.run(send_upload_notification(
+                        user_email=user_email,
+                        user_name=user_name,
+                        document_title=result['document_title'],
+                        document_id=result['document_id'],
+                        triplet_count=result['triplets_written']
+                    ))
+                    logger.info(f"Email notification sent to {user_email}")
+                except Exception as email_error:
+                    logger.warning(f"Failed to send email notification: {email_error}")
             
             # Acknowledge message
             ch.basic_ack(delivery_tag=method.delivery_tag)
