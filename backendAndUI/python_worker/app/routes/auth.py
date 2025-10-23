@@ -215,7 +215,7 @@ def login_page():
           
           // Small delay to ensure cookie is set
           setTimeout(() => {
-            window.location.href = '/app';
+            window.location.href = '/workspaces.html';
           }, 100);
           
         } catch (err) {

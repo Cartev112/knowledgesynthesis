@@ -3,7 +3,7 @@
  * Dropdown component for switching between workspaces in the main app
  */
 
-import API from '../api.js';
+import API from '../utils/api.js';
 
 class WorkspaceSwitcher {
   constructor(containerId) {

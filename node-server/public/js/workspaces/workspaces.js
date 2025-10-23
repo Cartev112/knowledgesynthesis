@@ -3,7 +3,7 @@
  * Handles workspace listing, creation, and navigation
  */
 
-import API from '../api.js';
+import API from '../utils/api.js';
 
 class WorkspacesManager {
   constructor() {

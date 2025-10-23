@@ -439,6 +439,11 @@ app.use('/api', (req, res, next) => {
   })
 })
 
+// Workspaces landing page
+app.get('/workspaces.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'workspaces.html'))
+})
+
 // Main app route - serve index.html
 app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
