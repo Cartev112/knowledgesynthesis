@@ -250,7 +250,6 @@
 
 .ai-query-message-content {
   max-width: 70%;
-  min-width: 100px;
   background: #f9fafb;
   border-radius: 1rem;
   padding: 1rem 1.25rem;
@@ -258,6 +257,7 @@
   font-size: 0.9375rem;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  width: fit-content;
 }
 
 .ai-query-message.user .ai-query-message-content {
