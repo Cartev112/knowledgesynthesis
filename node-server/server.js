@@ -432,6 +432,25 @@ app.get('/api/workspaces', requireAuth, async (req, res) => {
   }
 })
 
+app.get('/api/workspaces/:id', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.get(`${fastapiBase}/api/workspaces/${req.params.id}`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace get error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
 app.post('/api/workspaces', requireAuth, async (req, res) => {
   try {
     const user = req.session.user

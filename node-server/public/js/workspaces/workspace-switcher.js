@@ -47,7 +47,7 @@ class WorkspaceSwitcher {
 
   async loadCurrentUser() {
     try {
-      const response = await API.get('/api/auth/me');
+      const response = await API.get('/api/me');
       this.currentUser = response.user;
     } catch (error) {
       console.error('Failed to load current user:', error);
