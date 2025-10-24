@@ -17,6 +17,19 @@ class WorkspacesManager {
     this.init();
   }
 
+  getMemberDisplayName(member) {
+    const first = (member.user_first_name || '').trim();
+    const last = (member.user_last_name || '').trim();
+    const name = `${first} ${last}`.trim();
+    if (name) return name;
+    const email = member.user_email || '';
+    const local = email.split('@')[0] || '';
+    if (!local) return email;
+    const parts = local.split(/[._-]+/).filter(Boolean);
+    if (parts.length === 0) return local;
+    return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+
   createGlobalViewCard() {
     const totals = this.computeTotals();
     const card = document.createElement('div');
@@ -56,6 +69,15 @@ class WorkspacesManager {
     
     // Load workspaces
     await this.loadWorkspaces();
+
+    // If navigated with #settings=<workspaceId>, auto-open settings
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#settings=')) {
+      const wsId = decodeURIComponent(hash.split('=')[1] || '');
+      if (wsId) {
+        this.openWorkspaceSettings(wsId);
+      }
+    }
   }
 
   async checkAuth() {
@@ -242,7 +264,7 @@ class WorkspacesManager {
     const stats = workspace.stats || {};
     const owner = (workspace.members || []).find(m => m.role === 'owner');
     const createdByMe = owner && owner.user_id === this.currentUser.user_id;
-    const creatorName = owner ? ((owner.user_first_name || '') + ' ' + (owner.user_last_name || '')).trim() || owner.user_email : null;
+    const creatorName = owner ? this.getMemberDisplayName(owner) : null;
 
     card.innerHTML = `
       <div class="workspace-header">

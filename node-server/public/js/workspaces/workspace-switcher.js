@@ -115,7 +115,7 @@ class WorkspaceSwitcher {
             ${this.workspaces.length > 0 ? `
             <div class="ws-divider"></div>
             <div class="ws-section">
-              <div class="ws-label">Your Workspaces</div>
+              <div class="ws-label">Workspaces</div>
               <div class="ws-list">${workspacesList || '<div class="ws-empty">No other workspaces</div>'}</div>
             </div>` : ''}
           </div>
@@ -193,12 +193,18 @@ class WorkspaceSwitcher {
 
   openModal() {
     const modal = document.getElementById('ws-modal');
-    if (modal) modal.classList.add('show');
+    if (modal) {
+      modal.classList.add('show');
+      document.body.classList.add('modal-open');
+    }
   }
 
   closeModal() {
     const modal = document.getElementById('ws-modal');
-    if (modal) modal.classList.remove('show');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
   }
 
   switchWorkspace(workspaceId) {
@@ -236,8 +242,12 @@ class WorkspaceSwitcher {
   }
 
   openWorkspaceSettings() {
-    // TODO: Implement workspace settings modal
-    alert('Workspace settings coming soon!');
+    if (this.currentWorkspace && this.currentWorkspace.workspace_id) {
+      const id = encodeURIComponent(this.currentWorkspace.workspace_id);
+      window.location.href = `/workspaces.html#settings=${id}`;
+    } else {
+      window.location.href = '/workspaces.html';
+    }
   }
 
   getCurrentWorkspace() {

@@ -91,9 +91,7 @@
 
 /* Dropdown */
 .workspace-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
+  position: relative;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
