@@ -412,10 +412,38 @@ app.use('/review', (req, res) => {
   })
 })
 
-// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async)
+// Workspace API endpoints (handled by Node.js, wrapping Python backend)
+app.get('/api/workspaces', requireAuth, async (req, res) => {
+  try {
+    const response = await axios.get(`${fastapiBase}/api/workspaces`, {
+      headers: { 'Cookie': `session_id=sess_${req.session.user.email}` }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace list error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+app.post('/api/workspaces', requireAuth, async (req, res) => {
+  try {
+    const response = await axios.post(`${fastapiBase}/api/workspaces`, req.body, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cookie': `session_id=sess_${req.session.user.email}`
+      }
+    })
+    res.status(201).json(response.data)
+  } catch (err) {
+    console.error('Workspace create error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async, /api/workspaces)
 app.use('/api', (req, res, next) => {
   // Skip proxy for Node-handled endpoints
-  if (req.path === '/me' || req.path === '/login' || req.path === '/logout' || req.path === '/ingest/pdf_async') {
+  if (req.path === '/me' || req.path === '/login' || req.path === '/logout' || req.path === '/ingest/pdf_async' || req.path.startsWith('/workspaces')) {
     return next()
   }
   
