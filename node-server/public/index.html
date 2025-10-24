@@ -5,16 +5,17 @@
   <title>Knowledge Synthesis Platform</title>
   
   <!-- CSS Stylesheets -->
-  <link rel="stylesheet" href="/static/css/base.css">
-  <link rel="stylesheet" href="/static/css/ingestion.css">
-  <link rel="stylesheet" href="/static/css/viewing.css">
-  <link rel="stylesheet" href="/static/css/query-builder.css">
-  <link rel="stylesheet" href="/static/css/ai-query.css">
-  <link rel="stylesheet" href="/static/css/discovery.css">
-  <link rel="stylesheet" href="/static/css/modals.css">
-  <link rel="stylesheet" href="/static/css/custom-classes.css">
-  <link rel="stylesheet" href="/static/css/graph3d.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/ingestion.css">
+  <link rel="stylesheet" href="/css/viewing.css">
+  <link rel="stylesheet" href="/css/query-builder.css">
+  <link rel="stylesheet" href="/css/ai-query.css">
+  <link rel="stylesheet" href="/css/discovery.css">
+  <link rel="stylesheet" href="/css/modals.css">
+  <link rel="stylesheet" href="/css/custom-classes.css">
+  <link rel="stylesheet" href="/css/graph3d.css">
   <link rel="stylesheet" href="/css/workspace-switcher.css">
+  <link rel="stylesheet" href="/css/workspaces.css">
   
   <!-- External Dependencies -->
   <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
@@ -679,6 +680,51 @@
   <div id="ai-query-tab" class="tab-content">
     <div id="ai-query-content">
       <!-- Content will be populated by ai-query.js -->
+    </div>
+  </div>
+
+  <!-- Create Workspace Modal -->
+  <div class="modal" id="app-create-workspace-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New Workspace</h2>
+        <button class="modal-close" id="app-create-close">&times;</button>
+      </div>
+      <form id="app-create-workspace-form">
+        <div class="form-group">
+          <label for="app-create-name">Name *</label>
+          <input type="text" id="app-create-name" maxlength="100" required />
+        </div>
+        <div class="form-group">
+          <label for="app-create-description">Description</label>
+          <textarea id="app-create-description" rows="3" maxlength="500"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Icon</label>
+          <div class="icon-selector" id="app-create-icon-selector"></div>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <div class="color-selector" id="app-create-color-selector"></div>
+        </div>
+        <div class="form-group">
+          <label>Privacy</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="app-create-privacy" value="private" checked />
+              <span>Private - Only invited members</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="app-create-privacy" value="organization" />
+              <span>Organization - Anyone in your org</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="button button-secondary" id="app-create-cancel">Cancel</button>
+          <button type="submit" class="button button-primary" id="app-create-submit">Create Workspace</button>
+        </div>
+      </form>
     </div>
   </div>
 

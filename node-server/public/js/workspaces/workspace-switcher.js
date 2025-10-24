@@ -167,8 +167,9 @@ class WorkspaceSwitcher {
     const createAction = document.getElementById('create-workspace-action');
     if (createAction) {
       createAction.addEventListener('click', () => {
-        window.location.href = '/workspaces.html';
-        this.closeModal();
+
+        
+        this.openCreateWorkspaceModal();
       });
     }
 
@@ -363,6 +364,135 @@ class WorkspaceSwitcher {
   
   closeAppSettingsModal() {
     const modal = document.getElementById('app-workspace-settings-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
+  }
+  
+  openCreateWorkspaceModal() {
+    // Reset form
+    const form = document.getElementById('app-create-workspace-form');
+    if (form) form.reset();
+    
+    // Render icon/color selectors with defaults
+    this.renderCreateIconColor('📊', '#3B82F6');
+    
+    // Show modal
+    const modal = document.getElementById('app-create-workspace-modal');
+    if (modal) {
+      modal.classList.add('show');
+      document.body.classList.add('modal-open');
+    }
+    
+    // Set up modal event listeners if not already set
+    if (!this.createListenersSet) {
+      this.setupCreateListeners();
+      this.createListenersSet = true;
+    }
+  }
+  
+  renderCreateIconColor(selectedIcon, selectedColor) {
+    const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
+    const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+    const iconSel = document.getElementById('app-create-icon-selector');
+    const colorSel = document.getElementById('app-create-color-selector');
+    
+    if (iconSel) {
+      iconSel.innerHTML = icons.map(ic => 
+        `<button type="button" class="icon-option ${ic===selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`
+      ).join('');
+      
+      iconSel.querySelectorAll('.icon-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          iconSel.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+    }
+    
+    if (colorSel) {
+      colorSel.innerHTML = colors.map(c => 
+        `<button type="button" class="color-option ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`
+      ).join('');
+      
+      colorSel.querySelectorAll('.color-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          colorSel.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+    }
+  }
+  
+  setupCreateListeners() {
+    const modal = document.getElementById('app-create-workspace-modal');
+    const closeBtn = document.getElementById('app-create-close');
+    const cancelBtn = document.getElementById('app-create-cancel');
+    const form = document.getElementById('app-create-workspace-form');
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeCreateModal());
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => this.closeCreateModal());
+    }
+    
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeCreateModal();
+      });
+    }
+    
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.createWorkspace();
+      });
+    }
+  }
+  
+  async createWorkspace() {
+    const submitBtn = document.getElementById('app-create-submit');
+    const originalText = submitBtn.textContent;
+    
+    try {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+      
+      const name = document.getElementById('app-create-name').value.trim();
+      const description = document.getElementById('app-create-description').value.trim();
+      const iconBtn = document.querySelector('#app-create-icon-selector .icon-option.selected');
+      const colorBtn = document.querySelector('#app-create-color-selector .color-option.selected');
+      const privacy = document.querySelector('input[name="app-create-privacy"]:checked')?.value || 'private';
+      
+      const payload = {
+        name,
+        description: description || undefined,
+        icon: iconBtn ? iconBtn.dataset.icon : '📊',
+        color: colorBtn ? colorBtn.dataset.color : '#3B82F6',
+        privacy
+      };
+      
+      const workspace = await API.post('/api/workspaces', payload);
+      
+      // Close modal
+      this.closeCreateModal();
+      
+      // Switch to new workspace
+      sessionStorage.setItem('currentWorkspaceId', workspace.workspace_id);
+      window.location.reload();
+    } catch (e) {
+      console.error('Failed to create workspace:', e);
+      alert('Failed to create workspace: ' + (e.message || 'Unknown error'));
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+  
+  closeCreateModal() {
+    const modal = document.getElementById('app-create-workspace-modal');
     if (modal) {
       modal.classList.remove('show');
       document.body.classList.remove('modal-open');
