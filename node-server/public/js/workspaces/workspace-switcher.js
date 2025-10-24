@@ -254,4 +254,5 @@ class WorkspaceSwitcher {
   }
 }
 
+export { WorkspaceSwitcher };
 export default WorkspaceSwitcher;

@@ -380,4 +380,5 @@ class ViewFilter {
   }
 }
 
+export { ViewFilter };
 export default ViewFilter;
