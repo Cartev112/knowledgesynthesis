@@ -328,12 +328,22 @@ def flag_relationship(relationship_id: str, payload: ReviewFlagRequest):
 
 
 @router.get("/stats")
-def get_review_stats():
+def get_review_stats(workspace_id: Optional[str] = None):
     """
     Get statistics about the review status of relationships.
     """
-    cypher = """
+    workspace_filter = ""
+    if workspace_id:
+        workspace_filter = """
+        WHERE EXISTS {
+            MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+            WHERE d.document_id IN r.sources
+        }
+        """
+    
+    cypher = f"""
     MATCH (s:Entity)-[r]->(o:Entity)
+    {workspace_filter}
     RETURN 
         coalesce(r.status, 'unverified') AS status,
         count(r) AS count
@@ -341,7 +351,11 @@ def get_review_stats():
     
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
-            result = session.run(cypher)
+            params = {}
+            if workspace_id:
+                params["workspace_id"] = workspace_id
+            
+            result = session.run(cypher, **params)
             stats = {record["status"] or "unknown": record["count"] for record in result}
             
             return {

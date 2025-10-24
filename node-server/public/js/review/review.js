@@ -14,7 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fetch statistics
 async function fetchStats() {
   try {
-    const response = await fetch('/review/stats');
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId');
+    let url = '/review/stats';
+    if (workspaceId) {
+      url += `?workspace_id=${workspaceId}`;
+    }
+    
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch stats');
     
     const stats = await response.json();
