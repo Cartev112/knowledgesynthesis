@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query as Q
+from typing import Optional
 
 from ..services.neo4j_client import neo4j_client
 from ..core.settings import settings
