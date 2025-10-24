@@ -41,7 +41,7 @@ class ReviewFlagRequest(BaseModel):
 
 
 @router.get("/queue")
-def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_ids: Optional[str] = None):
+def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_ids: Optional[str] = None, workspace_id: Optional[str] = None):
     """
     Fetch relationships that need review.
     
@@ -49,20 +49,31 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         limit: Maximum number of items to return
         status_filter: Filter by status (unverified, verified, incorrect)
         node_ids: Optional comma-separated list of node IDs to filter by
+        workspace_id: Optional workspace ID to filter by
     """
     # Build query based on whether we're filtering by nodes
     if node_ids:
         # Parse node IDs
         ids_list = [id.strip() for id in node_ids.split(',') if id.strip()]
         
-        cypher = """
+        workspace_filter = ""
+        if workspace_id:
+            workspace_filter = """
+            AND EXISTS {
+                MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                WHERE d.document_id IN r.sources
+            }
+            """
+        
+        cypher = f"""
         MATCH (s:Entity)-[r]->(o:Entity)
         WHERE coalesce(r.status, 'unverified') = $status
         AND (coalesce(s.id, s.name, elementId(s)) IN $node_ids 
              OR coalesce(o.id, o.name, elementId(o)) IN $node_ids)
+        {workspace_filter}
         WITH s, r, o, type(r) as rel_type
         OPTIONAL MATCH (d:Document) WHERE d.document_id IN r.sources
-        WITH s, r, o, rel_type, collect(DISTINCT {id: d.document_id, title: coalesce(d.title, d.document_id)}) as docs
+        WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
         RETURN 
             elementId(r) AS relationship_id,
             s.name AS subject,
@@ -81,13 +92,25 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         LIMIT $limit
         """
         params = {"status": status_filter, "limit": limit, "node_ids": ids_list}
+        if workspace_id:
+            params["workspace_id"] = workspace_id
     else:
-        cypher = """
+        workspace_filter = ""
+        if workspace_id:
+            workspace_filter = """
+            AND EXISTS {
+                MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                WHERE d.document_id IN r.sources
+            }
+            """
+        
+        cypher = f"""
         MATCH (s:Entity)-[r]->(o:Entity)
         WHERE coalesce(r.status, 'unverified') = $status
+        {workspace_filter}
         WITH s, r, o, type(r) as rel_type
         OPTIONAL MATCH (d:Document) WHERE d.document_id IN r.sources
-        WITH s, r, o, rel_type, collect(DISTINCT {id: d.document_id, title: coalesce(d.title, d.document_id)}) as docs
+        WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
         RETURN 
             elementId(r) AS relationship_id,
             s.name AS subject,
@@ -106,6 +129,8 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         LIMIT $limit
         """
         params = {"status": status_filter, "limit": limit}
+        if workspace_id:
+            params["workspace_id"] = workspace_id
     
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:

@@ -79,8 +79,16 @@ async function fetchRelationships() {
   
   try {
     const statusFilter = document.getElementById('filter-status').value;
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId');
+    
+    let url = `/review/queue?limit=100&status_filter=${statusFilter}`;
+    if (workspaceId) {
+      url += `&workspace_id=${workspaceId}`;
+      console.log('Fetching review queue for workspace:', workspaceId);
+    }
+    
     console.log('Fetching review queue with status:', statusFilter);
-    const response = await fetch(`/review/queue?limit=100&status_filter=${statusFilter}`);
+    const response = await fetch(url);
     
     console.log('Review queue response status:', response.status);
     if (!response.ok) throw new Error('Failed to fetch relationships');

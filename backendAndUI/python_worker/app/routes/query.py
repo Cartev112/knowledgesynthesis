@@ -97,7 +97,8 @@ def query(name: str = Q(..., min_length=1)):
 @router.get("/all")
 def get_all(
     page_number: int = Q(1, ge=1, description="Page number for pagination"),
-    limit: int = Q(100, ge=1, le=1000, description="Number of items per page")
+    limit: int = Q(100, ge=1, le=1000, description="Number of items per page"),
+    workspace_id: Optional[str] = Q(None, description="Filter by workspace ID")
 ):
     """Return all nodes and relationships in the graph (supports legacy and new schemas).
     
@@ -105,8 +106,19 @@ def get_all(
     This prevents orphaned edges that reference nodes outside the pagination window.
     """
     skip = (page_number - 1) * limit
+    
+    # Add workspace filter if provided
+    workspace_filter = ""
+    if workspace_id:
+        workspace_filter = (
+            "WHERE EXISTS { "
+            "  MATCH (n)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id}) "
+            "} "
+        )
+    
     nodes_cypher = (
         "MATCH (n:Entity) "
+        f"{workspace_filter}"
         "OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
         "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), type: coalesce(n.type, head(labels(n))), significance: coalesce(n.significance, null), sources: source_docs} AS node "
@@ -125,7 +137,11 @@ def get_all(
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             # First get the nodes
-            nodes_result = session.run(nodes_cypher, skip=skip, limit=limit)
+            params = {"skip": skip, "limit": limit}
+            if workspace_id:
+                params["workspace_id"] = workspace_id
+            
+            nodes_result = session.run(nodes_cypher, **params)
             nodes = [record["node"] for record in nodes_result]
             
             # Extract node IDs from the returned nodes
@@ -143,11 +159,17 @@ def get_all(
 @router.get("/documents")
 def list_documents(
     page_number: int = Q(1, ge=1, description="Page number for pagination"),
-    limit: int = Q(50, ge=1, le=500, description="Number of documents per page")
+    limit: int = Q(50, ge=1, le=500, description="Number of documents per page"),
+    workspace_id: Optional[str] = Q(None, description="Filter by workspace ID")
 ):
     skip = (page_number - 1) * limit
-    cypher = """
-        MATCH (d:Document) 
+    
+    workspace_filter = ""
+    if workspace_id:
+        workspace_filter = "-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})"
+    
+    cypher = f"""
+        MATCH (d:Document){workspace_filter}
         RETURN d.document_id AS id, 
                d.title AS title,
                d.created_by_first_name AS created_by_first_name,
@@ -161,7 +183,11 @@ def list_documents(
     """
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
-            result = session.run(cypher, skip=skip, limit=limit)
+            params = {"skip": skip, "limit": limit}
+            if workspace_id:
+                params["workspace_id"] = workspace_id
+            
+            result = session.run(cypher, **params)
             documents = [{
                 "id": r["id"], 
                 "title": r["title"],

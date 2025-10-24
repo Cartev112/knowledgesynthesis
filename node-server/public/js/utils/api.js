@@ -59,7 +59,14 @@ export class API {
   
   static async getAllGraph(limit = 1000, page = 1) {
     const timestamp = Date.now();
-    return this.get(`/query/all?limit=${encodeURIComponent(limit)}&page_number=${encodeURIComponent(page)}&t=${timestamp}`);
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId');
+    
+    let url = `/query/all?limit=${encodeURIComponent(limit)}&page_number=${encodeURIComponent(page)}&t=${timestamp}`;
+    if (workspaceId) {
+      url += `&workspace_id=${encodeURIComponent(workspaceId)}`;
+    }
+    
+    return this.get(url);
   }
   
   static async searchConcept(name, verifiedOnly = false) {
