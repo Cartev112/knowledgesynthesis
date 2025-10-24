@@ -4,15 +4,11 @@
     <meta charset="utf-8" />
     <title>Knowledge Graph Review Queue</title>
     <link rel="stylesheet" href="/static/css/review.css">
-    <link rel="stylesheet" href="/css/workspaces.css">
   </head>
   <body>
     <!-- Header -->
     <div id="header">
-      <div style="display: flex; align-items: center; gap: 20px;">
-        <h1>📋 Knowledge Graph Review Queue</h1>
-        <div id="workspace-switcher-container"></div>
-      </div>
+      <h1>📋 Knowledge Graph Review Queue</h1>
       <div id="stats">
         <div class="stat stat-unverified">
           <div class="stat-label">Unverified</div>
@@ -158,19 +154,6 @@
       </div>
     </div>
     
-    <script type="module">
-      import { WorkspaceSwitcher } from '/js/workspaces/workspace-switcher.js';
-      
-      // Initialize workspace switcher
-      const switcher = new WorkspaceSwitcher('workspace-switcher-container');
-      
-      // Listen for workspace changes and reload data
-      window.addEventListener('workspaceChanged', (e) => {
-        console.log('Workspace changed to:', e.detail.workspaceId);
-        fetchStats();
-        fetchRelationships();
-      });
-    </script>
     <script src="/static/js/review/review.js"></script>
   </body>
 </html>

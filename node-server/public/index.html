@@ -14,7 +14,6 @@
   <link rel="stylesheet" href="/static/css/modals.css">
   <link rel="stylesheet" href="/static/css/custom-classes.css">
   <link rel="stylesheet" href="/static/css/graph3d.css">
-  <link rel="stylesheet" href="/css/workspaces.css">
   
   <!-- External Dependencies -->
   <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
@@ -24,10 +23,7 @@
 <body>
   <!-- === HEADER === -->
   <div id="header">
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <h1>Knowledge Synthesis Platform</h1>
-      <div id="workspace-switcher-container"></div>
-    </div>
+    <h1>Knowledge Synthesis Platform</h1>
     <div id="user-info">
       <span>👤 <span id="username">Guest</span></span>
       <button onclick="window.authManager.logout()">Logout</button>
@@ -138,9 +134,6 @@
   <!-- VIEWING TAB (Graph Visualization) -->
   <div id="viewing-tab" class="tab-content">
     <div id="viewing-panel">
-      <!-- View Filter Panel -->
-      <div id="view-filter-container"></div>
-      
       <div id="cy-container">
         <div id="cy"></div>
         <div id="graph3d-container" class="graph3d-container hidden"></div>
@@ -689,32 +682,6 @@
   
   <!-- JavaScript Modules (ES6 Modules) -->
   <script src="/static/js/discovery/discovery.js"></script>
-  <script type="module">
-    import { WorkspaceSwitcher } from '/js/workspaces/workspace-switcher.js';
-    import { ViewFilter } from '/js/workspaces/view-filter.js';
-    
-    // Initialize workspace switcher
-    window.workspaceSwitcher = new WorkspaceSwitcher('workspace-switcher-container');
-    
-    // Initialize view filter
-    window.viewFilter = new ViewFilter('view-filter-container');
-    
-    // Listen for workspace changes and reload graph
-    window.addEventListener('workspaceChanged', (e) => {
-      console.log('Workspace changed to:', e.detail.workspaceId);
-      if (window.graphViewer) {
-        window.graphViewer.loadGraph();
-      }
-    });
-    
-    // Listen for filter changes and reload graph
-    window.addEventListener('filtersChanged', (e) => {
-      console.log('Filters changed:', e.detail);
-      if (window.graphViewer) {
-        window.graphViewer.loadGraph();
-      }
-    });
-  </script>
   <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>
