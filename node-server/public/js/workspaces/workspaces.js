@@ -77,40 +77,47 @@ class WorkspacesManager {
     // User menu
     const userButton = document.getElementById('user-button');
     const userDropdown = document.getElementById('user-dropdown');
-    
-    userButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      userDropdown.classList.toggle('show');
-    });
-
-    document.addEventListener('click', () => {
-      userDropdown.classList.remove('show');
-    });
+    if (userButton && userDropdown) {
+      userButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+      });
+      document.addEventListener('click', () => {
+        userDropdown.classList.remove('show');
+      });
+    }
 
     // Logout
-    document.getElementById('logout-link').addEventListener('click', async (e) => {
-      e.preventDefault();
-      await this.logout();
-    });
+    const logoutLink = document.getElementById('logout-link');
+    if (logoutLink) {
+      logoutLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await this.logout();
+      });
+    }
 
     // Retry button
-    document.getElementById('retry-button').addEventListener('click', () => {
-      this.loadWorkspaces();
-    });
+    const retryBtn = document.getElementById('retry-button');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        this.loadWorkspaces();
+      });
+    }
 
-    // Global view button
-    document.getElementById('global-view-button').addEventListener('click', () => {
-      this.openGlobalView();
-    });
+    // Global view button (legacy, removed in rehaul) – guard if present
+    const globalBtn = document.getElementById('global-view-button');
+    if (globalBtn) {
+      globalBtn.addEventListener('click', () => {
+        this.openGlobalView();
+      });
+    }
 
     // Modal controls
-    document.getElementById('modal-close').addEventListener('click', () => {
-      this.closeModal();
-    });
+    const modalClose = document.getElementById('modal-close');
+    if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
 
-    document.getElementById('cancel-button').addEventListener('click', () => {
-      this.closeModal();
-    });
+    const cancelBtn = document.getElementById('cancel-button');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
 
     // Settings modal controls
     const wsClose = document.getElementById('ws-settings-close');
@@ -463,7 +470,7 @@ class WorkspacesManager {
       if (statsEl) statsEl.innerHTML = `${totals.documents} documents • ${totals.entities} entities • ${this.workspaces.length} workspaces`;
     } catch (error) {
       console.error('Failed to load global stats:', error);
-      statsEl.textContent = 'Stats unavailable';
+      if (statsEl) statsEl.textContent = 'Stats unavailable';
     }
   }
 

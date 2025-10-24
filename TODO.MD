@@ -14,3 +14,4 @@ fix semantic scholar rate limiting
 
 save agent conversations to postgres
 
+set up collaborator invitation configuration
