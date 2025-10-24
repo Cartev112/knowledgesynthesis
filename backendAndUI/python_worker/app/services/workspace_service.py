@@ -58,10 +58,12 @@ class WorkspaceService:
                 created_at=now.isoformat(),
             )
 
-            # Add creator as owner
+            # Add creator as owner (create User node if doesn't exist)
             session.run(
                 """
-                MATCH (u:User {user_id: $user_id})
+                MERGE (u:User {user_id: $user_id})
+                ON CREATE SET u.user_email = $user_email, u.created_at = datetime()
+                WITH u
                 MATCH (w:Workspace {workspace_id: $workspace_id})
                 CREATE (u)-[:MEMBER_OF {
                     role: 'owner',
@@ -70,6 +72,7 @@ class WorkspaceService:
                 }]->(w)
                 """,
                 user_id=user_id,
+                user_email=user_email,
                 workspace_id=workspace_id,
                 permissions=['view', 'add_documents', 'edit_relationships', 'invite_others', 'manage_workspace'],
                 joined_at=now.isoformat(),
