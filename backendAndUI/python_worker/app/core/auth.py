@@ -19,7 +19,22 @@ def get_current_user(request: Request) -> User:
         def protected_route(current_user: User = Depends(get_current_user)):
             return {"user": current_user}
     """
-    # Check for session cookie
+    # Check for user info in headers (from Node.js proxy)
+    user_id = request.headers.get("X-User-ID")
+    user_email = request.headers.get("X-User-Email")
+    
+    if user_id and user_email:
+        # User authenticated via Node.js, create User object
+        return User(
+            user_id=user_id,
+            email=user_email,
+            first_name=request.headers.get("X-User-First-Name", ""),
+            last_name=request.headers.get("X-User-Last-Name", ""),
+            username=request.headers.get("X-User-Username"),
+            roles=request.headers.get("X-User-Roles", "user").split(",")
+        )
+    
+    # Fallback to session cookie
     session_id = request.cookies.get("session_id")
     
     if not session_id or session_id not in sessions:

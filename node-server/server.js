@@ -415,8 +415,15 @@ app.use('/review', (req, res) => {
 // Workspace API endpoints (handled by Node.js, wrapping Python backend)
 app.get('/api/workspaces', requireAuth, async (req, res) => {
   try {
+    const user = req.session.user
     const response = await axios.get(`${fastapiBase}/api/workspaces`, {
-      headers: { 'Cookie': `session_id=sess_${req.session.user.email}` }
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
     })
     res.json(response.data)
   } catch (err) {
@@ -427,10 +434,15 @@ app.get('/api/workspaces', requireAuth, async (req, res) => {
 
 app.post('/api/workspaces', requireAuth, async (req, res) => {
   try {
+    const user = req.session.user
     const response = await axios.post(`${fastapiBase}/api/workspaces`, req.body, {
       headers: { 
         'Content-Type': 'application/json',
-        'Cookie': `session_id=sess_${req.session.user.email}`
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
       }
     })
     res.status(201).json(response.data)
