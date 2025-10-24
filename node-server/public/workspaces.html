@@ -30,7 +30,7 @@
     <!-- Main Content -->
     <main class="workspaces-main">
       <div class="workspaces-section">
-        <h2>Your Workspaces</h2>
+        <h2>Workspaces</h2>
         
         <!-- Loading State -->
         <div class="loading-state" id="loading-state">
@@ -46,32 +46,10 @@
 
         <!-- Workspaces Grid -->
         <div class="workspaces-grid" id="workspaces-grid">
-          <!-- Workspace cards will be inserted here -->
+          <!-- Cards (Create, Global View, and Workspaces) will be inserted here -->
         </div>
       </div>
 
-      <!-- Global View Section -->
-      <div class="global-view-section">
-        <div class="global-view-card">
-          <div class="global-view-icon">🌐</div>
-          <h3>Global View</h3>
-          <p>View all content across all workspaces</p>
-          <div class="global-view-stats" id="global-stats">
-            <span>Loading...</span>
-          </div>
-          <button class="global-view-button" id="global-view-button">
-            Explore Global Graph
-          </button>
-        </div>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="recent-activity-section">
-        <h3>Recent Activity</h3>
-        <div class="activity-list" id="activity-list">
-          <p class="no-activity">No recent activity</p>
-        </div>
-      </div>
     </main>
   </div>
 
@@ -139,6 +117,46 @@
         <div class="modal-footer">
           <button type="button" class="button button-secondary" id="cancel-button">Cancel</button>
           <button type="submit" class="button button-primary" id="submit-button">Create Workspace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Workspace Settings Modal -->
+  <div class="modal" id="workspace-settings-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Workspace Settings</h2>
+        <button class="modal-close" id="ws-settings-close">&times;</button>
+      </div>
+      <form id="workspace-settings-form">
+        <div class="form-group">
+          <label for="ws-settings-name">Name</label>
+          <input type="text" id="ws-settings-name" maxlength="100" />
+        </div>
+        <div class="form-group">
+          <label for="ws-settings-description">Description</label>
+          <textarea id="ws-settings-description" rows="3" maxlength="500"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Icon & Color</label>
+          <div class="icon-selector" id="ws-settings-icon-selector"></div>
+          <div class="color-selector" id="ws-settings-color-selector"></div>
+        </div>
+        <div class="form-group">
+          <label>Privacy</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="ws-settings-privacy" value="private"> <span>Private</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="ws-settings-privacy" value="shared"> <span>Shared</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="button button-secondary" id="ws-settings-cancel">Cancel</button>
+          <button type="submit" class="button button-primary" id="ws-settings-save">Save Changes</button>
         </div>
       </form>
     </div>

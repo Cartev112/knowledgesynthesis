@@ -471,6 +471,26 @@ app.post('/api/workspaces', requireAuth, async (req, res) => {
   }
 })
 
+app.put('/api/workspaces/:id', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.put(`${fastapiBase}/api/workspaces/${req.params.id}`, req.body, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace update error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
 // Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async, /api/workspaces)
 app.use('/api', (req, res, next) => {
   // Skip proxy for Node-handled endpoints

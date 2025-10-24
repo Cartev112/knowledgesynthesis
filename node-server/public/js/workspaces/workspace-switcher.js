@@ -72,99 +72,94 @@ class WorkspaceSwitcher {
       ? this.currentWorkspace.icon 
       : '🌐';
 
+    const workspacesList = this.workspaces
+      .filter(w => !this.currentWorkspace || w.workspace_id !== this.currentWorkspace.workspace_id)
+      .map(workspace => `
+        <div class="ws-item" data-workspace-id="${workspace.workspace_id}">
+          <span class="ws-item-icon">${workspace.icon}</span>
+          <span class="ws-item-name">${this.escapeHtml(workspace.name)}</span>
+          ${workspace.members && workspace.members.length > 1 ? '<span class="ws-shared">Shared</span>' : ''}
+        </div>
+      `).join('');
+
     this.container.innerHTML = `
-      <div class="workspace-switcher">
-        <button class="workspace-switcher-button" id="workspace-switcher-button">
-          <span class="workspace-icon">${currentIcon}</span>
-          <span class="workspace-name">${this.escapeHtml(currentName)}</span>
-          <span class="dropdown-arrow">▼</span>
+      <div class="workspace-switcher ws-center">
+        <button class="ws-current-button" id="ws-current-button" aria-haspopup="dialog" aria-controls="ws-modal">
+          <span class="ws-icon">${currentIcon}</span>
+          <span class="ws-name">${this.escapeHtml(currentName)}</span>
         </button>
-        
-        <div class="workspace-dropdown" id="workspace-dropdown">
-          <div class="dropdown-section">
-            <div class="dropdown-label">Current Workspace</div>
-            <div class="dropdown-item current ${!this.currentWorkspace ? 'active' : ''}" data-workspace-id="">
-              <span class="item-icon">🌐</span>
-              <span class="item-name">Global View</span>
-              ${!this.currentWorkspace ? '<span class="check-icon">✓</span>' : ''}
-            </div>
-            ${this.currentWorkspace ? `
-              <div class="dropdown-item current active" data-workspace-id="${this.currentWorkspace.workspace_id}">
-                <span class="item-icon">${this.currentWorkspace.icon}</span>
-                <span class="item-name">${this.escapeHtml(this.currentWorkspace.name)}</span>
-                <span class="check-icon">✓</span>
-              </div>
-            ` : ''}
+      </div>
+
+      <div class="ws-modal" id="ws-modal" role="dialog" aria-modal="true" aria-labelledby="ws-modal-title">
+        <div class="ws-modal-dialog">
+          <div class="ws-modal-header">
+            <h3 id="ws-modal-title">Switch Workspace</h3>
+            <button class="ws-modal-close" id="ws-modal-close" aria-label="Close">×</button>
           </div>
-
-          ${this.workspaces.length > 0 ? `
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-section">
-              <div class="dropdown-label">Your Workspaces</div>
-              ${this.workspaces
-                .filter(w => !this.currentWorkspace || w.workspace_id !== this.currentWorkspace.workspace_id)
-                .map(workspace => `
-                  <div class="dropdown-item" data-workspace-id="${workspace.workspace_id}">
-                    <span class="item-icon">${workspace.icon}</span>
-                    <span class="item-name">${this.escapeHtml(workspace.name)}</span>
-                    ${workspace.members && workspace.members.length > 1 ? '<span class="shared-badge">Shared</span>' : ''}
-                  </div>
-                `).join('')}
-            </div>
-          ` : ''}
-
-          <div class="dropdown-divider"></div>
-          <div class="dropdown-section">
-            <div class="dropdown-item action" id="create-workspace-action">
-              <span class="item-icon">➕</span>
-              <span class="item-name">Create New Workspace</span>
-            </div>
-            <div class="dropdown-item action" id="manage-workspaces-action">
-              <span class="item-icon">🏠</span>
-              <span class="item-name">Manage Workspaces</span>
-            </div>
-          </div>
-
-          ${this.currentWorkspace ? `
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-section">
-              <div class="dropdown-item action" id="workspace-settings-action">
-                <span class="item-icon">⚙️</span>
-                <span class="item-name">Workspace Settings</span>
+          <div class="ws-modal-body">
+            <div class="ws-section">
+              <div class="ws-label">Current</div>
+              <div class="ws-item ${!this.currentWorkspace ? 'active' : ''}" data-workspace-id="">
+                <span class="ws-item-icon">🌐</span>
+                <span class="ws-item-name">Global View</span>
+                ${!this.currentWorkspace ? '<span class="ws-check">✓</span>' : ''}
               </div>
+              ${this.currentWorkspace ? `
+              <div class="ws-item active" data-workspace-id="${this.currentWorkspace.workspace_id}">
+                <span class="ws-item-icon">${this.currentWorkspace.icon}</span>
+                <span class="ws-item-name">${this.escapeHtml(this.currentWorkspace.name)}</span>
+                <span class="ws-check">✓</span>
+              </div>` : ''}
             </div>
-          ` : ''}
+
+            ${this.workspaces.length > 0 ? `
+            <div class="ws-divider"></div>
+            <div class="ws-section">
+              <div class="ws-label">Your Workspaces</div>
+              <div class="ws-list">${workspacesList || '<div class="ws-empty">No other workspaces</div>'}</div>
+            </div>` : ''}
+          </div>
+          <div class="ws-modal-footer">
+            <button class="ws-action" id="create-workspace-action">➕ Create New</button>
+            <button class="ws-action" id="manage-workspaces-action">🏠 Manage</button>
+            ${this.currentWorkspace ? '<button class="ws-action" id="workspace-settings-action">⚙️ Settings</button>' : ''}
+          </div>
         </div>
       </div>
     `;
   }
 
   setupEventListeners() {
-    const button = document.getElementById('workspace-switcher-button');
-    const dropdown = document.getElementById('workspace-dropdown');
+    const trigger = document.getElementById('ws-current-button');
+    const modal = document.getElementById('ws-modal');
+    const dialog = modal?.querySelector('.ws-modal-dialog');
+    const closeBtn = document.getElementById('ws-modal-close');
 
-    // Toggle dropdown
-    button.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown.classList.toggle('show');
-    });
+    if (trigger) {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openModal();
+      });
+    }
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      dropdown.classList.remove('show');
-    });
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeModal());
+    }
 
-    // Prevent dropdown from closing when clicking inside
-    dropdown.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
+    // Close when clicking outside dialog
+    if (modal && dialog) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeModal();
+      });
+      dialog.addEventListener('click', (e) => e.stopPropagation());
+    }
 
     // Workspace selection
-    dropdown.querySelectorAll('.dropdown-item[data-workspace-id]').forEach(item => {
+    modal?.querySelectorAll('.ws-item[data-workspace-id]')?.forEach(item => {
       item.addEventListener('click', () => {
         const workspaceId = item.dataset.workspaceId;
         this.switchWorkspace(workspaceId);
-        dropdown.classList.remove('show');
+        this.closeModal();
       });
     });
 
@@ -173,7 +168,7 @@ class WorkspaceSwitcher {
     if (createAction) {
       createAction.addEventListener('click', () => {
         window.location.href = '/workspaces.html';
-        dropdown.classList.remove('show');
+        this.closeModal();
       });
     }
 
@@ -182,7 +177,7 @@ class WorkspaceSwitcher {
     if (manageAction) {
       manageAction.addEventListener('click', () => {
         window.location.href = '/workspaces.html';
-        dropdown.classList.remove('show');
+        this.closeModal();
       });
     }
 
@@ -191,9 +186,19 @@ class WorkspaceSwitcher {
     if (settingsAction) {
       settingsAction.addEventListener('click', () => {
         this.openWorkspaceSettings();
-        dropdown.classList.remove('show');
+        this.closeModal();
       });
     }
+  }
+
+  openModal() {
+    const modal = document.getElementById('ws-modal');
+    if (modal) modal.classList.add('show');
+  }
+
+  closeModal() {
+    const modal = document.getElementById('ws-modal');
+    if (modal) modal.classList.remove('show');
   }
 
   switchWorkspace(workspaceId) {

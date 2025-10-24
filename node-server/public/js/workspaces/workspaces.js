@@ -12,8 +12,38 @@ class WorkspacesManager {
     this.currentUser = null;
     this.selectedIcon = '📊';
     this.selectedColor = '#3B82F6';
+    this.editingWorkspaceId = null;
     
     this.init();
+  }
+
+  createGlobalViewCard() {
+    const totals = this.computeTotals();
+    const card = document.createElement('div');
+    card.className = 'workspace-card';
+    card.innerHTML = `
+      <div class="workspace-header">
+        <div class="workspace-icon">🌐</div>
+        <div class="workspace-title">Global View</div>
+      </div>
+      <div class="workspace-description">View all content across all workspaces</div>
+      <div class="workspace-stats">
+        <div class="stat"><span>📄</span><span>${totals.documents} docs</span></div>
+        <div class="stat"><span>🔗</span><span>${totals.entities} entities</span></div>
+      </div>
+      <div class="workspace-footer">
+        <div class="last-activity">Across ${this.workspaces.length} workspaces</div>
+        <div class="workspace-actions">
+          <button class="action-button primary" id="open-global">Open</button>
+        </div>
+      </div>
+    `;
+    card.querySelector('#open-global').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openGlobalView();
+    });
+    card.addEventListener('click', () => this.openGlobalView());
+    return card;
   }
 
   async init() {
@@ -81,6 +111,21 @@ class WorkspacesManager {
     document.getElementById('cancel-button').addEventListener('click', () => {
       this.closeModal();
     });
+
+    // Settings modal controls
+    const wsClose = document.getElementById('ws-settings-close');
+    const wsCancel = document.getElementById('ws-settings-cancel');
+    if (wsClose) wsClose.addEventListener('click', () => this.closeSettingsModal());
+    if (wsCancel) wsCancel.addEventListener('click', () => this.closeSettingsModal());
+
+    // Settings save
+    const wsForm = document.getElementById('workspace-settings-form');
+    if (wsForm) {
+      wsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveWorkspaceSettings();
+      });
+    }
 
     // Create workspace form
     document.getElementById('create-workspace-form').addEventListener('submit', (e) => {
@@ -154,6 +199,10 @@ class WorkspacesManager {
     const createCard = this.createNewWorkspaceCard();
     grid.appendChild(createCard);
 
+    // Add Global View card (same size as other cards)
+    const globalCard = this.createGlobalViewCard();
+    grid.appendChild(globalCard);
+
     // Add workspace cards
     this.workspaces.forEach(workspace => {
       const card = this.createWorkspaceCard(workspace);
@@ -184,6 +233,9 @@ class WorkspacesManager {
 
     const isShared = workspace.members && workspace.members.length > 1;
     const stats = workspace.stats || {};
+    const owner = (workspace.members || []).find(m => m.role === 'owner');
+    const createdByMe = owner && owner.user_id === this.currentUser.user_id;
+    const creatorName = owner ? ((owner.user_first_name || '') + ' ' + (owner.user_last_name || '')).trim() || owner.user_email : null;
 
     card.innerHTML = `
       <div class="workspace-header">
@@ -208,9 +260,7 @@ class WorkspacesManager {
       </div>
       
       <div class="workspace-footer">
-        <div class="last-activity">
-          ${this.formatLastActivity(workspace.updated_at || workspace.created_at)}
-        </div>
+        <div class="last-activity">${!createdByMe && creatorName ? `by ${this.escapeHtml(creatorName)} • ` : ''}${this.formatLastActivity(workspace.updated_at || workspace.created_at)}</div>
         <div class="workspace-actions">
           <button class="action-button settings-button" data-workspace-id="${workspace.workspace_id}">
             ⚙️
@@ -246,6 +296,7 @@ class WorkspacesManager {
   openCreateModal() {
     const modal = document.getElementById('create-workspace-modal');
     modal.classList.add('show');
+    document.body.classList.add('modal-open');
 
     // Reset form
     document.getElementById('create-workspace-form').reset();
@@ -260,6 +311,7 @@ class WorkspacesManager {
   closeModal() {
     const modal = document.getElementById('create-workspace-modal');
     modal.classList.remove('show');
+    document.body.classList.remove('modal-open');
   }
 
   async createWorkspace() {
@@ -311,9 +363,88 @@ class WorkspacesManager {
   }
 
   openWorkspaceSettings(workspaceId) {
-    // TODO: Implement workspace settings modal
-    console.log('Open settings for workspace:', workspaceId);
-    alert('Workspace settings coming soon!');
+    this.editingWorkspaceId = workspaceId;
+    this.loadWorkspaceAndOpenSettings(workspaceId);
+  }
+
+  async loadWorkspaceAndOpenSettings(workspaceId) {
+    try {
+      const ws = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}`);
+      // Populate fields
+      document.getElementById('ws-settings-name').value = ws.name || '';
+      document.getElementById('ws-settings-description').value = ws.description || '';
+
+      // Render icon/color selectors with current selected
+      this.renderSettingsIconColor(ws.icon, ws.color);
+
+      // Set privacy
+      const privacy = ws.privacy || 'private';
+      const radios = document.querySelectorAll('input[name="ws-settings-privacy"]');
+      radios.forEach(r => { r.checked = (r.value === privacy); });
+
+      // Open modal
+      const modal = document.getElementById('workspace-settings-modal');
+      modal.classList.add('show');
+      document.body.classList.add('modal-open');
+    } catch (e) {
+      console.error('Failed to load workspace for settings', e);
+      alert('Failed to load workspace settings');
+    }
+  }
+
+  renderSettingsIconColor(selectedIcon, selectedColor) {
+    const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
+    const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+    const iconSel = document.getElementById('ws-settings-icon-selector');
+    const colorSel = document.getElementById('ws-settings-color-selector');
+    iconSel.innerHTML = icons.map(ic => `<button type="button" class="icon-option ${ic===selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`).join('');
+    colorSel.innerHTML = colors.map(c => `<button type="button" class="color-option ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+
+    iconSel.querySelectorAll('.icon-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        iconSel.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+    colorSel.querySelectorAll('.color-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorSel.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  async saveWorkspaceSettings() {
+    if (!this.editingWorkspaceId) return;
+    const name = document.getElementById('ws-settings-name').value.trim();
+    const description = document.getElementById('ws-settings-description').value.trim();
+    const iconBtn = document.querySelector('#ws-settings-icon-selector .icon-option.selected');
+    const colorBtn = document.querySelector('#ws-settings-color-selector .color-option.selected');
+    const privacy = document.querySelector('input[name="ws-settings-privacy"]:checked')?.value;
+
+    const payload = {
+      name: name || undefined,
+      description: description || undefined,
+      icon: iconBtn ? iconBtn.dataset.icon : undefined,
+      color: colorBtn ? colorBtn.dataset.color : undefined,
+      privacy: privacy || undefined
+    };
+
+    try {
+      await API.put(`/api/workspaces/${encodeURIComponent(this.editingWorkspaceId)}`, payload);
+      this.closeSettingsModal();
+      await this.loadWorkspaces();
+    } catch (e) {
+      console.error('Failed to save settings', e);
+      alert('Failed to save workspace settings');
+    }
+  }
+
+  closeSettingsModal() {
+    const modal = document.getElementById('workspace-settings-modal');
+    modal.classList.remove('show');
+    document.body.classList.remove('modal-open');
+    this.editingWorkspaceId = null;
   }
 
   openGlobalView() {
@@ -328,15 +459,18 @@ class WorkspacesManager {
     const statsEl = document.getElementById('global-stats');
     
     try {
-      // Calculate total stats from all workspaces
-      const totalDocs = this.workspaces.reduce((sum, w) => sum + (w.stats?.document_count || 0), 0);
-      const totalEntities = this.workspaces.reduce((sum, w) => sum + (w.stats?.entity_count || 0), 0);
-      
-      statsEl.innerHTML = `${totalDocs} documents • ${totalEntities} entities • ${this.workspaces.length} workspaces`;
+      const totals = this.computeTotals();
+      if (statsEl) statsEl.innerHTML = `${totals.documents} documents • ${totals.entities} entities • ${this.workspaces.length} workspaces`;
     } catch (error) {
       console.error('Failed to load global stats:', error);
       statsEl.textContent = 'Stats unavailable';
     }
+  }
+
+  computeTotals() {
+    const totalDocs = this.workspaces.reduce((sum, w) => sum + (w.stats?.document_count || 0), 0);
+    const totalEntities = this.workspaces.reduce((sum, w) => sum + (w.stats?.entity_count || 0), 0);
+    return { documents: totalDocs, entities: totalEntities };
   }
 
   async logout() {

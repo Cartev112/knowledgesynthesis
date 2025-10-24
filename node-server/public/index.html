@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/static/css/modals.css">
   <link rel="stylesheet" href="/static/css/custom-classes.css">
   <link rel="stylesheet" href="/static/css/graph3d.css">
+  <link rel="stylesheet" href="/css/workspace-switcher.css">
   
   <!-- External Dependencies -->
   <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
@@ -24,6 +25,7 @@
   <!-- === HEADER === -->
   <div id="header">
     <h1>Knowledge Synthesis Platform</h1>
+    <div id="workspace-switcher-container"></div>
     <div id="user-info">
       <span>👤 <span id="username">Guest</span></span>
       <button onclick="window.authManager.logout()">Logout</button>
@@ -682,6 +684,11 @@
   
   <!-- JavaScript Modules (ES6 Modules) -->
   <script src="/static/js/discovery/discovery.js"></script>
+  <script type="module">
+    import { WorkspaceSwitcher } from '/js/workspaces/workspace-switcher.js';
+    // Initialize centered header modal switcher
+    window.workspaceSwitcher = new WorkspaceSwitcher('workspace-switcher-container');
+  </script>
   <script type="module" src="/static/js/main.js"></script>
 </body>
 </html>

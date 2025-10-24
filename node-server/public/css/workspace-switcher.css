@@ -5,6 +5,47 @@
   display: inline-block;
 }
 
+/* Centered header variant */
+.ws-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Make the switcher container flex and centered inside the app header */
+#header #workspace-switcher-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* Current workspace button (glass pill) */
+.ws-current-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+.ws-current-button:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.ws-current-button .ws-icon { font-size: 1rem; line-height: 1; }
+.ws-current-button .ws-name { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .workspace-switcher-button {
   display: flex;
   align-items: center;
