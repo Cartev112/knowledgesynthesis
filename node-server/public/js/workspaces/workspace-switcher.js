@@ -241,12 +241,131 @@ class WorkspaceSwitcher {
     window.dispatchEvent(event);
   }
 
-  openWorkspaceSettings() {
-    if (this.currentWorkspace && this.currentWorkspace.workspace_id) {
-      const id = encodeURIComponent(this.currentWorkspace.workspace_id);
-      window.location.href = `/workspaces.html#settings=${id}`;
-    } else {
-      window.location.href = '/workspaces.html';
+  async openWorkspaceSettings() {
+    if (!this.currentWorkspace || !this.currentWorkspace.workspace_id) return;
+    
+    try {
+      // Load workspace details
+      const ws = await API.get(`/api/workspaces/${encodeURIComponent(this.currentWorkspace.workspace_id)}`);
+      
+      // Populate modal fields
+      document.getElementById('app-ws-name').value = ws.name || '';
+      document.getElementById('app-ws-description').value = ws.description || '';
+      
+      // Render icon/color selectors
+      this.renderAppSettingsIconColor(ws.icon, ws.color);
+      
+      // Show modal
+      const modal = document.getElementById('app-workspace-settings-modal');
+      if (modal) {
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+      }
+      
+      // Set up modal event listeners if not already set
+      if (!this.appSettingsListenersSet) {
+        this.setupAppSettingsListeners();
+        this.appSettingsListenersSet = true;
+      }
+    } catch (e) {
+      console.error('Failed to load workspace settings:', e);
+      alert('Failed to load workspace settings');
+    }
+  }
+  
+  renderAppSettingsIconColor(selectedIcon, selectedColor) {
+    const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
+    const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+    const iconSel = document.getElementById('app-ws-icon-selector');
+    const colorSel = document.getElementById('app-ws-color-selector');
+    
+    if (iconSel) {
+      iconSel.innerHTML = icons.map(ic => 
+        `<button type="button" class="icon-option ${ic===selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`
+      ).join('');
+      
+      iconSel.querySelectorAll('.icon-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          iconSel.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+    }
+    
+    if (colorSel) {
+      colorSel.innerHTML = colors.map(c => 
+        `<button type="button" class="color-option ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`
+      ).join('');
+      
+      colorSel.querySelectorAll('.color-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          colorSel.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+    }
+  }
+  
+  setupAppSettingsListeners() {
+    const modal = document.getElementById('app-workspace-settings-modal');
+    const closeBtn = document.getElementById('app-ws-settings-close');
+    const cancelBtn = document.getElementById('app-ws-settings-cancel');
+    const form = document.getElementById('app-workspace-settings-form');
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeAppSettingsModal());
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => this.closeAppSettingsModal());
+    }
+    
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeAppSettingsModal();
+      });
+    }
+    
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.saveAppWorkspaceSettings();
+      });
+    }
+  }
+  
+  async saveAppWorkspaceSettings() {
+    if (!this.currentWorkspace || !this.currentWorkspace.workspace_id) return;
+    
+    const name = document.getElementById('app-ws-name').value.trim();
+    const description = document.getElementById('app-ws-description').value.trim();
+    const iconBtn = document.querySelector('#app-ws-icon-selector .icon-option.selected');
+    const colorBtn = document.querySelector('#app-ws-color-selector .color-option.selected');
+    
+    const payload = {
+      name: name || undefined,
+      description: description || undefined,
+      icon: iconBtn ? iconBtn.dataset.icon : undefined,
+      color: colorBtn ? colorBtn.dataset.color : undefined
+    };
+    
+    try {
+      await API.put(`/api/workspaces/${encodeURIComponent(this.currentWorkspace.workspace_id)}`, payload);
+      this.closeAppSettingsModal();
+      
+      // Reload to reflect changes
+      window.location.reload();
+    } catch (e) {
+      console.error('Failed to save workspace settings:', e);
+      alert('Failed to save workspace settings');
+    }
+  }
+  
+  closeAppSettingsModal() {
+    const modal = document.getElementById('app-workspace-settings-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
     }
   }
 

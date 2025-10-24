@@ -60,6 +60,7 @@ export async function verifyUser(email, password) {
     const ok = bcrypt.compareSync(password, user.password_hash)
     
     return ok ? {
+      user_id: user.email,
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -82,6 +83,7 @@ export async function getUserByEmail(email) {
     
     const user = result.rows[0]
     return {
+      user_id: user.email,
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,

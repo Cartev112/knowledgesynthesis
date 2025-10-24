@@ -26,7 +26,7 @@ class WorkspaceService:
     """Service for managing workspaces."""
 
     @staticmethod
-    def create_workspace(user_id: str, user_email: str, request: CreateWorkspaceRequest) -> Workspace:
+    def create_workspace(user_id: str, user_email: str, request: CreateWorkspaceRequest, user_first_name: str = None, user_last_name: str = None) -> Workspace:
         """Create a new workspace."""
         workspace_id = str(uuid4())
         now = datetime.utcnow()
@@ -62,7 +62,8 @@ class WorkspaceService:
             session.run(
                 """
                 MERGE (u:User {user_id: $user_id})
-                ON CREATE SET u.user_email = $user_email, u.created_at = datetime()
+                ON CREATE SET u.user_email = $user_email, u.user_first_name = $user_first_name, u.user_last_name = $user_last_name, u.created_at = datetime()
+                ON MATCH SET u.user_first_name = coalesce($user_first_name, u.user_first_name), u.user_last_name = coalesce($user_last_name, u.user_last_name)
                 WITH u
                 MATCH (w:Workspace {workspace_id: $workspace_id})
                 CREATE (u)-[:MEMBER_OF {
@@ -73,6 +74,8 @@ class WorkspaceService:
                 """,
                 user_id=user_id,
                 user_email=user_email,
+                user_first_name=user_first_name,
+                user_last_name=user_last_name,
                 workspace_id=workspace_id,
                 permissions=['view', 'add_documents', 'edit_relationships', 'invite_others', 'manage_workspace'],
                 joined_at=now.isoformat(),

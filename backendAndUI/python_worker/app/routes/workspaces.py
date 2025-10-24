@@ -42,7 +42,9 @@ def create_workspace(
         workspace = workspace_service.create_workspace(
             user_id=current_user.user_id,
             user_email=current_user.email,
-            request=request
+            request=request,
+            user_first_name=current_user.first_name,
+            user_last_name=current_user.last_name
         )
         return workspace
     except Exception as e:
