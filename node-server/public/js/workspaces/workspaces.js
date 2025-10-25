@@ -558,18 +558,27 @@ class WorkspacesManager {
       // Load workspace details
       const workspace = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}`);
       
-      // Populate workspace info
+      // Populate workspace info (both in overview and stats)
       document.getElementById('detail-icon').textContent = workspace.icon || '📊';
       document.getElementById('detail-name').textContent = workspace.name || 'Untitled';
       document.getElementById('detail-description').textContent = workspace.description || 'No description';
+      document.getElementById('detail-privacy').textContent = workspace.privacy === 'private' ? 'Private' : 'Shared';
+      document.getElementById('detail-created').textContent = this.formatLastActivity(workspace.created_at);
       
       const stats = workspace.stats || {};
-      document.getElementById('detail-members').textContent = stats.member_count || 0;
+      const memberCount = workspace.members?.length || stats.member_count || 0;
+      document.getElementById('detail-members').textContent = memberCount;
       document.getElementById('detail-docs').textContent = stats.document_count || 0;
       document.getElementById('detail-entities').textContent = stats.entity_count || 0;
       document.getElementById('detail-rels').textContent = stats.relationship_count || 0;
 
-      // Load documents, entities, and relationships
+      // Populate members list
+      this.populateMembersList(workspace.members || []);
+
+      // Populate activity (placeholder for now)
+      this.populateActivity(workspace);
+
+      // Load documents, entities, and relationships (for Content tab)
       await this.loadWorkspaceDocuments(workspaceId);
       await this.loadWorkspaceEntities(workspaceId);
       await this.loadWorkspaceRelationships(workspaceId);
@@ -578,6 +587,68 @@ class WorkspacesManager {
       alert('Failed to load workspace details');
       this.closeDetailModal();
     }
+  }
+
+  populateMembersList(members) {
+    const listEl = document.getElementById('detail-members-list');
+    if (!listEl) return;
+
+    if (members.length === 0) {
+      listEl.innerHTML = '<div class="detail-empty"><p>No members</p></div>';
+      return;
+    }
+
+    listEl.innerHTML = members.map(member => {
+      const displayName = this.getMemberDisplayName(member);
+      const roleColor = member.role === 'owner' ? '#667eea' : '#6b7280';
+      return `
+        <div class="detail-item">
+          <div class="detail-item-header">
+            <div class="detail-item-title">👤 ${this.escapeHtml(displayName)}</div>
+            <span style="color: ${roleColor}; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">${this.escapeHtml(member.role || 'member')}</span>
+          </div>
+          ${member.user_email ? `<div class="detail-item-content">${this.escapeHtml(member.user_email)}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  populateActivity(workspace) {
+    const listEl = document.getElementById('detail-activity');
+    if (!listEl) return;
+
+    // For now, show basic activity info
+    const activities = [];
+    
+    if (workspace.created_at) {
+      activities.push({
+        type: 'created',
+        message: 'Workspace created',
+        timestamp: workspace.created_at
+      });
+    }
+
+    if (workspace.updated_at && workspace.updated_at !== workspace.created_at) {
+      activities.push({
+        type: 'updated',
+        message: 'Workspace updated',
+        timestamp: workspace.updated_at
+      });
+    }
+
+    if (activities.length === 0) {
+      listEl.innerHTML = '<div class="detail-empty"><p>No recent activity</p></div>';
+      return;
+    }
+
+    listEl.innerHTML = activities.map(activity => `
+      <div class="detail-item">
+        <div class="detail-item-header">
+          <div class="detail-item-title">${activity.message}</div>
+          <div class="detail-item-meta">${this.formatLastActivity(activity.timestamp)}</div>
+        </div>
+      </div>
+    `).join('');
   }
 
   setupDetailModalListeners() {
@@ -608,18 +679,36 @@ class WorkspacesManager {
       });
     }
 
-    // Tab switching
-    const tabs = document.querySelectorAll('.detail-tab');
-    tabs.forEach(tab => {
+    // Main tab switching (Overview / Content)
+    const mainTabs = document.querySelectorAll('.detail-main-tab');
+    mainTabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const targetTab = tab.dataset.tab;
         
         // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
+        mainTabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         
         // Update active pane
-        document.querySelectorAll('.detail-tab-pane').forEach(pane => {
+        document.querySelectorAll('.detail-main-pane').forEach(pane => {
+          pane.classList.remove('active');
+        });
+        document.getElementById(`${targetTab}-pane`).classList.add('active');
+      });
+    });
+
+    // Sub-tab switching (Documents / Entities / Relationships)
+    const subTabs = document.querySelectorAll('.detail-sub-tab');
+    subTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        subTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active pane
+        document.querySelectorAll('.detail-sub-pane').forEach(pane => {
           pane.classList.remove('active');
         });
         document.getElementById(`${targetTab}-pane`).classList.add('active');

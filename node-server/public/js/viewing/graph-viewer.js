@@ -7,6 +7,7 @@ import { API } from '../utils/api.js';
 import { cytoscapeConfig, cytoscapeStyles, getLayoutConfig } from './cytoscape-config.js';
 import { ModalManager } from './modals.js';
 import { IndexPanelManager } from './index-panel.js';
+import { VisualConfigManager } from './visual-config.js';
 
 export class GraphViewer {
   constructor() {
@@ -20,6 +21,7 @@ export class GraphViewer {
     this.hideNodeTooltipTimeout = null;
     this.modalManager = new ModalManager();
     this.indexManager = new IndexPanelManager(this.modalManager);
+    this.visualConfig = null; // Will be initialized after cy is created
     
     // Performance optimization: cache and debounce
     this.viewportCache = null;
@@ -44,10 +46,31 @@ export class GraphViewer {
       style: cytoscapeStyles
     });
     
+    // Initialize visual configuration manager
+    this.visualConfig = new VisualConfigManager(state.cy);
+    
     // Wire up event handlers
     this.setupEventHandlers();
     
     console.log('Cytoscape initialized successfully');
+  }
+
+  applyVisualConfig() {
+    if (this.visualConfig) {
+      this.visualConfig.applyVisualConfig();
+    }
+  }
+
+  applyLayout() {
+    if (this.visualConfig) {
+      this.visualConfig.applyLayout();
+    }
+  }
+
+  resetVisualConfig() {
+    if (this.visualConfig) {
+      this.visualConfig.resetVisualConfig();
+    }
   }
   
   setupEventHandlers() {

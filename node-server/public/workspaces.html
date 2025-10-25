@@ -169,62 +169,105 @@
         <h2>Workspace Details</h2>
         <button class="modal-close" id="ws-detail-close">&times;</button>
       </div>
+      
+      <!-- Main Tabs -->
+      <div class="detail-main-tabs">
+        <button class="detail-main-tab active" data-tab="overview">Overview</button>
+        <button class="detail-main-tab" data-tab="content">Content</button>
+      </div>
+
       <div class="workspace-detail-body">
-        <!-- Workspace Info Section -->
-        <div class="detail-section workspace-info-section">
-          <div class="workspace-info-header">
-            <div class="workspace-info-icon" id="detail-icon">📊</div>
-            <div class="workspace-info-text">
+        <!-- Overview Tab -->
+        <div class="detail-main-pane active" id="overview-pane">
+          <div class="overview-header">
+            <div class="overview-icon" id="detail-icon">📊</div>
+            <div class="overview-info">
               <h3 id="detail-name">Workspace Name</h3>
               <p id="detail-description">Description goes here</p>
+              <div class="overview-meta">
+                <span id="detail-privacy">Private</span>
+                <span>•</span>
+                <span id="detail-created">Created recently</span>
+              </div>
             </div>
-            <div class="workspace-info-stats">
-              <div class="stat-item">
-                <span class="stat-value" id="detail-members">0</span>
-                <span class="stat-label">Members</span>
+          </div>
+
+          <div class="overview-stats-grid">
+            <div class="overview-stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-members">0</div>
+                <div class="stat-label">Members</div>
               </div>
-              <div class="stat-item">
-                <span class="stat-value" id="detail-docs">0</span>
-                <span class="stat-label">Documents</span>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">📄</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-docs">0</div>
+                <div class="stat-label">Documents</div>
               </div>
-              <div class="stat-item">
-                <span class="stat-value" id="detail-entities">0</span>
-                <span class="stat-label">Entities</span>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">🔗</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-entities">0</div>
+                <div class="stat-label">Entities</div>
               </div>
-              <div class="stat-item">
-                <span class="stat-value" id="detail-rels">0</span>
-                <span class="stat-label">Relationships</span>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">↔️</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-rels">0</div>
+                <div class="stat-label">Relationships</div>
               </div>
+            </div>
+          </div>
+
+          <div class="overview-section">
+            <h4>Members</h4>
+            <div id="detail-members-list" class="members-list">
+              <div class="detail-loading">Loading members...</div>
+            </div>
+          </div>
+
+          <div class="overview-section">
+            <h4>Recent Activity</h4>
+            <div id="detail-activity" class="activity-list">
+              <div class="detail-loading">Loading activity...</div>
             </div>
           </div>
         </div>
 
-        <!-- Tabs for Documents, Entities, Relationships -->
-        <div class="detail-tabs">
-          <button class="detail-tab active" data-tab="documents">Documents</button>
-          <button class="detail-tab" data-tab="entities">Entities</button>
-          <button class="detail-tab" data-tab="relationships">Relationships</button>
-        </div>
+        <!-- Content Tab -->
+        <div class="detail-main-pane" id="content-pane">
+          <!-- Sub-tabs for Documents, Entities, Relationships -->
+          <div class="detail-sub-tabs">
+            <button class="detail-sub-tab active" data-tab="documents">Documents</button>
+            <button class="detail-sub-tab" data-tab="entities">Entities</button>
+            <button class="detail-sub-tab" data-tab="relationships">Relationships</button>
+          </div>
 
-        <!-- Tab Content -->
-        <div class="detail-tab-content">
-          <div class="detail-tab-pane active" id="documents-pane">
-            <div class="detail-list" id="documents-list">
-              <div class="detail-loading">Loading documents...</div>
+          <!-- Sub-tab Content -->
+          <div class="detail-sub-content">
+            <div class="detail-sub-pane active" id="documents-pane">
+              <div class="detail-list" id="documents-list">
+                <div class="detail-loading">Loading documents...</div>
+              </div>
             </div>
-          </div>
-          <div class="detail-tab-pane" id="entities-pane">
-            <div class="detail-list" id="entities-list">
-              <div class="detail-loading">Loading entities...</div>
+            <div class="detail-sub-pane" id="entities-pane">
+              <div class="detail-list" id="entities-list">
+                <div class="detail-loading">Loading entities...</div>
+              </div>
             </div>
-          </div>
-          <div class="detail-tab-pane" id="relationships-pane">
-            <div class="detail-list" id="relationships-list">
-              <div class="detail-loading">Loading relationships...</div>
+            <div class="detail-sub-pane" id="relationships-pane">
+              <div class="detail-list" id="relationships-list">
+                <div class="detail-loading">Loading relationships...</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
       <div class="modal-footer">
         <button type="button" class="button button-secondary" id="ws-detail-close-btn">Close</button>
         <button type="button" class="button button-primary" id="ws-detail-open">Open Workspace</button>

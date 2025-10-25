@@ -240,6 +240,16 @@ export class IngestionManager {
         return;
       }
     }
+
+    // Append advanced configuration prompt if non-default settings
+    const advancedPrompt = this.getAdvancedConfigPrompt();
+    if (advancedPrompt && advancedPrompt.trim().length > 50) { // Only if there are actual additions
+      if (extractionContext) {
+        extractionContext = extractionContext + advancedPrompt;
+      } else {
+        extractionContext = advancedPrompt;
+      }
+    }
     
     const btn = document.getElementById('ingest-btn');
     this.convertButtonToStatusBar('Queuing...');
@@ -561,5 +571,194 @@ export class IngestionManager {
     const statusEl = document.getElementById('ingest-status');
     statusEl.className = type;
     statusEl.textContent = message;
+  }
+
+  openAdvancedConfig() {
+    const modal = document.getElementById('advanced-extraction-modal-overlay');
+    if (modal) {
+      modal.classList.add('visible');
+      document.body.classList.add('modal-open');
+    }
+  }
+
+  closeAdvancedConfig() {
+    const modal = document.getElementById('advanced-extraction-modal-overlay');
+    if (modal) {
+      modal.classList.remove('visible');
+      document.body.classList.remove('modal-open');
+    }
+  }
+
+  resetAdvancedConfig() {
+    document.getElementById('extraction-density').value = 'balanced';
+    document.getElementById('entity-granularity').value = 'balanced';
+    document.getElementById('relationship-specificity').value = 'balanced';
+    document.getElementById('temporal-context').value = 'ignore';
+    document.getElementById('confidence-threshold').value = 'balanced';
+    // Newly added parameters
+    const pol = document.getElementById('polarity-emphasis'); if (pol) pol.value = 'balanced';
+    const ev = document.getElementById('evidence-style'); if (ev) ev.value = 'balanced';
+    const norm = document.getElementById('normalization-strictness'); if (norm) norm.value = 'balanced';
+    const nov = document.getElementById('novelty-preference'); if (nov) nov.value = 'balanced';
+    const caus = document.getElementById('causality-bias'); if (caus) caus.value = 'balanced';
+  }
+
+  getAdvancedConfigPrompt() {
+    const density = document.getElementById('extraction-density')?.value || 'balanced';
+    const granularity = document.getElementById('entity-granularity')?.value || 'balanced';
+    const specificity = document.getElementById('relationship-specificity')?.value || 'balanced';
+    const temporal = document.getElementById('temporal-context')?.value || 'ignore';
+    const confidence = document.getElementById('confidence-threshold')?.value || 'balanced';
+    const polarity = document.getElementById('polarity-emphasis')?.value || 'balanced';
+    const evidenceStyle = document.getElementById('evidence-style')?.value || 'balanced';
+    const normalization = document.getElementById('normalization-strictness')?.value || 'balanced';
+    const novelty = document.getElementById('novelty-preference')?.value || 'balanced';
+    const causality = document.getElementById('causality-bias')?.value || 'balanced';
+
+    let promptAdditions = '';
+    let hasAdditions = false;
+
+    // Extraction Density
+    if (density === 'comprehensive') {
+      promptAdditions += 'EXTRACTION DENSITY: Comprehensive Network Mode\n';
+      promptAdditions += '- Extract a DENSE, INTERCONNECTED knowledge network\n';
+      promptAdditions += '- Include intermediate entities and multi-hop relationships\n';
+      promptAdditions += '- Capture supporting details and contextual connections\n';
+      promptAdditions += '- Aim for rich, graph-like structures with high connectivity\n\n';
+      hasAdditions = true;
+    } else if (density === 'focused') {
+      promptAdditions += 'EXTRACTION DENSITY: Focused Triplets Mode\n';
+      promptAdditions += '- Extract ONLY the most significant, direct relationships\n';
+      promptAdditions += '- Focus on key entities and primary connections\n';
+      promptAdditions += '- Omit intermediate or supporting details\n';
+      promptAdditions += '- Prioritize quality over quantity\n\n';
+      hasAdditions = true;
+    }
+
+    // Entity Granularity
+    if (granularity === 'fine') {
+      promptAdditions += 'ENTITY GRANULARITY: Fine-grained\n';
+      promptAdditions += '- Use SPECIFIC, DETAILED entity names\n';
+      promptAdditions += '- Include subtypes, variants, and specific forms (e.g., "BRAF V600E mutation", "CD8+ T cells")\n';
+      promptAdditions += '- Preserve technical details and precision\n\n';
+      hasAdditions = true;
+    } else if (granularity === 'coarse') {
+      promptAdditions += 'ENTITY GRANULARITY: Coarse-grained\n';
+      promptAdditions += '- Use BROAD, GENERAL entity names\n';
+      promptAdditions += '- Group specific variants into broader categories (e.g., "BRAF mutations", "T cells")\n';
+      promptAdditions += '- Favor conceptual groupings over specific instances\n\n';
+      hasAdditions = true;
+    }
+
+    // Relationship Specificity
+    if (specificity === 'specific') {
+      promptAdditions += 'RELATIONSHIP SPECIFICITY: Specific Predicates\n';
+      promptAdditions += '- Use PRECISE, TECHNICAL predicates\n';
+      promptAdditions += '- Examples: "phosphorylates", "upregulates", "competitively_inhibits", "binds_to_active_site"\n';
+      promptAdditions += '- Capture the exact mechanism or nature of the relationship\n\n';
+      hasAdditions = true;
+    } else if (specificity === 'general') {
+      promptAdditions += 'RELATIONSHIP SPECIFICITY: General Predicates\n';
+      promptAdditions += '- Use BROAD, HIGH-LEVEL predicates\n';
+      promptAdditions += '- Examples: "affects", "relates_to", "modulates", "influences"\n';
+      promptAdditions += '- Focus on the existence of relationships rather than precise mechanisms\n\n';
+      hasAdditions = true;
+    }
+
+    // Temporal Context
+    if (temporal === 'include') {
+      promptAdditions += 'TEMPORAL CONTEXT: Include Temporal Markers\n';
+      promptAdditions += '- Extract TIME-BASED relationships and sequences\n';
+      promptAdditions += '- Use temporal predicates: "occurs_before", "follows", "precedes", "triggers"\n';
+      promptAdditions += '- Capture causal chains and temporal dependencies\n';
+      promptAdditions += '- Note experimental timelines and progression\n\n';
+      hasAdditions = true;
+    }
+
+    // Confidence Threshold
+    if (confidence === 'high') {
+      promptAdditions += 'CONFIDENCE THRESHOLD: High (Explicit Only)\n';
+      promptAdditions += '- Extract ONLY explicitly stated relationships\n';
+      promptAdditions += '- Require clear, direct evidence in the text\n';
+      promptAdditions += '- Avoid inferring relationships from context\n';
+      promptAdditions += '- Prioritize precision over recall\n\n';
+      hasAdditions = true;
+    } else if (confidence === 'permissive') {
+      promptAdditions += 'CONFIDENCE THRESHOLD: Permissive (Include Inferred)\n';
+      promptAdditions += '- Extract both explicit AND strongly implied relationships\n';
+      promptAdditions += '- Use context and domain knowledge to infer connections\n';
+      promptAdditions += '- Include relationships suggested by experimental design or discussion\n';
+      promptAdditions += '- Prioritize recall over precision\n\n';
+      hasAdditions = true;
+    }
+
+    // Relationship Polarity Emphasis
+    if (polarity === 'negative') {
+      promptAdditions += 'POLARITY EMPHASIS: Negative Findings\n';
+      promptAdditions += '- Prefer extracting negative relationships when evidence exists (e.g., does_not_* predicates)\n';
+      promptAdditions += '- Maintain representation of positive findings but favor negative outcomes if both are present\n\n';
+      hasAdditions = true;
+    } else if (polarity === 'positive') {
+      promptAdditions += 'POLARITY EMPHASIS: Positive Findings\n';
+      promptAdditions += '- Prefer extracting positive/affirmative relationships when evidence exists\n';
+      promptAdditions += '- Still extract negative findings when they are central to the text\n\n';
+      hasAdditions = true;
+    }
+
+    // Evidence Style
+    if (evidenceStyle === 'verbatim') {
+      promptAdditions += 'EVIDENCE STYLE: Verbatim Quotes\n';
+      promptAdditions += "- For 'original_text', use direct sentence fragments quoted verbatim from the source\n";
+      promptAdditions += "- Keep quotes concise but exact; include page cues if present\n\n";
+      hasAdditions = true;
+    } else if (evidenceStyle === 'summary') {
+      promptAdditions += 'EVIDENCE STYLE: Summarized Evidence\n';
+      promptAdditions += "- For 'original_text', provide a concise paraphrase capturing the exact claim\n";
+      promptAdditions += "- Keep faithful to the source; avoid adding external information\n\n";
+      hasAdditions = true;
+    }
+
+    // Normalization Strictness
+    if (normalization === 'strict') {
+      promptAdditions += 'NORMALIZATION: Strict Ontology Mapping\n';
+      promptAdditions += "- Use canonical entity types and normalized, lowercase snake_case predicates\n";
+      promptAdditions += "- Prefer controlled vocabulary; collapse synonymous predicates into a single canonical form\n\n";
+      hasAdditions = true;
+    } else if (normalization === 'natural') {
+      promptAdditions += 'NORMALIZATION: Natural Language Friendly\n';
+      promptAdditions += "- Still normalize to snake_case, but choose predicate terms that best preserve nuance\n";
+      promptAdditions += "- Allow more expressive predicate choices when they add clarity\n\n";
+      hasAdditions = true;
+    }
+
+    // Novelty Preference
+    if (novelty === 'novel') {
+      promptAdditions += 'NOVELTY PREFERENCE: Prefer Novel Findings\n';
+      promptAdditions += "- Prioritize relationships that appear new, surprising, or explicitly described as novel\n";
+      promptAdditions += "- Surface previously unreported connections highlighted by the text\n\n";
+      hasAdditions = true;
+    } else if (novelty === 'confirmatory') {
+      promptAdditions += 'NOVELTY PREFERENCE: Prefer Confirmatory Findings\n';
+      promptAdditions += "- Prioritize relationships that confirm or replicate known findings\n";
+      promptAdditions += "- Emphasize consensus and reproducibility signals in the text\n\n";
+      hasAdditions = true;
+    }
+
+    // Causality Bias
+    if (causality === 'causal') {
+      promptAdditions += 'CAUSALITY BIAS: Prefer Causal\n';
+      promptAdditions += "- Prefer causal predicates (e.g., causes, increases, induces) when justified\n";
+      promptAdditions += "- Only use associative predicates when causal interpretation is not supported\n\n";
+      hasAdditions = true;
+    } else if (causality === 'associative') {
+      promptAdditions += 'CAUSALITY BIAS: Prefer Associative\n';
+      promptAdditions += "- Prefer associative/correlative predicates (e.g., associated_with, correlates_with) unless causality is explicit\n";
+      promptAdditions += "- Avoid overstating causality without clear evidence\n\n";
+      hasAdditions = true;
+    }
+
+    if (!hasAdditions) return '';
+
+    return '\n\n=== ADVANCED EXTRACTION PARAMETERS ===\n' + promptAdditions + '=== END ADVANCED PARAMETERS ===\n';
   }
 }
