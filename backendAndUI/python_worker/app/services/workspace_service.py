@@ -118,6 +118,20 @@ class WorkspaceService:
             # Get stats
             stats = WorkspaceService._get_workspace_stats(workspace_id)
 
+            # Handle datetime fields - they might be datetime objects or ISO strings
+            created_at = w["created_at"]
+            if hasattr(created_at, 'to_native'):
+                created_at = created_at.to_native()
+            elif isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            
+            updated_at = w.get("updated_at")
+            if updated_at:
+                if hasattr(updated_at, 'to_native'):
+                    updated_at = updated_at.to_native()
+                elif isinstance(updated_at, str):
+                    updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+            
             return Workspace(
                 workspace_id=w["workspace_id"],
                 name=w["name"],
@@ -126,8 +140,8 @@ class WorkspaceService:
                 color=w.get("color", "#3B82F6"),
                 privacy=w.get("privacy", "private"),
                 created_by=w["created_by"],
-                created_at=w["created_at"].to_native(),
-                updated_at=w.get("updated_at").to_native() if w.get("updated_at") else None,
+                created_at=created_at,
+                updated_at=updated_at,
                 archived=w.get("archived", False),
                 members=members,
                 stats=stats,
@@ -157,6 +171,20 @@ class WorkspaceService:
                 members = WorkspaceService._get_workspace_members(w["workspace_id"])
                 stats = WorkspaceService._get_workspace_stats(w["workspace_id"])
 
+                # Handle datetime fields - they might be datetime objects or ISO strings
+                created_at = w["created_at"]
+                if hasattr(created_at, 'to_native'):
+                    created_at = created_at.to_native()
+                elif isinstance(created_at, str):
+                    created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                
+                updated_at = w.get("updated_at")
+                if updated_at:
+                    if hasattr(updated_at, 'to_native'):
+                        updated_at = updated_at.to_native()
+                    elif isinstance(updated_at, str):
+                        updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+
                 workspace = Workspace(
                     workspace_id=w["workspace_id"],
                     name=w["name"],
@@ -165,8 +193,8 @@ class WorkspaceService:
                     color=w.get("color", "#3B82F6"),
                     privacy=w.get("privacy", "private"),
                     created_by=w["created_by"],
-                    created_at=w["created_at"].to_native(),
-                    updated_at=w.get("updated_at").to_native() if w.get("updated_at") else None,
+                    created_at=created_at,
+                    updated_at=updated_at,
                     archived=w.get("archived", False),
                     members=members,
                     stats=stats,

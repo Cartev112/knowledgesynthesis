@@ -416,6 +416,7 @@ app.use('/review', (req, res) => {
 app.get('/api/workspaces', requireAuth, async (req, res) => {
   try {
     const user = req.session.user
+    console.log('Session user data:', JSON.stringify(user, null, 2))
     const response = await axios.get(`${fastapiBase}/api/workspaces`, {
       headers: { 
         'X-User-ID': user.user_id || user.email,
