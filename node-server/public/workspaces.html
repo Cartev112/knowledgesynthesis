@@ -162,6 +162,76 @@
     </div>
   </div>
 
+  <!-- Workspace Detail Modal -->
+  <div class="modal" id="workspace-detail-modal">
+    <div class="modal-content workspace-detail-content">
+      <div class="modal-header">
+        <h2>Workspace Details</h2>
+        <button class="modal-close" id="ws-detail-close">&times;</button>
+      </div>
+      <div class="workspace-detail-body">
+        <!-- Workspace Info Section -->
+        <div class="detail-section workspace-info-section">
+          <div class="workspace-info-header">
+            <div class="workspace-info-icon" id="detail-icon">📊</div>
+            <div class="workspace-info-text">
+              <h3 id="detail-name">Workspace Name</h3>
+              <p id="detail-description">Description goes here</p>
+            </div>
+            <div class="workspace-info-stats">
+              <div class="stat-item">
+                <span class="stat-value" id="detail-members">0</span>
+                <span class="stat-label">Members</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="detail-docs">0</span>
+                <span class="stat-label">Documents</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="detail-entities">0</span>
+                <span class="stat-label">Entities</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="detail-rels">0</span>
+                <span class="stat-label">Relationships</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs for Documents, Entities, Relationships -->
+        <div class="detail-tabs">
+          <button class="detail-tab active" data-tab="documents">Documents</button>
+          <button class="detail-tab" data-tab="entities">Entities</button>
+          <button class="detail-tab" data-tab="relationships">Relationships</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="detail-tab-content">
+          <div class="detail-tab-pane active" id="documents-pane">
+            <div class="detail-list" id="documents-list">
+              <div class="detail-loading">Loading documents...</div>
+            </div>
+          </div>
+          <div class="detail-tab-pane" id="entities-pane">
+            <div class="detail-list" id="entities-list">
+              <div class="detail-loading">Loading entities...</div>
+            </div>
+          </div>
+          <div class="detail-tab-pane" id="relationships-pane">
+            <div class="detail-list" id="relationships-list">
+              <div class="detail-loading">Loading relationships...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button button-secondary" id="ws-detail-close-btn">Close</button>
+        <button type="button" class="button button-primary" id="ws-detail-open">Open Workspace</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Debug: Confirm page loaded
     console.log('✅ Workspaces page HTML loaded');

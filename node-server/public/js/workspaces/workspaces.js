@@ -314,9 +314,9 @@ class WorkspacesManager {
       this.openWorkspaceSettings(workspace.workspace_id);
     });
 
-    // Click on card to open
+    // Click on card to show details
     card.addEventListener('click', () => {
-      this.openWorkspace(workspace.workspace_id);
+      this.showWorkspaceDetails(workspace.workspace_id);
     });
 
     return card;
@@ -535,6 +535,194 @@ class WorkspacesManager {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  async showWorkspaceDetails(workspaceId) {
+    const modal = document.getElementById('workspace-detail-modal');
+    if (!modal) return;
+
+    // Show modal immediately
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+
+    // Set up event listeners if not already done
+    if (!this.detailModalListenersSet) {
+      this.setupDetailModalListeners();
+      this.detailModalListenersSet = true;
+    }
+
+    // Store current workspace ID
+    this.currentDetailWorkspaceId = workspaceId;
+
+    try {
+      // Load workspace details
+      const workspace = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}`);
+      
+      // Populate workspace info
+      document.getElementById('detail-icon').textContent = workspace.icon || '📊';
+      document.getElementById('detail-name').textContent = workspace.name || 'Untitled';
+      document.getElementById('detail-description').textContent = workspace.description || 'No description';
+      
+      const stats = workspace.stats || {};
+      document.getElementById('detail-members').textContent = stats.member_count || 0;
+      document.getElementById('detail-docs').textContent = stats.document_count || 0;
+      document.getElementById('detail-entities').textContent = stats.entity_count || 0;
+      document.getElementById('detail-rels').textContent = stats.relationship_count || 0;
+
+      // Load documents, entities, and relationships
+      await this.loadWorkspaceDocuments(workspaceId);
+      await this.loadWorkspaceEntities(workspaceId);
+      await this.loadWorkspaceRelationships(workspaceId);
+    } catch (error) {
+      console.error('Failed to load workspace details:', error);
+      alert('Failed to load workspace details');
+      this.closeDetailModal();
+    }
+  }
+
+  setupDetailModalListeners() {
+    const modal = document.getElementById('workspace-detail-modal');
+    const closeBtn = document.getElementById('ws-detail-close');
+    const closeBtnFooter = document.getElementById('ws-detail-close-btn');
+    const openBtn = document.getElementById('ws-detail-open');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeDetailModal());
+    }
+
+    if (closeBtnFooter) {
+      closeBtnFooter.addEventListener('click', () => this.closeDetailModal());
+    }
+
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        if (this.currentDetailWorkspaceId) {
+          this.openWorkspace(this.currentDetailWorkspaceId);
+        }
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeDetailModal();
+      });
+    }
+
+    // Tab switching
+    const tabs = document.querySelectorAll('.detail-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active pane
+        document.querySelectorAll('.detail-tab-pane').forEach(pane => {
+          pane.classList.remove('active');
+        });
+        document.getElementById(`${targetTab}-pane`).classList.add('active');
+      });
+    });
+  }
+
+  closeDetailModal() {
+    const modal = document.getElementById('workspace-detail-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
+    this.currentDetailWorkspaceId = null;
+  }
+
+  async loadWorkspaceDocuments(workspaceId) {
+    const listEl = document.getElementById('documents-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="detail-loading">Loading documents...</div>';
+
+    try {
+      const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
+      const documents = response.documents || response || [];
+
+      if (documents.length === 0) {
+        listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">📄</div><p>No documents yet</p></div>';
+        return;
+      }
+
+      listEl.innerHTML = documents.map(doc => `
+        <div class="detail-item">
+          <div class="detail-item-header">
+            <div class="detail-item-title">${this.escapeHtml(doc.title || doc.name || 'Untitled')}</div>
+            <div class="detail-item-meta">${this.formatLastActivity(doc.created_at)}</div>
+          </div>
+          ${doc.summary ? `<div class="detail-item-content">${this.escapeHtml(doc.summary)}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+      listEl.innerHTML = '<div class="detail-empty"><p>Failed to load documents</p></div>';
+    }
+  }
+
+  async loadWorkspaceEntities(workspaceId) {
+    const listEl = document.getElementById('entities-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="detail-loading">Loading entities...</div>';
+
+    try {
+      const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/entities`);
+      const entities = response.entities || response || [];
+
+      if (entities.length === 0) {
+        listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">🔗</div><p>No entities yet</p></div>';
+        return;
+      }
+
+      listEl.innerHTML = entities.map(entity => `
+        <div class="detail-item">
+          <div class="detail-item-header">
+            <div class="detail-item-title">${this.escapeHtml(entity.name || entity.label || 'Unnamed')}</div>
+            ${entity.type ? `<span class="entity-type-badge">${this.escapeHtml(entity.type)}</span>` : ''}
+          </div>
+          ${entity.description ? `<div class="detail-item-content">${this.escapeHtml(entity.description)}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Failed to load entities:', error);
+      listEl.innerHTML = '<div class="detail-empty"><p>Failed to load entities</p></div>';
+    }
+  }
+
+  async loadWorkspaceRelationships(workspaceId) {
+    const listEl = document.getElementById('relationships-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="detail-loading">Loading relationships...</div>';
+
+    try {
+      const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/relationships`);
+      const relationships = response.relationships || response || [];
+
+      if (relationships.length === 0) {
+        listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">↔️</div><p>No relationships yet</p></div>';
+        return;
+      }
+
+      listEl.innerHTML = relationships.map(rel => `
+        <div class="relationship-wrapper">
+          <div class="relationship-type">${this.escapeHtml(rel.type || rel.relationship_type || 'RELATED')}</div>
+          <div class="relationship-node">${this.escapeHtml(rel.source_name || rel.from || 'Node')}</div>
+          <div class="relationship-arrow">→</div>
+          <div class="relationship-node">${this.escapeHtml(rel.target_name || rel.to || 'Node')}</div>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Failed to load relationships:', error);
+      listEl.innerHTML = '<div class="detail-empty"><p>Failed to load relationships</p></div>';
+    }
   }
 }
 

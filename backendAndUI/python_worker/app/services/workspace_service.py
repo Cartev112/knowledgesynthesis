@@ -483,6 +483,107 @@ class WorkspaceService:
 
         return False
 
+    @staticmethod
+    def get_workspace_documents(workspace_id: str, user_id: str) -> List[dict]:
+        """Get all documents in a workspace."""
+        # Check if user has access to workspace
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'view'):
+            logger.warning(f"User {user_id} does not have permission to view workspace {workspace_id}")
+            return []
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            result = session.run(
+                """
+                MATCH (d:Document)-[:BELONGS_TO]->(w:Workspace {workspace_id: $workspace_id})
+                OPTIONAL MATCH (d)-[:CREATED_BY]->(u:User)
+                RETURN d, u.user_email as creator_email
+                ORDER BY d.created_at DESC
+                """,
+                workspace_id=workspace_id
+            )
+
+            documents = []
+            for record in result:
+                doc = record["d"]
+                documents.append({
+                    "document_id": doc.get("document_id"),
+                    "title": doc.get("title") or doc.get("name"),
+                    "name": doc.get("name"),
+                    "summary": doc.get("summary"),
+                    "created_at": doc.get("created_at").to_native() if doc.get("created_at") else None,
+                    "updated_at": doc.get("updated_at").to_native() if doc.get("updated_at") else None,
+                    "creator_email": record.get("creator_email"),
+                })
+
+            return documents
+
+    @staticmethod
+    def get_workspace_entities(workspace_id: str, user_id: str) -> List[dict]:
+        """Get all entities in a workspace."""
+        # Check if user has access to workspace
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'view'):
+            logger.warning(f"User {user_id} does not have permission to view workspace {workspace_id}")
+            return []
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            result = session.run(
+                """
+                MATCH (e:Entity)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(w:Workspace {workspace_id: $workspace_id})
+                RETURN DISTINCT e
+                ORDER BY e.name
+                LIMIT 500
+                """,
+                workspace_id=workspace_id
+            )
+
+            entities = []
+            for record in result:
+                entity = record["e"]
+                entities.append({
+                    "entity_id": entity.get("entity_id"),
+                    "name": entity.get("name"),
+                    "label": entity.get("label"),
+                    "type": entity.get("type"),
+                    "description": entity.get("description"),
+                    "created_at": entity.get("created_at").to_native() if entity.get("created_at") else None,
+                })
+
+            return entities
+
+    @staticmethod
+    def get_workspace_relationships(workspace_id: str, user_id: str) -> List[dict]:
+        """Get all relationships in a workspace."""
+        # Check if user has access to workspace
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'view'):
+            logger.warning(f"User {user_id} does not have permission to view workspace {workspace_id}")
+            return []
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            result = session.run(
+                """
+                MATCH (source:Entity)-[r]->(target:Entity)
+                WHERE (source)-[:EXTRACTED_FROM]->(:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                AND (target)-[:EXTRACTED_FROM]->(:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                RETURN source.name as source_name, type(r) as relationship_type, target.name as target_name, r
+                ORDER BY source.name
+                LIMIT 500
+                """,
+                workspace_id=workspace_id
+            )
+
+            relationships = []
+            for record in result:
+                rel = record["r"]
+                relationships.append({
+                    "source_name": record.get("source_name"),
+                    "target_name": record.get("target_name"),
+                    "type": record.get("relationship_type"),
+                    "relationship_type": record.get("relationship_type"),
+                    "properties": dict(rel) if rel else {},
+                })
+
+            return relationships
+
 
 # Global service instance
 workspace_service = WorkspaceService()

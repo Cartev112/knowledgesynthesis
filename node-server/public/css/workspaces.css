@@ -640,6 +640,247 @@ form {
   cursor: not-allowed;
 }
 
+/* Workspace Detail Modal */
+.workspace-detail-content {
+  max-width: 900px;
+  width: 95%;
+}
+
+.workspace-detail-body {
+  padding: 0;
+  max-height: calc(90vh - 180px);
+  overflow-y: auto;
+}
+
+.detail-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.workspace-info-section {
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+}
+
+.workspace-info-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.workspace-info-icon {
+  font-size: 3rem;
+  line-height: 1;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.workspace-info-text h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.workspace-info-text p {
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.workspace-info-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.detail-tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.detail-tab:hover {
+  color: #374151;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.detail-tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  background: white;
+}
+
+.detail-tab-content {
+  padding: 1.5rem;
+  min-height: 300px;
+}
+
+.detail-tab-pane {
+  display: none;
+}
+
+.detail-tab-pane.active {
+  display: block;
+}
+
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.detail-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #9ca3af;
+}
+
+.detail-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.detail-item {
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.detail-item:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.detail-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.5rem;
+}
+
+.detail-item-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.detail-item-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.detail-item-content {
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.entity-type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.relationship-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.relationship-node {
+  flex: 1;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.relationship-arrow {
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.relationship-type {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .workspaces-grid {
@@ -652,5 +893,17 @@ form {
   
   .workspaces-main {
     padding: 1rem;
+  }
+  
+  .workspace-info-header {
+    grid-template-columns: 1fr;
+  }
+  
+  .workspace-info-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .workspace-detail-content {
+    width: 98%;
   }
 }

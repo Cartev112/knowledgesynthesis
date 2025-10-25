@@ -491,6 +491,63 @@ app.put('/api/workspaces/:id', requireAuth, async (req, res) => {
   }
 })
 
+app.get('/api/workspaces/:id/documents', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.get(`${fastapiBase}/api/workspaces/${req.params.id}/documents`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace documents error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+app.get('/api/workspaces/:id/entities', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.get(`${fastapiBase}/api/workspaces/${req.params.id}/entities`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace entities error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+app.get('/api/workspaces/:id/relationships', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.get(`${fastapiBase}/api/workspaces/${req.params.id}/relationships`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Workspace relationships error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
 // Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async, /api/workspaces)
 app.use('/api', (req, res, next) => {
   // Skip proxy for Node-handled endpoints

@@ -169,3 +169,51 @@ def update_member(
     """Update a member's role or permissions."""
     # TODO: Implement update member functionality
     raise HTTPException(status_code=501, detail="Not implemented yet")
+
+
+@router.get("/workspaces/{workspace_id}/documents")
+def get_workspace_documents(
+    workspace_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all documents in a workspace."""
+    try:
+        documents = workspace_service.get_workspace_documents(
+            workspace_id=workspace_id,
+            user_id=current_user.user_id
+        )
+        return {"documents": documents}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get documents: {str(e)}")
+
+
+@router.get("/workspaces/{workspace_id}/entities")
+def get_workspace_entities(
+    workspace_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all entities in a workspace."""
+    try:
+        entities = workspace_service.get_workspace_entities(
+            workspace_id=workspace_id,
+            user_id=current_user.user_id
+        )
+        return {"entities": entities}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get entities: {str(e)}")
+
+
+@router.get("/workspaces/{workspace_id}/relationships")
+def get_workspace_relationships(
+    workspace_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all relationships in a workspace."""
+    try:
+        relationships = workspace_service.get_workspace_relationships(
+            workspace_id=workspace_id,
+            user_id=current_user.user_id
+        )
+        return {"relationships": relationships}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get relationships: {str(e)}")
