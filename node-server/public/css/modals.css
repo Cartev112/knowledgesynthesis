@@ -547,7 +547,7 @@
 #legend-modal {
   background: white;
   border-radius: 0.75rem;
-  max-width: 37.5rem;
+  max-width: 75rem;
   width: 90%;
   box-shadow: 0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1);
 }
@@ -886,7 +886,7 @@
 .modal-dialog {
   background: white;
   border-radius: 0.75rem;
-  max-width: 42rem;
+  max-width: 75rem;
   width: 95%;
   max-height: 90vh;
   display: flex;
@@ -920,23 +920,39 @@
   font-weight: 600;
 }
 
-.btn-advanced {
-  width: 100%;
-  padding: 0.625rem 1rem;
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-gear-icon {
   background: #f3f4f6;
   color: #374151;
   border: 2px solid #e5e7eb;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
-.btn-advanced:hover {
+.btn-gear-icon:hover {
   background: #e5e7eb;
   border-color: #8b5cf6;
-  color: #8b5cf6;
+  transform: rotate(90deg);
 }
 
 @media (max-width: 768px) {

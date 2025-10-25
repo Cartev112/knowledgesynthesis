@@ -77,7 +77,12 @@
           
           <!-- Right Column: Extraction Parameters -->
           <div>
-            <h3 class="section-heading">Extraction Settings</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 class="section-heading" style="margin: 0;">Extraction Settings</h3>
+              <button type="button" class="btn-gear-icon" onclick="window.ingestionManager.openAdvancedConfig()" title="Advanced Extraction Settings">
+                ⚙️
+              </button>
+            </div>
             
             <div class="form-group">
               <label class="checkbox-label">
@@ -119,12 +124,6 @@
                 <option value="gpt-4-turbo">GPT-4 Turbo</option>
               </select>
               <div class="help-text">AI model for knowledge extraction</div>
-            </div>
-            
-            <div class="form-group">
-              <button type="button" class="btn-advanced" onclick="window.ingestionManager.openAdvancedConfig()">
-                ⚙️ Advanced Extraction Settings
-              </button>
             </div>
             
             <div id="ingest-btn-container">
@@ -479,68 +478,70 @@
       </div>
       <div class="modal-body">
         <!-- Configuration Controls -->
-        <div class="config-section">
-          <div class="config-section-title">Node Color Scheme</div>
-          <div class="config-control">
-            <select id="node-color-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-              <option value="default">Default (Purple)</option>
-              <option value="by-type">By Entity Type</option>
-              <option value="by-user">By User/Creator</option>
-              <option value="by-document">By Document Source</option>
-              <option value="by-degree">By Connection Count</option>
-            </select>
+        <div class="config-grid">
+          <div class="config-section">
+            <div class="config-section-title">Node Color Scheme</div>
+            <div class="config-control">
+              <select id="node-color-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+                <option value="default">Default (Purple)</option>
+                <option value="by-type">By Entity Type</option>
+                <option value="by-user">By User/Creator</option>
+                <option value="by-document">By Document Source</option>
+                <option value="by-degree">By Connection Count</option>
+              </select>
+            </div>
+            <div id="color-legend" class="color-legend-container"></div>
           </div>
-          <div id="color-legend" class="color-legend-container"></div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Node Size</div>
-          <div class="config-control">
-            <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-              <option value="by-significance">By Significance (Default)</option>
-              <option value="uniform">Uniform</option>
-              <option value="by-degree">By Connection Count</option>
-              <option value="by-importance">By Centrality</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Node Size</div>
+            <div class="config-control">
+              <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+                <option value="by-significance">By Significance (Default)</option>
+                <option value="uniform">Uniform</option>
+                <option value="by-degree">By Connection Count</option>
+                <option value="by-importance">By Centrality</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Edge Style</div>
-          <div class="config-control">
-            <select id="edge-style-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-              <option value="default">Default (Gray)</option>
-              <option value="by-type">By Relationship Type</option>
-              <option value="by-document">By Document Source</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Edge Style</div>
+            <div class="config-control">
+              <select id="edge-style-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+                <option value="default">Default (Gray)</option>
+                <option value="by-type">By Relationship Type</option>
+                <option value="by-document">By Document Source</option>
+              </select>
+            </div>
+            <div id="edge-legend" class="color-legend-container"></div>
           </div>
-          <div id="edge-legend" class="color-legend-container"></div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Label Display</div>
-          <div class="config-control">
-            <select id="label-display-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-              <option value="hover">Show on Hover</option>
-              <option value="always">Always Show</option>
-              <option value="selected">Selected Only</option>
-              <option value="never">Hide All</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Label Display</div>
+            <div class="config-control">
+              <select id="label-display-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+                <option value="hover">Show on Hover</option>
+                <option value="always">Always Show</option>
+                <option value="selected">Selected Only</option>
+                <option value="never">Hide All</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Layout Algorithm</div>
-          <div class="config-control">
-            <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.applyLayout()">
-              <option value="cose">Force-Directed (COSE)</option>
-              <option value="fcose">Fast Force-Directed</option>
-              <option value="cola">Constraint-Based</option>
-              <option value="circle">Circular</option>
-              <option value="grid">Grid</option>
-              <option value="concentric">Concentric</option>
-              <option value="breadthfirst">Hierarchical (Breadth-First)</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Layout Algorithm</div>
+            <div class="config-control">
+              <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.applyLayout()">
+                <option value="cose">Force-Directed (COSE)</option>
+                <option value="fcose">Fast Force-Directed</option>
+                <option value="cola">Constraint-Based</option>
+                <option value="circle">Circular</option>
+                <option value="grid">Grid</option>
+                <option value="concentric">Concentric</option>
+                <option value="breadthfirst">Hierarchical (Breadth-First)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -564,82 +565,82 @@
           Fine-tune how the AI extracts knowledge from your documents. These settings modify the extraction prompt to emphasize different aspects of knowledge representation.
         </p>
 
-        <div class="config-section">
-          <div class="config-section-title">Extraction Density</div>
-          <div class="config-control">
-            <select id="extraction-density" class="config-select">
-              <option value="comprehensive">Comprehensive Network (Dense, Interconnected)</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="focused">Focused Triplets (Key Relationships Only)</option>
-            </select>
+        <div class="config-grid">
+          <div class="config-section">
+            <div class="config-section-title">Extraction Density</div>
+            <div class="config-control">
+              <select id="extraction-density" class="config-select">
+                <option value="comprehensive">Comprehensive Network (Dense, Interconnected)</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="focused">Focused Triplets (Key Relationships Only)</option>
+              </select>
+            </div>
+            <div class="config-help">
+              <strong>Comprehensive:</strong> Extract many entities with rich interconnections, creating a dense knowledge network.<br>
+              <strong>Focused:</strong> Extract only the most significant, direct relationships between key entities.
+            </div>
           </div>
-          <div class="config-help">
-            <strong>Comprehensive:</strong> Extract many entities with rich interconnections, creating a dense knowledge network.<br>
-            <strong>Focused:</strong> Extract only the most significant, direct relationships between key entities.
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Entity Granularity</div>
-          <div class="config-control">
-            <select id="entity-granularity" class="config-select">
-              <option value="fine">Fine-grained (Specific Details)</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="coarse">Coarse-grained (Broad Concepts)</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Entity Granularity</div>
+            <div class="config-control">
+              <select id="entity-granularity" class="config-select">
+                <option value="fine">Fine-grained (Specific Details)</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="coarse">Coarse-grained (Broad Concepts)</option>
+              </select>
+            </div>
+            <div class="config-help">
+              <strong>Fine-grained:</strong> Extract specific entities (e.g., "BRAF V600E mutation", "CD8+ T cells").<br>
+              <strong>Coarse-grained:</strong> Extract broader concepts (e.g., "BRAF mutations", "T cells").
+            </div>
           </div>
-          <div class="config-help">
-            <strong>Fine-grained:</strong> Extract specific entities (e.g., "BRAF V600E mutation", "CD8+ T cells").<br>
-            <strong>Coarse-grained:</strong> Extract broader concepts (e.g., "BRAF mutations", "T cells").
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Relationship Specificity</div>
-          <div class="config-control">
-            <select id="relationship-specificity" class="config-select">
-              <option value="specific">Specific Predicates (Precise)</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="general">General Predicates (Broad)</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Relationship Specificity</div>
+            <div class="config-control">
+              <select id="relationship-specificity" class="config-select">
+                <option value="specific">Specific Predicates (Precise)</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="general">General Predicates (Broad)</option>
+              </select>
+            </div>
+            <div class="config-help">
+              <strong>Specific:</strong> Use precise predicates (e.g., "phosphorylates", "upregulates", "competitively_inhibits").<br>
+              <strong>General:</strong> Use broader predicates (e.g., "affects", "relates_to", "modulates").
+            </div>
           </div>
-          <div class="config-help">
-            <strong>Specific:</strong> Use precise predicates (e.g., "phosphorylates", "upregulates", "competitively_inhibits").<br>
-            <strong>General:</strong> Use broader predicates (e.g., "affects", "relates_to", "modulates").
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Temporal Context</div>
-          <div class="config-control">
-            <select id="temporal-context" class="config-select">
-              <option value="include">Include Temporal Markers</option>
-              <option value="ignore" selected>Ignore Temporal Context (Default)</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Temporal Context</div>
+            <div class="config-control">
+              <select id="temporal-context" class="config-select">
+                <option value="include">Include Temporal Markers</option>
+                <option value="ignore" selected>Ignore Temporal Context (Default)</option>
+              </select>
+            </div>
+            <div class="config-help">
+              <strong>Include:</strong> Extract time-based relationships and temporal sequences (e.g., "occurs_before", "follows").<br>
+              <strong>Ignore:</strong> Focus on static, timeless relationships.
+            </div>
           </div>
-          <div class="config-help">
-            <strong>Include:</strong> Extract time-based relationships and temporal sequences (e.g., "occurs_before", "follows").<br>
-            <strong>Ignore:</strong> Focus on static, timeless relationships.
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Confidence Threshold</div>
-          <div class="config-control">
-            <select id="confidence-threshold" class="config-select">
-              <option value="high">High Confidence Only (Explicit)</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="permissive">Permissive (Include Inferred)</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Confidence Threshold</div>
+            <div class="config-control">
+              <select id="confidence-threshold" class="config-select">
+                <option value="high">High Confidence Only (Explicit)</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="permissive">Permissive (Include Inferred)</option>
+              </select>
+            </div>
+            <div class="config-help">
+              <strong>High:</strong> Extract only explicitly stated relationships with clear evidence.<br>
+              <strong>Permissive:</strong> Include both explicit and strongly implied relationships from context.
+            </div>
           </div>
-          <div class="config-help">
-            <strong>High:</strong> Extract only explicitly stated relationships with clear evidence.<br>
-            <strong>Permissive:</strong> Include both explicit and strongly implied relationships from context.
-          </div>
-        </div>
 
-        <!-- New Parameters Start -->
-        <div class="config-section">
+          <div class="config-section">
           <div class="config-section-title">Relationship Polarity Emphasis</div>
           <div class="config-control">
             <select id="polarity-emphasis" class="config-select">
@@ -651,64 +652,64 @@
           <div class="config-help">
             Tune the balance between extracting negative vs. positive relationships.
           </div>
-        </div>
+          </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Evidence Style</div>
-          <div class="config-control">
-            <select id="evidence-style" class="config-select">
-              <option value="verbatim">Verbatim Quotes (Exact Evidence)</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="summary">Summarized Evidence</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Evidence Style</div>
+            <div class="config-control">
+              <select id="evidence-style" class="config-select">
+                <option value="verbatim">Verbatim Quotes (Exact Evidence)</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="summary">Summarized Evidence</option>
+              </select>
+            </div>
+            <div class="config-help">
+              Control whether supporting evidence should be verbatim quotes or concise summaries.
+            </div>
           </div>
-          <div class="config-help">
-            Control whether supporting evidence should be verbatim quotes or concise summaries.
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Normalization Strictness</div>
-          <div class="config-control">
-            <select id="normalization-strictness" class="config-select">
-              <option value="strict">Strict Ontology Mapping</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="natural">Natural Language Friendly</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Normalization Strictness</div>
+            <div class="config-control">
+              <select id="normalization-strictness" class="config-select">
+                <option value="strict">Strict Ontology Mapping</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="natural">Natural Language Friendly</option>
+              </select>
+            </div>
+            <div class="config-help">
+              Choose between strict canonical predicate/entity terms vs. expressive natural language when informative.
+            </div>
           </div>
-          <div class="config-help">
-            Choose between strict canonical predicate/entity terms vs. expressive natural language when informative.
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Novelty Preference</div>
-          <div class="config-control">
-            <select id="novelty-preference" class="config-select">
-              <option value="novel">Prefer Novel Findings</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="confirmatory">Prefer Confirmatory Findings</option>
-            </select>
+          <div class="config-section">
+            <div class="config-section-title">Novelty Preference</div>
+            <div class="config-control">
+              <select id="novelty-preference" class="config-select">
+                <option value="novel">Prefer Novel Findings</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="confirmatory">Prefer Confirmatory Findings</option>
+              </select>
+            </div>
+            <div class="config-help">
+              Emphasize extracting knowledge that is new vs. confirming known relationships.
+            </div>
           </div>
-          <div class="config-help">
-            Emphasize extracting knowledge that is new vs. confirming known relationships.
-          </div>
-        </div>
 
-        <div class="config-section">
-          <div class="config-section-title">Causality Bias</div>
-          <div class="config-control">
-            <select id="causality-bias" class="config-select">
-              <option value="causal">Prefer Causal Relationships</option>
-              <option value="balanced" selected>Balanced (Default)</option>
-              <option value="associative">Prefer Associative/Correlative</option>
-            </select>
-          </div>
-          <div class="config-help">
-            Bias extraction toward causal claims vs. associative relationships.
+          <div class="config-section">
+            <div class="config-section-title">Causality Bias</div>
+            <div class="config-control">
+              <select id="causality-bias" class="config-select">
+                <option value="causal">Prefer Causal Relationships</option>
+                <option value="balanced" selected>Balanced (Default)</option>
+                <option value="associative">Prefer Associative/Correlative</option>
+              </select>
+            </div>
+            <div class="config-help">
+              Bias extraction toward causal claims vs. associative relationships.
+            </div>
           </div>
         </div>
-        <!-- New Parameters End -->
 
         <div class="config-actions">
           <button class="config-btn config-btn-secondary" onclick="window.ingestionManager.resetAdvancedConfig()">Reset to Default</button>
