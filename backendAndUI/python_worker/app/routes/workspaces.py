@@ -12,7 +12,7 @@ from ..models.workspace import (
 from ..models.user import User
 from ..core.auth import get_current_user
 from ..services.workspace_service import workspace_service
-from ..db.neo4j_client import neo4j_client
+from ..services.neo4j_client import neo4j_client
 from ..core.settings import settings
 
 router = APIRouter()
