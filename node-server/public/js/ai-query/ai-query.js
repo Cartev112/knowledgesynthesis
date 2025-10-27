@@ -209,6 +209,8 @@ export class AIQuery {
     let answerText = '';
     let sources = [];
     let thinkingTraces = [];
+    let toolUses = [];
+    let toolResults = [];
     let retrievedContext = {
       entities: [],
       documents: []
@@ -216,9 +218,20 @@ export class AIQuery {
 
     // Parse the Aura Agent response structure
     if (response.content && Array.isArray(response.content)) {
-      // Extract thinking traces
+      // Extract thinking traces (reasoning)
       const thinkingItems = response.content.filter(item => item.type === 'thinking');
       thinkingTraces = thinkingItems.map(item => item.thinking);
+
+      // Extract tool uses
+      const toolUseItems = response.content.filter(item => 
+        item.type === 'cypher_template_tool_use' || 
+        item.type === 'vector_similarity_tool_use'
+      );
+      toolUses = toolUseItems.map(item => ({
+        name: item.name,
+        input: item.input,
+        id: item.id
+      }));
 
       // Find text content
       const textContent = response.content.find(item => item.type === 'text');
@@ -227,13 +240,18 @@ export class AIQuery {
       }
 
       // Find tool results for context
-      const toolResults = response.content.filter(item => 
+      const toolResultItems = response.content.filter(item => 
         item.type === 'cypher_template_tool_result' || 
         item.type === 'vector_similarity_tool_result'
       );
 
+      toolResults = toolResultItems.map(item => ({
+        tool_use_id: item.tool_use_id,
+        output: item.output
+      }));
+
       // Extract sources from tool results
-      toolResults.forEach(result => {
+      toolResultItems.forEach(result => {
         if (result.output && result.output.records) {
           result.output.records.forEach(record => {
             // Try to extract document/source information
@@ -269,6 +287,8 @@ export class AIQuery {
       sources,
       retrievedContext,
       thinkingTraces,
+      toolUses,
+      toolResults,
       question
     });
   }
@@ -337,10 +357,16 @@ export class AIQuery {
 
     contentWrapper.appendChild(content);
 
-    // Add thinking traces if available (for assistant messages)
+    // Add reasoning section if available (for assistant messages)
     if (message.role === 'assistant' && message.metadata.thinkingTraces && message.metadata.thinkingTraces.length > 0) {
-      const thinkingEl = this.createThinkingElement(message.metadata.thinkingTraces);
-      content.appendChild(thinkingEl);
+      const reasoningEl = this.createReasoningElement(message.metadata.thinkingTraces);
+      content.appendChild(reasoningEl);
+    }
+
+    // Add tool usage section if available
+    if (message.role === 'assistant' && message.metadata.toolUses && message.metadata.toolUses.length > 0) {
+      const toolsEl = this.createToolUsageElement(message.metadata.toolUses, message.metadata.toolResults);
+      content.appendChild(toolsEl);
     }
 
     // Add sources if available
@@ -430,46 +456,94 @@ export class AIQuery {
     return result.join('<br>');
   }
 
-  createThinkingElement(thinkingTraces) {
+  createReasoningElement(thinkingTraces) {
     const div = document.createElement('div');
-    div.className = 'ai-query-thinking';
+    div.className = 'ai-query-reasoning';
 
-    const title = document.createElement('div');
-    title.className = 'ai-query-thinking-title';
-    title.innerHTML = '<span>💭</span><span>Agent Thinking</span>';
-    div.appendChild(title);
+    const header = document.createElement('div');
+    header.className = 'ai-query-reasoning-header';
+    header.innerHTML = '<span class="ai-query-reasoning-icon">✏️</span><span class="ai-query-reasoning-title">Reasoning</span>';
+    div.appendChild(header);
 
     const content = document.createElement('div');
-    content.className = 'ai-query-thinking-content';
+    content.className = 'ai-query-reasoning-content';
     
-    // Show first thinking trace by default, hide rest
+    // Show all thinking traces
     if (thinkingTraces.length > 0) {
-      content.textContent = thinkingTraces[0];
-      
-      // If there are more traces, add a toggle button
-      if (thinkingTraces.length > 1) {
-        const toggle = document.createElement('button');
-        toggle.className = 'ai-query-thinking-toggle';
-        toggle.textContent = `Show ${thinkingTraces.length - 1} more thinking step${thinkingTraces.length > 2 ? 's' : ''}`;
-        
-        let expanded = false;
-        toggle.addEventListener('click', () => {
-          expanded = !expanded;
-          if (expanded) {
-            content.textContent = thinkingTraces.join('\n\n---\n\n');
-            toggle.textContent = 'Show less';
-          } else {
-            content.textContent = thinkingTraces[0];
-            toggle.textContent = `Show ${thinkingTraces.length - 1} more thinking step${thinkingTraces.length > 2 ? 's' : ''}`;
-          }
-        });
-        
-        div.appendChild(toggle);
-      }
+      content.textContent = thinkingTraces.join('\n\n');
     }
 
     div.appendChild(content);
     return div;
+  }
+
+  createToolUsageElement(toolUses, toolResults) {
+    const div = document.createElement('div');
+    div.className = 'ai-query-tools';
+
+    const header = document.createElement('div');
+    header.className = 'ai-query-tools-header';
+    header.innerHTML = '<span class="ai-query-tools-icon">🔧</span><span class="ai-query-tools-title">Applying agent tools</span>';
+    div.appendChild(header);
+
+    const toolsList = document.createElement('div');
+    toolsList.className = 'ai-query-tools-list';
+
+    toolUses.forEach((tool, index) => {
+      const toolItem = document.createElement('div');
+      toolItem.className = 'ai-query-tool-item';
+
+      const toolHeader = document.createElement('div');
+      toolHeader.className = 'ai-query-tool-header';
+      toolHeader.innerHTML = `<span class="ai-query-tool-icon">&lt;/&gt;</span><span class="ai-query-tool-name">${tool.name}</span>`;
+      
+      toolItem.appendChild(toolHeader);
+
+      // Add expandable sections for Input and Output
+      if (tool.input) {
+        const inputSection = this.createToolSection('Input', tool.input);
+        toolItem.appendChild(inputSection);
+      }
+
+      // Find matching output
+      const matchingResult = toolResults?.find(r => r.tool_use_id === tool.id);
+      if (matchingResult && matchingResult.output) {
+        const outputSection = this.createToolSection('Output', matchingResult.output);
+        toolItem.appendChild(outputSection);
+      }
+
+      toolsList.appendChild(toolItem);
+    });
+
+    div.appendChild(toolsList);
+    return div;
+  }
+
+  createToolSection(title, data) {
+    const section = document.createElement('div');
+    section.className = 'ai-query-tool-section';
+
+    const sectionHeader = document.createElement('div');
+    sectionHeader.className = 'ai-query-tool-section-header';
+    sectionHeader.textContent = title;
+    
+    const sectionContent = document.createElement('pre');
+    sectionContent.className = 'ai-query-tool-section-content';
+    sectionContent.textContent = JSON.stringify(data, null, 2);
+
+    // Make it collapsible
+    let isExpanded = false;
+    sectionContent.style.display = 'none';
+
+    sectionHeader.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      sectionContent.style.display = isExpanded ? 'block' : 'none';
+      sectionHeader.classList.toggle('expanded', isExpanded);
+    });
+
+    section.appendChild(sectionHeader);
+    section.appendChild(sectionContent);
+    return section;
   }
 
   createSourcesElement(sources) {

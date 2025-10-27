@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from typing import Iterable, Optional, List
 import logging
+import hashlib
 
 from .neo4j_client import neo4j_client
 from .entity_consolidation import consolidate_identical_entities
 from ..models.triplet import Triplet
+from ..core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -194,8 +196,132 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
     return result
 
 
+def _embed_triplet(subject: str, predicate: str, object: str, original_text: str) -> List[float]:
+    """
+    Create embedding for a triplet combining structured and unstructured information.
+    Format: "{subject} {predicate} {object}. Context: {original_text}"
+    """
+    if settings.openai_dry_run or not settings.openai_api_key:
+        # Dry run mode
+        dim = settings.openai_embedding_dim
+        combined = f"{subject}{predicate}{object}{original_text}"
+        return [(hash(combined + str(i)) % 1000) / 1000.0 for i in range(dim)]
+    
+    from openai import OpenAI
+    client = OpenAI(api_key=settings.openai_api_key)
+    
+    # Combine structured triplet with contextual evidence (truncate text to avoid token limits)
+    triplet_text = f"{subject} {predicate} {object}. Context: {original_text[:500]}"
+    
+    resp = client.embeddings.create(
+        model=settings.openai_embedding_model,
+        input=[triplet_text]
+    )
+    return resp.data[0].embedding
 
 
-
-
-
+def write_triplet_with_embedding(
+    subject: str,
+    predicate: str,
+    object: str,
+    original_text: str,
+    sources: List[str],
+    page_number: Optional[int] = None,
+    confidence: float = 1.0,
+    status: str = "unverified",
+    user_id: Optional[str] = None,
+    subject_type: str = "Concept",
+    object_type: str = "Concept"
+) -> str:
+    """
+    Write a triplet node with embedding to Neo4j.
+    Also creates the traditional relationship for backward compatibility.
+    
+    Returns: triplet_id
+    """
+    # Generate embedding
+    embedding = _embed_triplet(subject, predicate, object, original_text)
+    
+    # Create unique ID
+    triplet_id = hashlib.md5(
+        f"{subject}|{predicate}|{object}|{sources[0]}".encode()
+    ).hexdigest()
+    
+    # Normalize predicate for relationship type
+    rel_type = predicate.strip().upper().replace(" ", "_")
+    
+    cypher = f"""
+    // Create or merge entities (existing logic)
+    MERGE (s:Entity {{name: $subject}})
+    ON CREATE SET s.type = $subject_type, s.created_at = datetime()
+    
+    MERGE (o:Entity {{name: $object}})
+    ON CREATE SET o.type = $object_type, o.created_at = datetime()
+    
+    // Create traditional relationship (for backward compatibility)
+    MERGE (s)-[r:{rel_type}]->(o)
+    ON CREATE SET 
+        r.original_text = $original_text,
+        r.sources = $sources,
+        r.page_number = $page_number,
+        r.confidence = $confidence,
+        r.status = $status,
+        r.created_at = datetime(),
+        r.created_by = $user_id
+    ON MATCH SET
+        r.sources = CASE
+            WHEN r.sources IS NULL THEN $sources
+            ELSE r.sources + [x IN $sources WHERE NOT x IN r.sources]
+        END
+    
+    // Create Triplet node with embedding
+    MERGE (t:Triplet {{id: $triplet_id}})
+    ON CREATE SET 
+        t.subject = $subject,
+        t.predicate = $predicate,
+        t.object = $object,
+        t.original_text = $original_text,
+        t.embedding = $embedding,
+        t.sources = $sources,
+        t.page_number = $page_number,
+        t.confidence = $confidence,
+        t.status = $status,
+        t.created_at = datetime(),
+        t.embedding_model = $embedding_model
+    ON MATCH SET
+        t.sources = t.sources + [x IN $sources WHERE NOT x IN t.sources]
+    
+    // Link triplet to entities
+    MERGE (t)-[:ABOUT_SUBJECT]->(s)
+    MERGE (t)-[:ABOUT_OBJECT]->(o)
+    
+    // Link triplet to documents
+    WITH t, $sources as doc_ids
+    UNWIND doc_ids as doc_id
+    MERGE (d:Document {{document_id: doc_id}})
+    MERGE (t)-[:FROM_DOCUMENT]->(d)
+    
+    RETURN t.id as triplet_id
+    """
+    
+    with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+        result = session.run(
+            cypher,
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            original_text=original_text,
+            sources=sources,
+            page_number=page_number,
+            confidence=confidence,
+            status=status,
+            embedding=embedding,
+            triplet_id=triplet_id,
+            user_id=user_id or "anonymous",
+            subject_type=subject_type,
+            object_type=object_type,
+            embedding_model=settings.openai_embedding_model
+        )
+        record = result.single()
+        logger.info(f"Created triplet node: {triplet_id} ({subject} {predicate} {object})")
+        return record["triplet_id"] if record else triplet_id

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 ENTITY_VECTOR_INDEX = "entity_embedding_idx"
 DOCUMENT_VECTOR_INDEX = "document_embedding_idx"
+TRIPLET_VECTOR_INDEX = "triplet_embedding_idx"
 
 
 def _ensure_vector_index(session, name: str, label: str, property: str, dims: int) -> None:
@@ -41,10 +42,11 @@ def _ensure_vector_index(session, name: str, label: str, property: str, dims: in
 
 
 def ensure_vector_indexes() -> None:
-    """Ensure required vector indexes exist for Entities and Documents."""
+    """Ensure required vector indexes exist for Entities, Documents, and Triplets."""
     with neo4j_client._driver.session(database=settings.neo4j_database) as session:
         _ensure_vector_index(session, ENTITY_VECTOR_INDEX, "Entity", "embedding", settings.openai_embedding_dim)
         _ensure_vector_index(session, DOCUMENT_VECTOR_INDEX, "Document", "embedding", settings.openai_embedding_dim)
+        _ensure_vector_index(session, TRIPLET_VECTOR_INDEX, "Triplet", "embedding", settings.openai_embedding_dim)
 
 
 def _embed_texts(texts: List[str]) -> List[List[float]]:
@@ -126,3 +128,10 @@ def upsert_entity_embeddings_for_document(document_id: str) -> int:
 
     logger.info(f"Updated embeddings for {updated} entities from document {document_id}")
     return updated
+
+
+def ensure_triplet_vector_index() -> None:
+    """Create vector index for Triplet node embeddings."""
+    with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+        _ensure_vector_index(session, TRIPLET_VECTOR_INDEX, "Triplet", "embedding", settings.openai_embedding_dim)
+    logger.info(f"Ensured triplet vector index: {TRIPLET_VECTOR_INDEX}")

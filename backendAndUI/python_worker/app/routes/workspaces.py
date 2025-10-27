@@ -12,6 +12,8 @@ from ..models.workspace import (
 from ..models.user import User
 from ..core.auth import get_current_user
 from ..services.workspace_service import workspace_service
+from ..db.neo4j_client import neo4j_client
+from ..core.settings import settings
 
 router = APIRouter()
 
@@ -217,3 +219,25 @@ def get_workspace_relationships(
         return {"relationships": relationships}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get relationships: {str(e)}")
+
+
+@router.post("/sync-user", status_code=200)
+def sync_user_data(current_user: User = Depends(get_current_user)):
+    """Sync current user data to Neo4j User node."""
+    try:
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            session.run(
+                """
+                MERGE (u:User {user_id: $user_id})
+                SET u.user_email = $user_email,
+                    u.user_first_name = $user_first_name,
+                    u.user_last_name = $user_last_name
+                """,
+                user_id=current_user.user_id,
+                user_email=current_user.email,
+                user_first_name=current_user.first_name,
+                user_last_name=current_user.last_name
+            )
+        return {"message": "User data synced successfully", "user": current_user}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync user: {str(e)}")

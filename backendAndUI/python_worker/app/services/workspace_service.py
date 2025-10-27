@@ -63,7 +63,10 @@ class WorkspaceService:
                 """
                 MERGE (u:User {user_id: $user_id})
                 ON CREATE SET u.user_email = $user_email, u.user_first_name = $user_first_name, u.user_last_name = $user_last_name, u.created_at = datetime()
-                ON MATCH SET u.user_first_name = coalesce($user_first_name, u.user_first_name), u.user_last_name = coalesce($user_last_name, u.user_last_name)
+                ON MATCH SET 
+                    u.user_email = $user_email,
+                    u.user_first_name = CASE WHEN $user_first_name <> '' THEN $user_first_name ELSE u.user_first_name END,
+                    u.user_last_name = CASE WHEN $user_last_name <> '' THEN $user_last_name ELSE u.user_last_name END
                 WITH u
                 MATCH (w:Workspace {workspace_id: $workspace_id})
                 CREATE (u)-[:MEMBER_OF {
