@@ -26,6 +26,156 @@ export class IngestionManager {
       userText: ''
     };
   }
+
+  _readModalConfig() {
+    const docIds = Array.from(document.querySelectorAll('.context-doc-checkbox:checked')).map(cb => cb.dataset.docId);
+    const docsToggle = document.getElementById('context-use-documents')?.checked || false;
+    return {
+      enabled: true,
+      sources: {
+        selectedNodes: document.getElementById('context-use-selected-nodes')?.checked || false,
+        selectedEdges: document.getElementById('context-use-selected-edges')?.checked || false,
+        filteredView: document.getElementById('context-use-filtered-view')?.checked || false,
+        // Treat documents as active if toggle is on OR any document is checked
+        documents: docsToggle || docIds.length > 0,
+        documentIds: docIds
+      },
+      intents: {
+        complements: document.getElementById('intent-complements')?.checked || false,
+        conflicts: document.getElementById('intent-conflicts')?.checked || false,
+        extends: document.getElementById('intent-extends')?.checked || false,
+        distinct: document.getElementById('intent-distinct')?.checked || false
+      }
+    };
+  }
+
+  async _getGraphContextTextFromConfig(config) {
+    // Check if any sources are configured
+    const hasNodes = config.sources.selectedNodes && state.selectedNodes.size > 0;
+    const hasEdges = config.sources.selectedEdges && state.selectedEdges?.size > 0;
+    const hasFiltered = config.sources.filteredView;
+    const hasDocs = config.sources.documents && config.sources.documentIds.length > 0;
+    
+    if (!hasNodes && !hasEdges && !hasFiltered && !hasDocs) {
+      return null;
+    }
+    
+    try {
+      let allNodes = new Map();
+      let allRelationships = new Map();
+      let selectedRelationships = [];
+      
+      // Collect nodes from selected nodes
+      if (hasNodes && state.selectedNodes.size > 0) {
+        const nodeIds = Array.from(state.selectedNodes);
+        const data = await API.getSubgraph(nodeIds);
+        data.nodes.forEach(node => allNodes.set(node.id, node));
+        data.relationships.forEach(rel => allRelationships.set(rel.id, rel));
+      }
+      
+      // Collect nodes and relationships from selected edges
+      if (hasEdges && state.selectedEdges.size > 0) {
+        const edgeIds = Array.from(state.selectedEdges);
+        if (state.cy) {
+          edgeIds.forEach(edgeId => {
+            const edge = state.cy.getElementById(edgeId);
+            if (edge.length > 0) {
+              const edgeData = edge.data();
+              selectedRelationships.push(edgeData);
+              allRelationships.set(edgeId, edgeData);
+              const sourceNode = state.cy.getElementById(edgeData.source);
+              const targetNode = state.cy.getElementById(edgeData.target);
+              if (sourceNode.length > 0) allNodes.set(edgeData.source, sourceNode.data());
+              if (targetNode.length > 0) allNodes.set(edgeData.target, targetNode.data());
+            }
+          });
+        }
+      }
+      
+      // Collect nodes and relationships from selected documents (ALL entities/relationships)
+      if (hasDocs && config.sources.documentIds.length > 0) {
+        for (const docId of config.sources.documentIds) {
+          try {
+            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}&limit=10000`);
+            if (response.ok) {
+              const docData = await response.json();
+              if (docData.nodes) docData.nodes.forEach(node => allNodes.set(node.id, node));
+              if (docData.relationships) docData.relationships.forEach(rel => allRelationships.set(rel.id, rel));
+            }
+          } catch (error) {
+            console.error(`Error fetching document ${docId}:`, error);
+          }
+        }
+      }
+      
+      // Handle filtered view - use currently visible graph
+      if (hasFiltered && state.cy) {
+        const visibleNodes = state.cy.nodes(':visible');
+        const visibleEdges = state.cy.edges(':visible');
+        visibleNodes.forEach(node => { allNodes.set(node.id(), node.data()); });
+        visibleEdges.forEach(edge => { allRelationships.set(edge.id(), edge.data()); });
+      }
+      
+      const nodes = Array.from(allNodes.values());
+      const relationships = Array.from(allRelationships.values());
+      const neighbors = this._getNeighbors(nodes, relationships);
+      const intentInstructions = this.buildIntentInstructions(config.intents);
+      
+      let contextText = '=== EXISTING KNOWLEDGE GRAPH CONTEXT ===\n\n';
+      contextText += intentInstructions;
+      contextText += `\nThis context contains ${nodes.length} concepts, ${neighbors.length} neighbor concepts, and ${relationships.length} relationships:\n\n`;
+      
+      if (selectedRelationships.length > 0) {
+        contextText += 'SELECTED RELATIONSHIPS (Focus on these):\n';
+        selectedRelationships.forEach(rel => {
+          const sourceNode = allNodes.get(rel.source) || neighbors.find(n => n.id === rel.source);
+          const targetNode = allNodes.get(rel.target) || neighbors.find(n => n.id === rel.target);
+          const sourceName = String(sourceNode ? sourceNode.label : rel.source).replace(/[^\w\s-]/g, '');
+          const targetName = String(targetNode ? targetNode.label : rel.target).replace(/[^\w\s-]/g, '');
+          const relation = String(rel.relation || 'RELATED_TO').replace(/[^\w\s-]/g, '');
+          const conf = rel.confidence ? ` (confidence: ${rel.confidence.toFixed(2)})` : '';
+          const evidence = rel.original_text ? `\n  Evidence: "${rel.original_text.substring(0, 100)}..."` : '';
+          contextText += `- ${sourceName} -> [${relation}] -> ${targetName}${conf}${evidence}\n`;
+        });
+        contextText += '\n';
+      }
+      
+      contextText += 'SELECTED CONCEPTS:\n';
+      nodes.forEach(node => {
+        const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
+        const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
+        const sig = node.significance ? ` (significance: ${node.significance}/5)` : '';
+        contextText += `- ${label} (${type})${sig}\n`;
+      });
+      
+      if (neighbors.length > 0) {
+        contextText += '\nNEIGHBOR CONCEPTS:\n';
+        neighbors.forEach(node => {
+          const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
+          const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
+          contextText += `- ${label} (${type})\n`;
+        });
+      }
+      
+      contextText += '\nALL RELATIONSHIPS:\n';
+      relationships.forEach(rel => {
+        const sourceNode = allNodes.get(rel.source) || neighbors.find(n => n.id === rel.source);
+        const targetNode = allNodes.get(rel.target) || neighbors.find(n => n.id === rel.target);
+        const sourceName = String(sourceNode ? sourceNode.label : rel.source).replace(/[^\w\s-]/g, '');
+        const targetName = String(targetNode ? targetNode.label : rel.target).replace(/[^\w\s-]/g, '');
+        const relation = String(rel.relation || 'RELATED_TO').replace(/[^\w\s-]/g, '');
+        const conf = rel.confidence ? ` (confidence: ${rel.confidence.toFixed(2)})` : '';
+        contextText += `- ${sourceName} -> [${relation}] -> ${targetName}${conf}\n`;
+      });
+      
+      contextText += '\n=== END CONTEXT ===\n\n';
+      return { text: contextText, data: { nodes, relationships }, neighbors };
+      
+    } catch (error) {
+      console.error('Error getting graph context from config:', error);
+      return null;
+    }
+  }
   displayFileName() {
     const fileInput = document.getElementById('pdf-file');
     const fileNameDisplay = document.getElementById('file-name');
@@ -100,6 +250,19 @@ export class IngestionManager {
           <span class="checkbox-text" style="font-size: 13px;">${doc.title || doc.id}</span>
         </label>
       `).join('');
+
+      // Keep summary in sync when user checks/unchecks docs
+      listEl.querySelectorAll('.context-doc-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+          // If any doc is checked, turn on the documents toggle for clarity
+          const docsToggleEl = document.getElementById('context-use-documents');
+          if (docsToggleEl) {
+            const anyChecked = listEl.querySelectorAll('.context-doc-checkbox:checked').length > 0;
+            if (anyChecked) docsToggleEl.checked = true;
+          }
+          this.updateContextSummary();
+        });
+      });
       
     } catch (error) {
       console.error('Error loading documents:', error);
@@ -110,12 +273,14 @@ export class IngestionManager {
     const useNodes = document.getElementById('context-use-selected-nodes')?.checked;
     const useEdges = document.getElementById('context-use-selected-edges')?.checked;
     const useFiltered = document.getElementById('context-use-filtered-view')?.checked;
-    const useDocs = document.getElementById('context-use-documents')?.checked;
+    const docsToggle = document.getElementById('context-use-documents')?.checked;
+    const checkedDocCount = document.querySelectorAll('.context-doc-checkbox:checked').length;
+    const docsActive = !!docsToggle || checkedDocCount > 0;
     
     // Show/hide document selection
     const docSelection = document.getElementById('context-document-selection');
     if (docSelection) {
-      docSelection.style.display = useDocs ? 'block' : 'none';
+      docSelection.style.display = docsActive ? 'block' : 'none';
     }
     
     // Build summary
@@ -129,9 +294,8 @@ export class IngestionManager {
     if (useFiltered) {
       parts.push('filtered view');
     }
-    if (useDocs) {
-      const checked = document.querySelectorAll('.context-doc-checkbox:checked').length;
-      if (checked > 0) parts.push(`${checked} document(s)`);
+    if (docsActive && checkedDocCount > 0) {
+      parts.push(`all entities and relationships from ${checkedDocCount} document(s)`);
     }
     
     const detailsEl = document.getElementById('context-preview-details');
@@ -183,12 +347,13 @@ export class IngestionManager {
     this.contextConfig.sources.selectedNodes = document.getElementById('context-use-selected-nodes')?.checked || false;
     this.contextConfig.sources.selectedEdges = document.getElementById('context-use-selected-edges')?.checked || false;
     this.contextConfig.sources.filteredView = document.getElementById('context-use-filtered-view')?.checked || false;
-    this.contextConfig.sources.documents = document.getElementById('context-use-documents')?.checked || false;
+    const docsToggle = document.getElementById('context-use-documents')?.checked || false;
     
     // Get selected document IDs
     this.contextConfig.sources.documentIds = Array.from(
       document.querySelectorAll('.context-doc-checkbox:checked')
     ).map(cb => cb.dataset.docId);
+    this.contextConfig.sources.documents = docsToggle || this.contextConfig.sources.documentIds.length > 0;
     
     // Save user context text from modal
     this.contextConfig.userText = (document.getElementById('user-context-text')?.value || '').trim();
@@ -336,7 +501,7 @@ export class IngestionManager {
         for (const docId of this.contextConfig.sources.documentIds) {
           try {
             // Fetch all entities and relationships for this document
-            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}`);
+            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}&limit=10000`);
             if (response.ok) {
               const docData = await response.json();
               
@@ -472,7 +637,9 @@ export class IngestionManager {
     if (!modal) return;
     
     try {
-      const result = await this.getGraphContextText();
+      // Build a temporary config from the CURRENT modal selections (no Apply required)
+      const tempConfig = this._readModalConfig();
+      const result = await this._getGraphContextTextFromConfig(tempConfig);
       if (!result) {
         alert('Failed to load context');
         return;
@@ -554,18 +721,19 @@ export class IngestionManager {
     }
   }
   
-  buildIntentInstructions() {
+  buildIntentInstructions(intentsConfig = null) {
+    const cfg = intentsConfig || this.contextConfig.intents;
     const intents = [];
-    if (this.contextConfig.intents.complements) {
+    if (cfg.complements) {
       intents.push('- COMPLEMENT: Find relationships that support, confirm, or align with the existing knowledge');
     }
-    if (this.contextConfig.intents.conflicts) {
+    if (cfg.conflicts) {
       intents.push('- CONFLICT: Find relationships that contradict or disagree with the existing knowledge');
     }
-    if (this.contextConfig.intents.extends) {
+    if (cfg.extends) {
       intents.push('- EXTEND: Find new relationships that add to or expand upon the existing knowledge');
     }
-    if (this.contextConfig.intents.distinct) {
+    if (cfg.distinct) {
       intents.push('- DISTINCT: Find relationships that are unrelated to the existing knowledge');
     }
     
