@@ -162,7 +162,20 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
                 document_id=document_id,
                 workspace_id=workspace_id
             )
-            logger.info(f"Associated document {document_id} with workspace {workspace_id}")
+            
+            # Also link all entities extracted from this document to the workspace
+            tx.run(
+                """
+                MATCH (d:Document {document_id: $document_id})
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                MATCH (e:Entity)-[:EXTRACTED_FROM]->(d)
+                MERGE (e)-[:BELONGS_TO]->(w)
+                """,
+                document_id=document_id,
+                workspace_id=workspace_id
+            )
+            
+            logger.info(f"Associated document {document_id} and its entities with workspace {workspace_id}")
         
         return outputs
 

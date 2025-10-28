@@ -473,12 +473,19 @@ class WorkspaceService:
                 MATCH (w:Workspace {workspace_id: $workspace_id})
                 OPTIONAL MATCH (d:Document)-[:BELONGS_TO]->(w)
                 OPTIONAL MATCH (e:Entity)-[:BELONGS_TO]->(w)
-                OPTIONAL MATCH (r:Relationship)-[:BELONGS_TO]->(w)
+                OPTIONAL MATCH (e1:Entity)-[:BELONGS_TO]->(w)
+                OPTIONAL MATCH (e2:Entity)-[:BELONGS_TO]->(w)
+                OPTIONAL MATCH (e1)-[rel]->(e2)
+                WHERE type(rel) <> 'BELONGS_TO' AND type(rel) <> 'EXTRACTED_FROM'
+                WITH w, 
+                     count(DISTINCT d) as doc_count, 
+                     count(DISTINCT e) as entity_count,
+                     count(DISTINCT rel) as rel_count
                 OPTIONAL MATCH (u:User)-[:MEMBER_OF]->(w)
                 RETURN 
-                    count(DISTINCT d) as doc_count, 
-                    count(DISTINCT e) as entity_count, 
-                    count(DISTINCT r) as rel_count, 
+                    doc_count, 
+                    entity_count, 
+                    rel_count, 
                     count(DISTINCT u) as member_count
                 """,
                 workspace_id=workspace_id,
