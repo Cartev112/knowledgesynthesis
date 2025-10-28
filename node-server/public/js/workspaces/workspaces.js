@@ -488,15 +488,32 @@ class WorkspacesManager {
     const statsEl = document.getElementById('global-stats');
     
     try {
-      const totals = this.computeTotals();
-      if (statsEl) statsEl.innerHTML = `${totals.documents} documents • ${totals.entities} entities • ${this.workspaces.length} workspaces`;
+      // Fetch actual global stats from backend
+      const stats = await API.get('/api/workspaces/global/stats');
+      if (statsEl) {
+        statsEl.innerHTML = `${stats.document_count} documents • ${stats.entity_count} entities • ${stats.workspace_count} workspaces`;
+      }
+      
+      // Store for Global View card
+      this.globalStats = stats;
     } catch (error) {
       console.error('Failed to load global stats:', error);
-      if (statsEl) statsEl.textContent = 'Stats unavailable';
+      // Fallback to computing from workspace stats
+      const totals = this.computeTotals();
+      if (statsEl) statsEl.innerHTML = `${totals.documents} documents • ${totals.entities} entities • ${this.workspaces.length} workspaces`;
     }
   }
 
   computeTotals() {
+    // Use cached global stats if available
+    if (this.globalStats) {
+      return { 
+        documents: this.globalStats.document_count, 
+        entities: this.globalStats.entity_count 
+      };
+    }
+    
+    // Fallback: sum from workspace stats
     const totalDocs = this.workspaces.reduce((sum, w) => sum + (w.stats?.document_count || 0), 0);
     const totalEntities = this.workspaces.reduce((sum, w) => sum + (w.stats?.entity_count || 0), 0);
     return { documents: totalDocs, entities: totalEntities };

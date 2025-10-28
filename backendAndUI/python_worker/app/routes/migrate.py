@@ -48,10 +48,11 @@ def link_entities_to_workspaces(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/migrate/check-workspace-links")
-def check_workspace_links(current_user: User = Depends(get_current_user)):
+def check_workspace_links():
     """
     Check the status of workspace linking.
     Returns counts of documents, entities with and without workspace links.
+    No authentication required for checking status.
     """
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
