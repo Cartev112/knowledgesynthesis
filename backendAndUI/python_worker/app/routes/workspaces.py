@@ -55,34 +55,30 @@ def create_workspace(
 
 @router.get("/workspaces/global/stats")
 def get_global_stats(current_user: User = Depends(get_current_user)):
-    """Get global statistics across all accessible workspaces and documents."""
+    """Get global statistics across the entire database (not workspace-scoped)."""
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(
                 """
-                // Count all documents
+                // Total documents
                 MATCH (d:Document)
-                WITH count(d) as total_docs
+                WITH count(d) AS total_docs
                 
-                // Count all entities
-                MATCH (e:Entity)
-                WITH total_docs, count(e) as total_entities
+                // Total entities
+                OPTIONAL MATCH (e:Entity)
+                WITH total_docs, count(e) AS total_entities
                 
-                // Count all relationships (excluding system relationships)
-                MATCH (e1:Entity)-[r]->(e2:Entity)
+                // Total relationships between entities (exclude system rels)
+                OPTIONAL MATCH (e1:Entity)-[r]->(e2:Entity)
                 WHERE type(r) <> 'BELONGS_TO' AND type(r) <> 'EXTRACTED_FROM'
-                WITH total_docs, total_entities, count(r) as total_rels
+                WITH total_docs, total_entities, count(r) AS total_rels
                 
-                // Count workspaces user has access to
-                MATCH (u:User {user_id: $user_id})
-                MATCH (w:Workspace)
-                WHERE (u)-[:MEMBER_OF]->(w) OR w.privacy = 'public'
-                
-                RETURN total_docs, total_entities, total_rels, count(DISTINCT w) as total_workspaces
-                """,
-                user_id=current_user.user_id
+                // Count all workspaces (not filtered by membership)
+                OPTIONAL MATCH (w:Workspace)
+                RETURN total_docs, total_entities, total_rels, count(w) AS total_workspaces
+                """
             )
-            
+
             record = result.single()
             if record:
                 return {
@@ -91,7 +87,7 @@ def get_global_stats(current_user: User = Depends(get_current_user)):
                     "relationship_count": record["total_rels"] or 0,
                     "workspace_count": record["total_workspaces"] or 0
                 }
-            
+
             return {
                 "document_count": 0,
                 "entity_count": 0,
