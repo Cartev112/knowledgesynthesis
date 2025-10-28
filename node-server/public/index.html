@@ -69,9 +69,10 @@
             </div>
             
             <div class="form-group">
-              <label>Extraction Context (Optional)</label>
-              <textarea id="extraction-context" placeholder="e.g., I'm interested in proteins and their functional relationships, drug-target interactions, or disease mechanisms..." class="extraction-context-area"></textarea>
-              <div class="help-text">Guide the AI: describe what types of relationships you're most interested in</div>
+              <button type="button" class="btn-secondary" onclick="window.ingestionManager.openContextConfig()" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600;">
+                🎯 Configure Context
+              </button>
+              <div class="help-text">Configure graph and user context used during extraction</div>
             </div>
           </div>
           
@@ -85,9 +86,6 @@
             </div>
             
             <div class="form-group">
-              <button type="button" class="btn-secondary" onclick="window.ingestionManager.openContextConfig()" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600;">
-                🎯 Configure Graph Context
-              </button>
               <div class="help-text">
                 Select concepts, relationships, or documents to guide extraction
               </div>
@@ -432,86 +430,102 @@
         <button class="modal-close" onclick="window.ingestionManager.closeContextConfig()">×</button>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        
-        <!-- Context Selection Section -->
-        <div class="modal-section">
-          <div class="modal-section-title">1. Select Context Source</div>
-          <div class="modal-section-content">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-              <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-                <input type="checkbox" id="context-use-selected-nodes" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
-                <span class="checkbox-text">Selected Concepts (<span id="context-node-count">0</span>)</span>
-              </label>
-              <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-                <input type="checkbox" id="context-use-selected-edges" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
-                <span class="checkbox-text">Selected Relationships (<span id="context-edge-count">0</span>)</span>
-              </label>
-              <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-                <input type="checkbox" id="context-use-filtered-view" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
-                <span class="checkbox-text">Current Filtered View</span>
-              </label>
-              <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-                <input type="checkbox" id="context-use-documents" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
-                <span class="checkbox-text">Specific Documents</span>
-              </label>
-            </div>
-            
-            <!-- Document Selection (shown when context-use-documents is checked) -->
-            <div id="context-document-selection" style="display: none; margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
-              <div style="font-weight: 600; margin-bottom: 8px; color: #374151;">Select Documents:</div>
-              <div id="context-document-list" style="max-height: 150px; overflow-y: auto;">
-                <!-- Populated dynamically -->
+        <!-- Tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <button id="context-tab-btn-graph" class="btn-secondary active" style="padding:8px 12px;" onclick="window.ingestionManager.switchContextTab('graph')">Graph Context</button>
+          <button id="context-tab-btn-user" class="btn-secondary" style="padding:8px 12px;" onclick="window.ingestionManager.switchContextTab('user')">User Context</button>
+        </div>
+
+        <!-- Graph Context Pane -->
+        <div id="context-tab-graph">
+          <!-- Context Selection Section -->
+          <div class="modal-section">
+            <div class="modal-section-title">1. Select Context Source</div>
+            <div class="modal-section-content">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                  <input type="checkbox" id="context-use-selected-nodes" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
+                  <span class="checkbox-text">Selected Concepts (<span id="context-node-count">0</span>)</span>
+                </label>
+                <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                  <input type="checkbox" id="context-use-selected-edges" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
+                  <span class="checkbox-text">Selected Relationships (<span id="context-edge-count">0</span>)</span>
+                </label>
+                <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                  <input type="checkbox" id="context-use-filtered-view" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
+                  <span class="checkbox-text">Current Filtered View</span>
+                </label>
+                <label class="checkbox-label" style="padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                  <input type="checkbox" id="context-use-documents" class="checkbox-input" onchange="window.ingestionManager.updateContextSummary()" />
+                  <span class="checkbox-text">Specific Documents</span>
+                </label>
+              </div>
+              
+              <!-- Document Selection (shown when context-use-documents is checked) -->
+              <div id="context-document-selection" style="display: none; margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #374151;">Select Documents:</div>
+                <div id="context-document-list" style="max-height: 150px; overflow-y: auto;"></div>
+              </div>
+              
+              <div class="help-text" style="margin-top: 12px;">
+                Select one or more sources to build your context. Use Shift+Click in the Viewer to select concepts/relationships.
               </div>
             </div>
-            
-            <div class="help-text" style="margin-top: 12px;">
-              Select one or more sources to build your context. Use Shift+Click in the Viewer to select concepts/relationships.
+          </div>
+          
+          <!-- Extraction Intent Section -->
+          <div class="modal-section">
+            <div class="modal-section-title">2. Specify Extraction Intent</div>
+            <div class="modal-section-content">
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                  <input type="checkbox" id="intent-complements" class="checkbox-input" checked />
+                  <span class="checkbox-text">Find relationships that <strong>complement</strong> existing knowledge</span>
+                </label>
+                <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                  <input type="checkbox" id="intent-conflicts" class="checkbox-input" checked />
+                  <span class="checkbox-text">Find relationships that <strong>conflict with</strong> existing knowledge</span>
+                </label>
+                <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                  <input type="checkbox" id="intent-extends" class="checkbox-input" checked />
+                  <span class="checkbox-text">Find relationships that <strong>extend</strong> existing knowledge</span>
+                </label>
+                <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                  <input type="checkbox" id="intent-distinct" class="checkbox-input" />
+                  <span class="checkbox-text">Find relationships <strong>distinct from</strong> existing knowledge</span>
+                </label>
+              </div>
+              <div class="help-text" style="margin-top: 12px;">
+                Select one or more intents to guide extraction. If none selected, extraction will be neutral.
+              </div>
+            </div>
+          </div>
+          
+          <!-- Context Preview Section -->
+          <div class="modal-section">
+            <div class="modal-section-title">3. Preview Context</div>
+            <div class="modal-section-content">
+              <div id="context-preview-summary" style="padding: 12px; background: #f3f4f6; border-radius: 6px; font-size: 13px; color: #374151;">
+                <div style="font-weight: 600; margin-bottom: 8px;">Context Summary:</div>
+                <div id="context-preview-details">No context configured yet</div>
+              </div>
+              <button type="button" onclick="window.ingestionManager.showDetailedContextPreview()" class="btn-secondary" style="margin-top: 12px; width: 100%;">
+                👁️ View Detailed Preview
+              </button>
             </div>
           </div>
         </div>
-        
-        <!-- Extraction Intent Section -->
-        <div class="modal-section">
-          <div class="modal-section-title">2. Specify Extraction Intent</div>
-          <div class="modal-section-content">
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-              <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                <input type="checkbox" id="intent-complements" class="checkbox-input" checked />
-                <span class="checkbox-text">Find relationships that <strong>complement</strong> existing knowledge</span>
-              </label>
-              <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                <input type="checkbox" id="intent-conflicts" class="checkbox-input" checked />
-                <span class="checkbox-text">Find relationships that <strong>conflict with</strong> existing knowledge</span>
-              </label>
-              <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                <input type="checkbox" id="intent-extends" class="checkbox-input" checked />
-                <span class="checkbox-text">Find relationships that <strong>extend</strong> existing knowledge</span>
-              </label>
-              <label class="checkbox-label" style="padding: 10px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                <input type="checkbox" id="intent-distinct" class="checkbox-input" />
-                <span class="checkbox-text">Find relationships <strong>distinct from</strong> existing knowledge</span>
-              </label>
-            </div>
-            <div class="help-text" style="margin-top: 12px;">
-              Select one or more intents to guide extraction. If none selected, extraction will be neutral.
+
+        <!-- User Context Pane -->
+        <div id="context-tab-user" style="display:none;">
+          <div class="modal-section">
+            <div class="modal-section-title">Your Focus/Instructions</div>
+            <div class="modal-section-content">
+              <textarea id="user-context-text" placeholder="Describe your focus, e.g., proteins and their functional relationships, drug-target interactions, disease mechanisms..." style="min-height: 160px; width: 100%;"></textarea>
+              <div class="help-text" style="margin-top:8px;">This text will be included with the graph context (if enabled) to guide extraction.</div>
             </div>
           </div>
         </div>
-        
-        <!-- Context Preview Section -->
-        <div class="modal-section">
-          <div class="modal-section-title">3. Preview Context</div>
-          <div class="modal-section-content">
-            <div id="context-preview-summary" style="padding: 12px; background: #f3f4f6; border-radius: 6px; font-size: 13px; color: #374151;">
-              <div style="font-weight: 600; margin-bottom: 8px;">Context Summary:</div>
-              <div id="context-preview-details">No context configured yet</div>
-            </div>
-            <button type="button" onclick="window.ingestionManager.showDetailedContextPreview()" class="btn-secondary" style="margin-top: 12px; width: 100%;">
-              👁️ View Detailed Preview
-            </button>
-          </div>
-        </div>
-        
       </div>
       <div class="modal-footer">
         <button type="button" onclick="window.ingestionManager.clearContext()" class="btn-secondary">Clear Context</button>

@@ -21,7 +21,9 @@ export class IngestionManager {
         conflicts: true,
         extends: true,
         distinct: false
-      }
+      },
+      // Store free-form user context text (moved from main panel textarea)
+      userText: ''
     };
   }
   displayFileName() {
@@ -54,6 +56,11 @@ export class IngestionManager {
     // Load documents list if needed
     this.loadDocumentsList();
     
+    // Initialize user context textarea and default to Graph tab
+    const userTextEl = document.getElementById('user-context-text');
+    if (userTextEl) userTextEl.value = this.contextConfig.userText || '';
+    this.switchContextTab('graph');
+
     // Show modal
     modal.classList.add('visible');
     document.body.classList.add('modal-open');
@@ -72,10 +79,14 @@ export class IngestionManager {
   
   async loadDocumentsList() {
     try {
-      const response = await fetch('/api/query/documents');
+      const workspaceId = sessionStorage.getItem('currentWorkspaceId');
+      let url = '/query/documents';
+      if (workspaceId) url += `?workspace_id=${encodeURIComponent(workspaceId)}`;
+      const response = await fetch(url);
       if (!response.ok) return;
       
-      const documents = await response.json();
+      const data = await response.json();
+      const documents = Array.isArray(data) ? data : (data.documents || []);
       const listEl = document.getElementById('context-document-list');
       
       if (documents.length === 0) {
@@ -85,8 +96,8 @@ export class IngestionManager {
       
       listEl.innerHTML = documents.map(doc => `
         <label class="checkbox-label" style="padding: 8px; margin: 4px 0; background: white; border-radius: 4px; cursor: pointer;">
-          <input type="checkbox" class="checkbox-input context-doc-checkbox" data-doc-id="${doc.document_id}" />
-          <span class="checkbox-text" style="font-size: 13px;">${doc.title || doc.document_id}</span>
+          <input type="checkbox" class="checkbox-input context-doc-checkbox" data-doc-id="${doc.id}" />
+          <span class="checkbox-text" style="font-size: 13px;">${doc.title || doc.id}</span>
         </label>
       `).join('');
       
@@ -158,6 +169,9 @@ export class IngestionManager {
       document.querySelectorAll('.context-doc-checkbox:checked')
     ).map(cb => cb.dataset.docId);
     
+    // Save user context text from modal
+    this.contextConfig.userText = (document.getElementById('user-context-text')?.value || '').trim();
+
     // Save intents
     this.contextConfig.intents.complements = document.getElementById('intent-complements')?.checked || false;
     this.contextConfig.intents.conflicts = document.getElementById('intent-conflicts')?.checked || false;
@@ -301,7 +315,7 @@ export class IngestionManager {
         for (const docId of this.contextConfig.sources.documentIds) {
           try {
             // Fetch all entities and relationships for this document
-            const response = await fetch(`/api/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}`);
+            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}`);
             if (response.ok) {
               const docData = await response.json();
               
@@ -544,7 +558,7 @@ export class IngestionManager {
   async ingestDocument() {
     const pdfFiles = document.getElementById('pdf-file').files;
     const text = document.getElementById('text-input').value.trim();
-    let extractionContext = document.getElementById('extraction-context').value.trim();
+    let extractionContext = (this.contextConfig.userText || '').trim();
     const maxConcepts = parseInt(document.getElementById('max-concepts').value);
     const maxRelationships = parseInt(document.getElementById('max-relationships').value);
     const model = document.getElementById('model-select').value;
@@ -617,7 +631,8 @@ export class IngestionManager {
         await this.pollJobStatus(result.job_id, 'text');
         
         document.getElementById('text-input').value = '';
-        document.getElementById('extraction-context').value = '';
+        this.contextConfig.userText = '';
+        this.updateMainContextSummary();
       } catch (e) {
         this.showStatus('error', '✗ Error: ' + e.message);
       } finally {
@@ -761,7 +776,8 @@ export class IngestionManager {
         }
         
         document.getElementById('pdf-file').value = '';
-        document.getElementById('extraction-context').value = '';
+        this.contextConfig.userText = '';
+        this.updateMainContextSummary();
         this.displayFileName();
         
       } catch (e) {
