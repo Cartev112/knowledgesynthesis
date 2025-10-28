@@ -5,6 +5,7 @@ export const state = {
   currentUser: null,
   cy: null,
   selectedNodes: new Set(),
+  selectedEdges: new Set(),
   manualEdgeNodes: { node1: null, node2: null },
   graphInitialized: false,
   indexVisible: false,
@@ -13,5 +14,12 @@ export const state = {
   viewportMode: false,
   isLoading: false,
   loadedNodes: new Set(),
-  documents: []
+  documents: [],
+  // Filter states to persist across tabs
+  filterStates: {
+    viewFilter: 'all',
+    typeFilter: '',
+    searchTerm: '',
+    verifiedOnly: false
+  }
 };

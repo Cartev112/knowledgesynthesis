@@ -24,9 +24,32 @@ export class IndexPanelManager {
         if (searchInput) {
           searchInput.addEventListener('input', (e) => {
             this.searchTerm = e.target.value.toLowerCase();
+            state.filterStates.searchTerm = this.searchTerm;
             this.conceptsPage = 1;
             this.relsPage = 1;
             this.renderIndexItems();
+          });
+        }
+        
+        // Save filter states when changed
+        const viewFilter = document.getElementById('index-view-filter');
+        if (viewFilter) {
+          viewFilter.addEventListener('change', (e) => {
+            state.filterStates.viewFilter = e.target.value;
+          });
+        }
+        
+        const typeFilter = document.getElementById('index-type-filter');
+        if (typeFilter) {
+          typeFilter.addEventListener('change', (e) => {
+            state.filterStates.typeFilter = e.target.value;
+          });
+        }
+        
+        const verifiedCheckbox = document.getElementById('verified-only-checkbox');
+        if (verifiedCheckbox) {
+          verifiedCheckbox.addEventListener('change', (e) => {
+            state.filterStates.verifiedOnly = e.target.checked;
           });
         }
       }, 100);

@@ -1,17 +1,20 @@
-TODO.MD
+BUGS
 
-fix index dropdown buttons
+- Global view workspace cards/modal is showing 0 entities + 0 relationships
 
-configure visual language control; color by user, other options
+- public workspaces are not appearing to others
 
-advanced configurations modal for information extraction
+- ingestion container looks much smaller on someone elses computer
 
-clicking on workspace modal shows additional info; namely documents and entities
+- remove entity type ingestion
 
-fix Aura Agent
+- graph context prompt should NOT assume goals; just incorporate the context
 
-fix semantic scholar rate limiting
+- graph is resetting node/document/relationship selections after moving to another tab (should not reset)
 
-save agent conversations to postgres
+- when documents are selected, automatically select all of their nodes + relationships for graph context
 
-set up collaborator invitation configuration
+- ingestion LLM is not generating enough triplets. should be very close to specificied maximum. (batch WHILE minimizing redundancy)
+
+- figure out why email service is not working (sendgrid)
+

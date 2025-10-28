@@ -19,28 +19,26 @@ def _create_prompt(max_triplets: int = 50) -> str:
         "Rules for extraction:\n"
         "1) Return ONLY a JSON object with a single field 'triplets' which is an array of objects.\n"
         "2) Each triplet object MUST include: subject, predicate, object, original_text, subject_type, object_type.\n"
-        "3) ENTITY TYPES (REQUIRED): For subject_type and object_type, classify each entity into categories such as:\n"
-        "   - Drug, Gene, Protein, Disease, Pathway, Phenotype, Chemical, Organism, Cell_Type, Tissue, Method, Concept, etc.\n"
-        "   - Use specific, consistent type names (e.g., 'Gene' not 'gene' or 'GENE')\n"
-        "   - If uncertain about the type, use your best judgment based on context\n"
+        "3) CONCEPT TYPES: For subject_type and object_type, classify each concept based on its role in the text:\n"
+        "   - Use descriptive, domain-appropriate type names (e.g., 'Algorithm', 'Theory', 'Metric', 'Framework', 'Process', 'Entity', 'Property', 'Outcome')\n"
+        "   - Types should reflect the FUNCTION or CATEGORY of the concept in context, not predetermined domain labels\n"
+        "   - Be consistent with type names across similar concepts\n"
+        "   - If uncertain about the type, use 'Concept' as a general fallback\n"
         "4) SIGNIFICANCE SCORES (REQUIRED): For each triplet, provide:\n"
         "   - relationship_significance: Integer 1-5, where 5=critical finding/core result, 3=important supporting detail, 1=minor mention\n"
-        "   - subject_significance: Integer 1-5, how important is the subject entity (5=central concept, 1=peripheral)\n"
-        "   - object_significance: Integer 1-5, how important is the object entity (5=central concept, 1=peripheral)\n"
-        "5) Normalize predicate to lowercase snake_case (e.g., 'inhibits', 'binds_to', 'causes', 'increases', 'decreases').\n"
+        "   - subject_significance: Integer 1-5, how important is the subject concept (5=central concept, 1=peripheral)\n"
+        "   - object_significance: Integer 1-5, how important is the object concept (5=central concept, 1=peripheral)\n"
+        "5) Normalize predicate to lowercase snake_case (e.g., 'improves', 'relates_to', 'causes', 'increases', 'decreases', 'defines').\n"
         "\n"
-        "6) NEGATIVE RELATIONSHIPS (IMPORTANT - Extract ~50% negative relationships):\n"
-        "   - For negative relations, prefix with 'does_not_' (e.g., 'does_not_bind', 'does_not_increase', 'does_not_cause').\n"
-        "   - Extract negative relationships when explicitly stated OR when strongly implied by context.\n"
-        "   - Look for explicit cue phrases: 'does not', 'did not', 'fails to', 'unable to', 'showed no', 'no effect on', 'no difference', 'not associated with', 'lacks', 'absence of', 'failed to'.\n"
-        "   - Also extract when text contrasts with expectations: 'unlike', 'in contrast to', 'however', 'but', 'although'.\n"
-        "   - Include negative findings from experiments, studies, or comparisons.\n"
-        "   - Include when something is explicitly stated as 'not working', 'not effective', 'not found'.\n"
-        "   - BALANCE: Aim for approximately 50% positive and 50% negative relationships when both types are present in the text.\n"
-        "   - If the text contains many negative findings, extract them - they are scientifically valuable.\n"
+        "6) NEGATIVE RELATIONSHIPS:\n"
+        "   - Extract negative relationships when they are EXPLICITLY stated in the text\n"
+        "   - For negative relations, prefix with 'does_not_' (e.g., 'does_not_improve', 'does_not_cause')\n"
+        "   - Look for explicit cue phrases: 'does not', 'did not', 'fails to', 'unable to', 'showed no', 'no effect on', 'no difference', 'not associated with'\n"
+        "   - Extract negative findings naturally as they appear - do not force a specific ratio\n"
+        "   - Negative relationships are scientifically valuable when present\n"
         "\n"
-        "7) Each extracted entity should be linked to at least one other entity.\n"
-        "8) Prefer concise canonical entity names.\n"
+        "7) Each extracted concept should be linked to at least one other concept.\n"
+        "8) Prefer concise canonical concept names.\n"
         "9) For each triplet, the 'original_text' field MUST contain the specific sentence or fragment from the source that supports this relationship.\n"
         "10) Focus ONLY on claims stated in the text; do not add external knowledge.\n"
         "11) Deduplicate: no repeated (subject, predicate, object) entries.\n"
@@ -49,13 +47,8 @@ def _create_prompt(max_triplets: int = 50) -> str:
         "    - For each relationship you extract, verify it doesn't contradict other statements in the text.\n"
         "    - Look for both explicit and implicit evidence for or against each relationship.\n"
         "\n"
-        f"13) EXAMPLES of negative relationships to extract:\n"
-        "   - 'Drug X does_not_inhibit protein Y' (from 'Drug X failed to inhibit protein Y')\n"
-        "   - 'Treatment does_not_reduce symptoms' (from 'Treatment showed no reduction in symptoms')\n"
-        "   - 'Gene does_not_express protein' (from 'Gene expression was not detected')\n"
-        "   - 'Method does_not_improve outcomes' (from 'Unlike traditional methods, this approach did not improve patient outcomes')\n"
-        "\n"
-        f"14) Target: Extract up to {max_triplets} high-quality relationships, aiming for ~50% negative relationships."
+        f"13) Target: Extract up to {max_triplets} high-quality relationships from the text.\n"
+        "    Focus on the most significant and well-supported relationships."
     )
 
 
@@ -63,36 +56,36 @@ def _fake_extract(text: str) -> TripletExtractionResult:
     # Deterministic placeholder for no-key environments
     demo = [
         Triplet(
-            subject="Vemurafenib",
-            predicate="targets",
-            object="BRAF V600E",
-            subject_type="Drug",
-            object_type="GeneMutation",
-            original_text="Vemurafenib targets the BRAF V600E mutation in melanoma.",
+            subject="Machine Learning",
+            predicate="improves",
+            object="Prediction Accuracy",
+            subject_type="Method",
+            object_type="Metric",
+            original_text="Machine learning techniques significantly improve prediction accuracy in complex datasets.",
             relationship_significance=5,
             subject_significance=4,
             object_significance=5,
             page_number=3
         ),
         Triplet(
-            subject="Vemurafenib",
-            predicate="does_not_inhibit",
-            object="wild-type BRAF",
-            subject_type="Drug",
-            object_type="Gene",
-            original_text="Vemurafenib showed no inhibitory effect on wild-type BRAF.",
+            subject="Deep Learning",
+            predicate="requires",
+            object="Large Training Data",
+            subject_type="Method",
+            object_type="Resource",
+            original_text="Deep learning models require large amounts of training data to achieve optimal performance.",
             relationship_significance=4,
             subject_significance=4,
             object_significance=3,
             page_number=5
         ),
         Triplet(
-            subject="Combination therapy",
-            predicate="does_not_improve",
-            object="overall survival",
-            subject_type="Treatment",
-            object_type="Outcome",
-            original_text="The combination therapy failed to demonstrate improved overall survival compared to monotherapy.",
+            subject="Simple Linear Model",
+            predicate="does_not_capture",
+            object="Non-linear Patterns",
+            subject_type="Model",
+            object_type="Pattern",
+            original_text="Simple linear models fail to capture complex non-linear patterns in the data.",
             relationship_significance=3,
             subject_significance=3,
             object_significance=4,
@@ -156,16 +149,14 @@ def extract_triplets(text: str, max_triplets: int = 50, pages: list = None, extr
             # Check if this contains graph context
             if "=== EXISTING KNOWLEDGE GRAPH CONTEXT ===" in extraction_context:
                 logger.info("Detected graph context in extraction context")
-                # Add context-aware instructions
+                # Add context-aware instructions - neutral, letting user specify intent
                 context_prefix = (
                     f"\n\n{extraction_context}\n"
                     f"CONTEXT-AWARE EXTRACTION INSTRUCTIONS:\n"
-                    f"Analyze the new document to find relationships that:\n"
-                    f"1. AGREE WITH existing knowledge - support or confirm what is in the graph\n"
-                    f"2. DISAGREE WITH existing knowledge - contradict existing relationships\n"
-                    f"3. ADD NEW knowledge - new entities or connections\n\n"
-                    f"Prioritize relationships involving entities from the existing graph.\n"
-                    f"Extract both positive and negative relationships.\n\n"
+                    f"The user has provided existing knowledge graph context above. "
+                    f"Use this context to guide your extraction based on the user's stated goals. "
+                    f"The user may want to find relationships that complement, conflict with, or are distinct from the existing knowledge. "
+                    f"Prioritize extracting relationships involving concepts from the existing graph when relevant.\n\n"
                 )
                 system_prompt = context_prefix + system_prompt
                 logger.info("Added context-aware extraction prompt")

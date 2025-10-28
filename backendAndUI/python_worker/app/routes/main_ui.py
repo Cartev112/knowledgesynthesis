@@ -1109,10 +1109,36 @@ _OLD_HTML = """
                   <span style="font-weight: 600;">Use Selected Graph as Context</span>
                 </label>
                 <div class="help-text" id="graph-context-help" style="color: #9ca3af;">
-                  Select nodes in the Viewer (Shift+Click), then check this box to find relationships that agree with, disagree with, or add to the existing knowledge
+                  Select nodes/edges in the Viewer, or filter by documents/relationships, then specify your extraction intent below
                 </div>
                 <div id="graph-context-status" style="display: none; margin-top: 8px; padding: 10px; background: #dbeafe; border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 13px; color: #1e40af;">
-                  <strong>Context Ready:</strong> <span id="graph-context-count">0</span> nodes selected
+                  <strong>Context Ready:</strong> <span id="graph-context-count">0</span> concepts selected
+                </div>
+                
+                <!-- Context Intent Options (shown when context is enabled) -->
+                <div id="context-intent-options" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+                  <div style="font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 13px;">Extraction Intent:</div>
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                      <input type="checkbox" id="intent-complements" style="width: auto; margin-right: 8px; cursor: pointer;" checked />
+                      <span>Find relationships that <strong>complement</strong> existing knowledge</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                      <input type="checkbox" id="intent-conflicts" style="width: auto; margin-right: 8px; cursor: pointer;" checked />
+                      <span>Find relationships that <strong>conflict with</strong> existing knowledge</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                      <input type="checkbox" id="intent-extends" style="width: auto; margin-right: 8px; cursor: pointer;" checked />
+                      <span>Find relationships that <strong>extend</strong> existing knowledge</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px;">
+                      <input type="checkbox" id="intent-distinct" style="width: auto; margin-right: 8px; cursor: pointer;" />
+                      <span>Find relationships <strong>distinct from</strong> existing knowledge</span>
+                    </label>
+                  </div>
+                  <div class="help-text" style="margin-top: 8px; font-size: 12px;">
+                    Select one or more intents to guide extraction. If none selected, extraction will be neutral.
+                  </div>
                 </div>
               </div>
               

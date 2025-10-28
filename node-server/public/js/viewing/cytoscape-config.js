@@ -142,6 +142,15 @@ export const cytoscapeStyles = [
     }
   },
   {
+    selector: 'edge.multi-selected',
+    style: {
+      'line-color': '#8b5cf6',
+      'target-arrow-color': '#8b5cf6',
+      'width': 4,
+      'z-index': 999
+    }
+  },
+  {
     selector: 'edge:selected',
     style: {
       'line-color': '#1d4ed8',

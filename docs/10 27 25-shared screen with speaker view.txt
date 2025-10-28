@@ -1,0 +1,401 @@
+(Transcribed by TurboScribe.ai. Go Unlimited to remove this message.)
+
+[Speaker 2]
+Hello. Hi. Can you hear me?
+
+[Speaker 1]
+Hi, Carter. How are you doing? Can you hear me, Carter?
+
+Yes. We are able to hear you. Okay.
+
+All right. Great. You can hear me, right?
+
+[Speaker 2]
+Yes. Can you hear me?
+
+[Speaker 1]
+Yeah, I can hear you.
+
+[Speaker 2]
+Sorry. I'm having issues with my microphone. AirPods.
+
+But they're working now. All right.
+
+[Speaker 1]
+Okay. All right. Yeah.
+
+Thank you for being available. So I had a chance to basically play a little bit over the weekend with the knowledge synthesis tool that you have, you are implementing. Yeah.
+
+So I had the conversations saved so I could see what you were querying and I could see the issues. So I've already started looking into it. The issues.
+
+Yeah. So there were a few issues, but they are not major. Okay.
+
+So one issue is basically, for example, here, this basically, so let's just go over minor issues that sort of we are in the same thing, right? So basically there is zero documents, zero entities, right? So I assume this is not correct.
+
+Yes. I don't know what it would mean otherwise, so this is minor, right? Secondly, so these are, let's just take a look at them and then maybe we can come back to this, right?
+
+So when we go to knowledge extraction, so this view selected graph as context, it's not entirely clear what this means, right? Because say I go to viewing, okay, right? And I select, where was my selection?
+
+This. I think the coloring was not entirely clear to me what it is, but okay. So let me basically select this one here.
+
+Okay. This is what I have. So I guess your concepts, so I selected this one, right?
+
+So now when I go to ingestion, I'm assuming that I can use the selected graph as context, but it doesn't let me. I don't know what it means.
+
+[Speaker 2]
+So essentially, when I set that up, essentially you have to manually select each node.
+
+[Speaker 1]
+I did not consider. Yeah. So I don't think that basically we should be selecting individual nodes, right?
+
+So there should be some filtering, whatever remains, that's why the filtering needs to be useful, right? So effective. And whatever is basically filtered, right, at the end, right?
+
+So must basically be used as a concept, as a context. In fact, it may not be just nodes, it can also be the edges. It can just be a set of papers, right?
+
+So because the context needs to be more general, okay, right? So it cannot be just basically selected a few nodes, right? So that is not, that's a good starting point, but that's not sufficient, right?
+
+[Speaker 2]
+So, and I had- So you want it to filter by documents?
+
+[Speaker 1]
+Okay, so whatever it is. So basically, by the way, when I come back here, this interface doesn't refresh correctly. Okay, I had noticed this already because only this one is selected, causal search is selected, but now it shows everything.
+
+[Speaker 2]
+Okay, yes. It's a minor bug. That is a bug.
+
+[Speaker 1]
+But there's a minor bug, but I want to basically meet with you to also show it, but it's not, I mean, that can be fixed. Okay, I'm just looking at more logic, right? So from my perspective, the more logical things are these, okay?
+
+So basically, again, so now basically it is doing the other thing. So let me basically now turn these off, okay? So I have basically some context right now, okay?
+
+I have some context, okay? Whatever it is, I have done some filtering, okay? So as we said, so, I mean, you went and basically spend more time on the AI query.
+
+I appreciate that. But then that's basically, as we had discussed, we want that feature investigated later, okay? That's we want to get more feedback from the people to what type of queries they ask and so on.
+
+We want to add that later. Ingestion is basically first we want to focus on, okay? So making sure that basic ingestion is perceived useful and perceived, I've been able to identify, okay, useful concepts and useful relationships.
+
+We'll come to querying later. So I may not run any queries, any AI queries yet. It's perfectly fine.
+
+So I wouldn't actually invest as much time on the AI query site. And it looks nice. I'm not saying it doesn't look nice.
+
+It also looks useful. I'm just saying that basically we still didn't get basically the ingestion parts working or to the satisfaction of basically people in the group. So we should invest more of our energy on the ingest site, make sure that it's working and in a way that is sort of effective before we invest a lot of time on the querying site.
+
+It's good that you've been playing around with it just so we can figure out the bugs because obviously I can't figure out all the bugs myself. Yeah, yeah, sure. I mean, that's the thing.
+
+Yeah, exactly. So once basically you implement, right? So it's hard to basically, I fully understand that.
+
+So basically, so we need a effective filtering mechanism here, right? So it could basically be, you're right. It might basically be.
+
+So how would I select a particular node? By the way, I couldn't figure out how I select here a particular node for filtering.
+
+[Speaker 2]
+You would shift click it.
+
+[Speaker 1]
+Shift click? Okay, so that was not entirely clear. Okay, shift click what?
+
+[Speaker 2]
+So this is- So now you see it changes color and then you would select multiple nodes like that.
+
+[Speaker 1]
+And how do I select? All right, so did it change colors? Because I don't know what has been selected right now.
+
+[Speaker 2]
+Just click the white screen, just click that. It should show all the purple.
+
+[Speaker 1]
+Okay, so this one is purple. All right, yeah, so that's, so then I click, okay. And yeah, okay, all right.
+
+What about, how do I select the edge? Because I care about certain relationships. How do I select?
+
+[Speaker 2]
+I don't think I implemented selection for edges themselves. Just knows now, but that can be implemented.
+
+[Speaker 1]
+Right, so basically it needs to be essentially, I select a graph, right? Those could be concepts or those could be relationships, right? So if you go back to ingestion, if you go back to the ingestion page and click the checkbox, click on that and then go to the preview, it should automatically grab those relationships.
+
+At least one of them, it's a little buggy, but that's essentially what it's grabbing there. But yes, that will be debugged a little further and I'll implement the ability to select edges. Right, so okay, so basically the key question is, are the concepts more important than relationships?
+
+Why don't I basically select a relationship and its concepts being selected? So you are making basically a value judgment is that basically in a knowledge graph, nodes are more important than the relationships.
+
+[Speaker 2]
+Right.
+
+[Speaker 1]
+That depends on you. Somebody might basically be interested in a particular node concept. Somebody may say, okay, I'm interested in basically a particular relationship and whatever basically, whatever sort of, whatever basic nodes are, right?
+
+So I'm okay with that. Do you see what I mean?
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+So that's why we need to be careful about basically this filtering, okay? Because that's how basically we say the user is going to sort of highlight interest and the scientist basically might just care about basically a particular relationship, a specific relationship or a particular concept. Okay, right.
+
+Or basically a particular paper, right? So that's basically, that's the thing, right? So when I go back to viewing now, right?
+
+Okay, so everything basically, I guess, resets. I mean, so, okay, now what happens when I get back? Is it still selected?
+
+Yeah, it's still selected.
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+But I don't see it on the other side. So yeah, so that's a buggy, okay? That can be fixed, but I'm more basically interested in a sense, right?
+
+So here, right? So the, how do I, okay, filter, okay, right? So what do I basically provide as input, right?
+
+So I can select basically papers, right? So I say, okay, so this is the paper that I recently uploaded and I want everything to be basically be investigated based on that, okay, right? Or I guess you have concepts here and you have relationships, right?
+
+So what are these relationships? Because they are basically, they are two things. It doesn't, okay, so you show it, I see.
+
+So I need to touch it to relationship, but that's not good. If I'm interested in relationship, the relationship is the more important thing.
+
+[Speaker 2]
+Right.
+
+[Speaker 1]
+Not the end points. In fact, the same relationship might occur across multiple end points.
+
+[Speaker 2]
+Yes, I can, that should have been put in there in the first place, but I can do that.
+
+[Speaker 1]
+All right, so basically, so concepts exist, okay? Then relationships exist, okay? Relationship is simply requires, okay?
+
+Right, so here basically, or interact with, okay? This is basically what you call a type, okay? On your, on your, on your, on the prompt, okay?
+
+Right, so, but it's really relationship name, okay? Right, so it's a interact with. That's the relationship.
+
+Now this relationship may have multiple instances. Under this relationship, you can have multiple instances. Okay, so this may be X interacts with Y, Z interacts with H, okay?
+
+But those are instances of that relationship. Do you, do you, do you.
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+Do you, do you, do you, do you, do you what I mean, right? So we should basically, we should let the user be able to select or focus on, okay? Right, so on, on, on, on, on, really any of these.
+
+Okay, I'm interested in interactions. Okay, I don't care about between what. Right, so I want basically interact with that identified.
+
+That's I should be able to basically specify that. Right, or I'm interested in a, I'm just interested in Z interact with Y, and then tell me other things that are related to that. Do you, do you, do you, do you, do you, do you, do you, do you, do you, do you, do you, do you, do you, do you see what I mean?
+
+Although that is basically right now, it's not entirely clear. Okay, right. And so we should be able to, so we should be able to basically provide, okay, the user, so the ability to basically provide that.
+
+Right, and as I said, so maybe I'm interested in everything in this paper. Right, so I just really click on this paper, and I'm interested in, the user didn't click on anything, but I'm interested in basically now everything being somehow investigated that's within the context of this, right? I don't care about the other things, this was the paper, and I want basically, I want this to basically use as a context, all right?
+
+So I have a couple of questions here, okay? So let's assume this is implemented, okay? Let's assume that this is implemented.
+
+So let's do this again, okay, right? Let me select this one again, just move them. Okay, now I go here, right?
+
+So let's assume that basically now, so what does it mean using selected graph as context? So can I, for example, say here, okay, right? So, okay, right?
+
+So exclude, okay, right? So, okay, what am I typing? I'm typing the wrong thing.
+
+Okay, exclude the selected graph context. Can I say this? Or can I say, focus on the selected graph context?
+
+What does it mean to have a graph context? Well, whenever you're selecting, when you're using the graph context, so did you check my email when there's a specific prepended prompt for the graph context?
+
+[Speaker 2]
+So it's going to say, okay, so it's going to specifically, the prompt is telling GPT to look for relationships that are agree, disagree, or add upon the graph context. And then there's a specific prompt for the user context, which is saying- Right, but the thing is the following, that's what I mean, right?
+
+[Speaker 1]
+So it is the user, right? So agree, disagree. I might basically want to agree.
+
+I might want to disagree. I might want it to be compliment, right? So the prompt basically shouldn't presume that.
+
+Okay. That basically, that's what I want to do, right? So, because again, we are basically extracting few things.
+
+I might be able to say, find those things that basically sort of use the same similar relationships or similar nodes or exclude them, right? So, or conflict with them, right? So we should, we need to basically have...
+
+So if you write it in a particular way, then I cannot basically say here, hey, hey, or that should be a default text. So I'm just basically worried about how would I basically say, hey, find, I'm interested in, okay, right? So conflict, okay, with the selected graph context, right?
+
+So I want to provide that myself. So, because now your prompt is basically is preventing me from basically doing research in which I want to explicitly look for things that conflict with the selected graph context. Do you see what I mean?
+
+So, and so that somehow needs to be, I mean, either basically we say, okay, so a number of check marks here, right? So conflict with, okay, you select a context and then underneath we say conflict with, agrees with, complements or distinct from, right? So, or compatible with distinct from, so that basically the user checks them, okay, right?
+
+So that it becomes, so that it basically becomes, so that I can tell what I'm interested in from this paper when I analyze, okay? So the graph context, the graph context prompt should more just be like incorporate this context for the user's goals or interests instead of any particular direction. So if you want to basically include, if you want to include, right?
+
+So either basically I will write it here, okay? You expect me to write it there, right? Or if you want to basically put it pre-designed, right?
+
+So into here, okay, right? We should, we can say, okay, complements conflicts with, excludes. So add those as check marks, okay, right?
+
+And then the prompt basically take that essentially as input, right? So then it's fine, okay? So basically, before I basically say extract, I say basically, hey, I click and say, hey, find those things that basically conflicts with, okay, right?
+
+So I basically provide that as input. You don't presume that that's what I'm interested in. You meaning not you, but your code.
+
+I mean, the code presumes that I'm interested in that. Do you see what I mean?
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+And I, so one more question, which is basically kind of related to that, is not exactly, but kind of related to that, is how do I ask the system to do more work on an existing paper? Say, but I'm not satisfied with it, or I want to basically, I want to do more. I want to say basically, okay, take again, give the same paper or the papers that one of the existing papers.
+
+And I say, hey, from this paper, right? So from this paper, extract more stuff like that. How would I do that?
+
+So currently you can't do that right now. You would just have, right now you would just have to select all the nodes in the relationships of that document, but implementing that would be a simple, a very simple query for, that could easily be done.
+
+[Speaker 2]
+So I can implement that.
+
+[Speaker 1]
+So basically the key point essentially is that when I choose PDF files here, I should also be able to really select one of the existing papers, because I don't think that we should download it again, because that paper, I mean, we can download, I guess again, because we don't keep the PDF files. Okay, but it shouldn't be, it shouldn't be seen as a new paper, because it's not a new paper.
+
+[Speaker 2]
+Right.
+
+[Speaker 1]
+Right, so that's why I'm sort of trying to figure out what is the best way to do that, right? So say basically that was, I mean, I had yesterday, I uploaded the paper. Okay, right, so yesterday I uploaded the paper.
+
+I'm not able to write, I don't know why it doesn't work. Okay. But yesterday I uploaded the paper and you extracted certain graphs.
+
+Something, okay, right? And now, but I wasn't happy about it. Okay, right, and I want it to be expanded in a particular way.
+
+So I want to basically provide the same paper again. Okay, right, so maybe basically giving some additional things, right? So say, hey, please focus on these things, on this paper or on the graph, right?
+
+So focus on those things and so on, as I want to give something more, or maybe I don't give anything, but say extract two and more relationship or whatever it is. Okay, right? But it is not a new PDF.
+
+Really, it is the yesterday's PDF. It is already in my database. So I think we need to do that, right?
+
+Because we cannot assume that the first, that first shot, that they will be able to extract all of the concepts and all of the relationships from the paper, right? So maybe basically I do it once, it gives me basically some results. And then I use those results to say, hey, these seem to be actually important, the way you say, okay, right?
+
+Can you basically extract more things from the paper? Okay, that basically includes those. Do you see what I mean?
+
+So we need to have a way to elaborate, right? So on a existing paper, right? We don't keep the PDF.
+
+They will need to provide the same PDF again, but we should be able to basically, we should be able to, we should be able to somehow recognize, right? So that it is the same paper, okay? Maybe from title or the user selects or whatever it is, right?
+
+And that, or we created some fingerprints, somehow recognize that this new paper, okay? Is actually a new PDF, is actually a previous PDF, right? Or either user tells us, right?
+
+And then elaborate, right? So elaborate on it, right? So I think we need to do something like that, Carter, if it makes sense.
+
+Yes, I can do that. Did you look over the main ingestion prompt? Because if you weren't satisfied with the initial extraction, then maybe we need to look at refining the main ingestion prompt.
+
+Because right now it's pretty detailed. Can you share? Because I think the one that you shared with me was not the ingestion, but it was the AI query ingestion format.
+
+Or maybe will you share both of them and maybe I missed it. Can you share? So in the first email, the first...
+
+[Speaker 2]
+Yeah, I can share it to you one more time, but...
+
+[Speaker 1]
+Oh, yeah. Share it on the screen, okay? Just once.
+
+Okay, give me just a second here. Okay, I stopped my share. You can share.
+
+Maybe basically, I think that's what happened. I think you should send it to, and then I looked at the AI prompt, but then I didn't look at the... I probably missed basically the...
+
+Yeah, it was in the first update I sent you, if you wanna look at that. Or I can just share my screen. Why don't you share your screen?
+
+Oh, maybe I need to give you the right to share. I didn't give you. Okay, you should be able to share now.
+
+[Speaker 2]
+Okay.
+
+[Speaker 1]
+And then I think I go to another meeting soon.
+
+[Speaker 2]
+Okay, can you see my screen?
+
+[Speaker 1]
+Well, it's starting. It didn't start yet. It is coming.
+
+Right, so basically I need to work on this a bit because that's what I was worried about. So you are basically, you are... Okay.
+
+Yeah. So this is fine. So you moved to Jason.
+
+Okay. So I don't know what the subject type and object type are. What's a type?
+
+So this is basically like the ontology, like what kind of entity is it? What is the type of an entity? I have no idea.
+
+So if you see it in the examples below. Again, I'm not actually comfortable with these because these are all bio-related. I don't know where these come from.
+
+Yes, those are just my... I don't know why they came from. They bias basically the...
+
+Carter, I mean, basically, I think you should have probably asked, okay, right? So before you have done these, right? So you should have basically write a short proposal.
+
+Okay, and this is how I plan to do. And then double check. I saw it.
+
+And in fact, I also saw it on your interface. Okay, that basically when I go to coloring, it somehow goes to those coloring. Okay, right?
+
+It is... How is that useful to me as a computer scientist? I want to basically put computer science paper here.
+
+Yeah, I'm not exactly sure about that. Why do you cancel those basically concepts? So types.
+
+So that doesn't make sense, right? So we shouldn't have that, right? And the prompt that I provided you didn't have it.
+
+Right? So if you are basically changing, it's perfectly fine to change. But the right way of doing is, hey, Dr. Kendal, Dr. Akbar, right? I believe I should introduce this or I have an idea to introduce this. Would that make sense?
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+So instead of you implementing, and then I have to basically go and do get into a debugging mode, right? So to find that these are not okay. And I'm telling you, no, you implemented the wrong way.
+
+I mean, the right way is not that. The right way is basically you propose, right? So you say, I have this idea.
+
+What do you guys think about it? And then we provide you feedback.
+
+[Speaker 2]
+Okay, I see.
+
+[Speaker 1]
+Right? Yeah, so you also basically have this, if I remember correctly, when I look at it, you are saying basically try to extract basically 50-50, positive 50-50, negative and so on. And basically something like that, if I remember correctly, when I looked, I'm not entirely sure.
+
+That might be kind of okay, I guess. All right. Maybe it's fine.
+
+But so this basically was worrisome to me when I looked. This was one of the things that I want to... Also, I saw this also in your implementation because I think it shows up basically in somewhere.
+
+Okay, right. Why is a word for concept? Okay, so you say subject, predicate object, but really subject and objects are concepts and predicate is a relationship.
+
+So you change basically the... So concept is not yet another type. Yeah, I can see how that's confusing.
+
+Right, so that basically creates this language of sort of confusion between what you have implemented and between us who specified, right? So you can say you are extracting concepts. Concepts basically can be as both subject or objects, but then they are concepts.
+
+Okay, right. If you basically single out drug, gene, protein and disease, you are basically singling out basically the knowledge synthesis platform in a particular domain. The whole point of this is it should be multidisciplinary.
+
+The whole point we are doing this is that basically people from different disciplines will use it and the concepts from different disciplines are going to be linked to each other so that basically we can start understanding each other and use it effectively, right? So that's the whole point of this ontology, right? So not just basically that a biologist will use it, right?
+
+So I would be very worried about... I mean, when I saw it, I would be very worried about this, right? It's your types.
+
+Okay, right? See, my whole initial idea with this concept was that if we want more advanced filtering and more advanced querying, where it's like, find all proteins that blah, blah, blah, find all chemicals, this would be the first step to something like that. But it's not how it would be, right?
+
+So because it's a protein, maybe there's something else, right? So that could be a separate... It could be something else, right?
+
+So maybe that's tagging, okay? Additional tagging that the user provides, okay, right? But not like this.
+
+And in fact, I mean, the concept is not just one of the things, okay? And I say a drug can be a concept, okay? Gene can be a concept as well, right?
+
+So it shouldn't basically... This is not okay as a labeling mechanism, even if you want to do that, what you suggest, okay? But Carter, thank you so much.
+
+Now I need to go because my next meeting starts at 2.30, but this was useful, okay, right? So do you see my concerns? Am I correct, right?
+
+[Speaker 2]
+Yes.
+
+[Speaker 1]
+Okay. And not concerns, but my basically comments. And I will basically also send this as a TypeScript, okay, right?
+
+So once this is done, so that basically you have it as a record on your site, all right? And then we can talk about later.
+
+[Speaker 2]
+Okay.
+
+[Speaker 1]
+Okay, all right?
+
+[Speaker 2]
+Sounds good.
+
+[Speaker 1]
+Okay. Yeah, so basically, again, let's be careful basically with the terminology that we use, right? We are using entity or we are using concept.
+
+Is everything is an entity? What's an entity, right? So we need to use the same, we need to be very careful about basically the language that we use.
+
+Okay, right?
+
+(This file is longer than 30 minutes. Go Unlimited at TurboScribe.ai to transcribe files up to 10 hours long.)

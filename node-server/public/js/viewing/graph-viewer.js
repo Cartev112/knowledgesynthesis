@@ -126,10 +126,34 @@ export class GraphViewer {
       }
     });
     
-    // Edge click handler
+    // Edge click handler with multi-select support
     cy.on('tap', 'edge', (evt) => {
-      this.hideEdgeTooltip();
-      this.showEdgeModal(evt.target.data());
+      const edge = evt.target;
+      const edgeId = edge.id();
+      
+      if (evt.originalEvent && evt.originalEvent.shiftKey) {
+        // Toggle multi-selection for edges
+        if (!state.selectedEdges) {
+          state.selectedEdges = new Set();
+        }
+        
+        if (state.selectedEdges.has(edgeId)) {
+          state.selectedEdges.delete(edgeId);
+          edge.removeClass('multi-selected');
+        } else {
+          state.selectedEdges.add(edgeId);
+          edge.addClass('multi-selected');
+        }
+        
+        // Notify selection changed
+        if (window.onSelectionChanged) {
+          window.onSelectionChanged(Array.from(state.selectedNodes), Array.from(state.selectedEdges));
+        }
+      } else {
+        // Regular click - show details
+        this.hideEdgeTooltip();
+        this.showEdgeModal(edge.data());
+      }
     });
     
     // Improved tooltip handlers with debouncing
@@ -469,8 +493,12 @@ export class GraphViewer {
   
   clearSelection() {
     state.selectedNodes.clear();
+    if (state.selectedEdges) {
+      state.selectedEdges.clear();
+    }
     if (state.cy) {
       state.cy.nodes().removeClass('multi-selected');
+      state.cy.edges().removeClass('multi-selected');
     }
     this.updateFabVisibility();
     if (window.onSelectionChanged) {

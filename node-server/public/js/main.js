@@ -86,6 +86,9 @@ class AppManager {
           }
           await this.graphViewer.loadAllData();
           state.graphInitialized = true;
+          
+          // Restore selection state
+          this.restoreSelectionState();
         }, 150);
       });
     } else if (state.cy) {
@@ -99,7 +102,74 @@ class AppManager {
       });
       setTimeout(() => {
         state.cy.resize();
+        
+        // Restore selection state after resize
+        this.restoreSelectionState();
       }, 100);
+    }
+  }
+  
+  restoreSelectionState() {
+    if (!state.cy) return;
+    
+    // Restore selected nodes
+    if (state.selectedNodes && state.selectedNodes.size > 0) {
+      state.selectedNodes.forEach(nodeId => {
+        const node = state.cy.getElementById(nodeId);
+        if (node.length > 0) {
+          node.addClass('multi-selected');
+        }
+      });
+    }
+    
+    // Restore selected edges
+    if (state.selectedEdges && state.selectedEdges.size > 0) {
+      state.selectedEdges.forEach(edgeId => {
+        const edge = state.cy.getElementById(edgeId);
+        if (edge.length > 0) {
+          edge.addClass('multi-selected');
+        }
+      });
+    }
+    
+    // Restore filter states
+    this.restoreFilterStates();
+    
+    // Update FAB visibility
+    if (this.graphViewer && this.graphViewer.updateFabVisibility) {
+      this.graphViewer.updateFabVisibility();
+    }
+  }
+  
+  restoreFilterStates() {
+    // Restore view filter
+    const viewFilter = document.getElementById('index-view-filter');
+    if (viewFilter && state.filterStates.viewFilter) {
+      viewFilter.value = state.filterStates.viewFilter;
+    }
+    
+    // Restore type filter
+    const typeFilter = document.getElementById('index-type-filter');
+    if (typeFilter && state.filterStates.typeFilter) {
+      typeFilter.value = state.filterStates.typeFilter;
+    }
+    
+    // Restore search term
+    const searchInput = document.getElementById('index-search');
+    if (searchInput && state.filterStates.searchTerm) {
+      searchInput.value = state.filterStates.searchTerm;
+    }
+    
+    // Restore verified only checkbox
+    const verifiedCheckbox = document.getElementById('verified-only-checkbox');
+    if (verifiedCheckbox) {
+      verifiedCheckbox.checked = state.filterStates.verifiedOnly || false;
+    }
+    
+    // Apply document filter to restore visual state
+    if (this.graphViewer && this.graphViewer.indexManager) {
+      this.graphViewer.indexManager.applyDocumentFilter();
+      this.graphViewer.indexManager.renderIndexItems();
     }
   }
   

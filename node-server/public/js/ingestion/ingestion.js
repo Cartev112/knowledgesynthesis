@@ -6,6 +6,24 @@ import { state } from '../state.js';
 import { showMessage } from '../utils/helpers.js';
 
 export class IngestionManager {
+  constructor() {
+    this.contextConfig = {
+      enabled: false,
+      sources: {
+        selectedNodes: false,
+        selectedEdges: false,
+        filteredView: false,
+        documents: false,
+        documentIds: []
+      },
+      intents: {
+        complements: true,
+        conflicts: true,
+        extends: true,
+        distinct: false
+      }
+    };
+  }
   displayFileName() {
     const fileInput = document.getElementById('pdf-file');
     const fileNameDisplay = document.getElementById('file-name');
@@ -25,42 +43,331 @@ export class IngestionManager {
     }
   }
   
-  toggleGraphContext() {
-    const checkbox = document.getElementById('use-graph-context');
-    const statusDiv = document.getElementById('graph-context-status');
-    const countSpan = document.getElementById('graph-context-count');
+  openContextConfig() {
+    const modal = document.getElementById('context-config-modal');
+    if (!modal) return;
     
-    if (checkbox.checked) {
-      if (state.selectedNodes.size === 0) {
-        alert('Please select nodes in the Viewer first.');
-        checkbox.checked = false;
-        return;
-      }
-      countSpan.textContent = state.selectedNodes.size;
-      statusDiv.classList.remove('hidden');
-      statusDiv.style.display = 'block'; // Override hidden class
-    } else {
-      statusDiv.classList.add('hidden');
+    // Update counts
+    document.getElementById('context-node-count').textContent = state.selectedNodes.size;
+    document.getElementById('context-edge-count').textContent = state.selectedEdges?.size || 0;
+    
+    // Load documents list if needed
+    this.loadDocumentsList();
+    
+    // Show modal
+    modal.classList.add('visible');
+    document.body.classList.add('modal-open');
+    
+    // Update summary
+    this.updateContextSummary();
+  }
+  
+  closeContextConfig() {
+    const modal = document.getElementById('context-config-modal');
+    if (modal) {
+      modal.classList.remove('visible');
+      document.body.classList.remove('modal-open');
     }
   }
   
+  async loadDocumentsList() {
+    try {
+      const response = await fetch('/api/query/documents');
+      if (!response.ok) return;
+      
+      const documents = await response.json();
+      const listEl = document.getElementById('context-document-list');
+      
+      if (documents.length === 0) {
+        listEl.innerHTML = '<div style="color: #9ca3af; font-style: italic;">No documents available</div>';
+        return;
+      }
+      
+      listEl.innerHTML = documents.map(doc => `
+        <label class="checkbox-label" style="padding: 8px; margin: 4px 0; background: white; border-radius: 4px; cursor: pointer;">
+          <input type="checkbox" class="checkbox-input context-doc-checkbox" data-doc-id="${doc.document_id}" />
+          <span class="checkbox-text" style="font-size: 13px;">${doc.title || doc.document_id}</span>
+        </label>
+      `).join('');
+      
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    }
+  }
+  
+  updateContextSummary() {
+    const useNodes = document.getElementById('context-use-selected-nodes')?.checked;
+    const useEdges = document.getElementById('context-use-selected-edges')?.checked;
+    const useFiltered = document.getElementById('context-use-filtered-view')?.checked;
+    const useDocs = document.getElementById('context-use-documents')?.checked;
+    
+    // Show/hide document selection
+    const docSelection = document.getElementById('context-document-selection');
+    if (docSelection) {
+      docSelection.style.display = useDocs ? 'block' : 'none';
+    }
+    
+    // Build summary
+    const parts = [];
+    if (useNodes && state.selectedNodes.size > 0) {
+      parts.push(`${state.selectedNodes.size} concept(s)`);
+    }
+    if (useEdges && state.selectedEdges?.size > 0) {
+      parts.push(`${state.selectedEdges.size} relationship(s)`);
+    }
+    if (useFiltered) {
+      parts.push('filtered view');
+    }
+    if (useDocs) {
+      const checked = document.querySelectorAll('.context-doc-checkbox:checked').length;
+      if (checked > 0) parts.push(`${checked} document(s)`);
+    }
+    
+    const detailsEl = document.getElementById('context-preview-details');
+    if (detailsEl) {
+      if (parts.length === 0) {
+        detailsEl.textContent = 'No context configured yet';
+      } else {
+        detailsEl.innerHTML = `
+          <div style="margin-bottom: 8px;"><strong>Sources:</strong> ${parts.join(', ')}</div>
+          <div><strong>Intents:</strong> ${this.getSelectedIntents().join(', ') || 'Neutral (no specific intent)'}</div>
+        `;
+      }
+    }
+  }
+  
+  getSelectedIntents() {
+    const intents = [];
+    if (document.getElementById('intent-complements')?.checked) intents.push('Complement');
+    if (document.getElementById('intent-conflicts')?.checked) intents.push('Conflict');
+    if (document.getElementById('intent-extends')?.checked) intents.push('Extend');
+    if (document.getElementById('intent-distinct')?.checked) intents.push('Distinct');
+    return intents;
+  }
+  
+  applyContextConfig() {
+    // Save configuration
+    this.contextConfig.enabled = true;
+    this.contextConfig.sources.selectedNodes = document.getElementById('context-use-selected-nodes')?.checked || false;
+    this.contextConfig.sources.selectedEdges = document.getElementById('context-use-selected-edges')?.checked || false;
+    this.contextConfig.sources.filteredView = document.getElementById('context-use-filtered-view')?.checked || false;
+    this.contextConfig.sources.documents = document.getElementById('context-use-documents')?.checked || false;
+    
+    // Get selected document IDs
+    this.contextConfig.sources.documentIds = Array.from(
+      document.querySelectorAll('.context-doc-checkbox:checked')
+    ).map(cb => cb.dataset.docId);
+    
+    // Save intents
+    this.contextConfig.intents.complements = document.getElementById('intent-complements')?.checked || false;
+    this.contextConfig.intents.conflicts = document.getElementById('intent-conflicts')?.checked || false;
+    this.contextConfig.intents.extends = document.getElementById('intent-extends')?.checked || false;
+    this.contextConfig.intents.distinct = document.getElementById('intent-distinct')?.checked || false;
+    
+    // Update main UI summary
+    this.updateMainContextSummary();
+    
+    // Close modal
+    this.closeContextConfig();
+    
+    showMessage('success', 'Context configuration applied');
+  }
+  
+  updateMainContextSummary() {
+    const summaryEl = document.getElementById('context-summary-text');
+    if (!summaryEl) return;
+    
+    if (!this.contextConfig.enabled) {
+      summaryEl.innerHTML = 'No context configured';
+      summaryEl.style.color = '#9ca3af';
+      return;
+    }
+    
+    const parts = [];
+    if (this.contextConfig.sources.selectedNodes && state.selectedNodes.size > 0) {
+      parts.push(`${state.selectedNodes.size} concepts`);
+    }
+    if (this.contextConfig.sources.selectedEdges && state.selectedEdges?.size > 0) {
+      parts.push(`${state.selectedEdges.size} relationships`);
+    }
+    if (this.contextConfig.sources.filteredView) {
+      parts.push('filtered view');
+    }
+    if (this.contextConfig.sources.documents && this.contextConfig.sources.documentIds.length > 0) {
+      parts.push(`${this.contextConfig.sources.documentIds.length} docs`);
+    }
+    
+    const intents = this.getActiveIntents();
+    
+    if (parts.length === 0) {
+      summaryEl.innerHTML = '<span style="color: #ef4444;">⚠ Context enabled but no sources selected</span>';
+    } else {
+      summaryEl.innerHTML = `
+        <div style="color: #059669; font-weight: 600; margin-bottom: 4px;">✓ Context Active</div>
+        <div style="font-size: 12px; color: #6b7280;">${parts.join(', ')} • ${intents}</div>
+      `;
+    }
+  }
+  
+  getActiveIntents() {
+    const intents = [];
+    if (this.contextConfig.intents.complements) intents.push('complement');
+    if (this.contextConfig.intents.conflicts) intents.push('conflict');
+    if (this.contextConfig.intents.extends) intents.push('extend');
+    if (this.contextConfig.intents.distinct) intents.push('distinct');
+    return intents.length > 0 ? intents.join(', ') : 'neutral';
+  }
+  
+  clearContext() {
+    this.contextConfig.enabled = false;
+    this.contextConfig.sources = {
+      selectedNodes: false,
+      selectedEdges: false,
+      filteredView: false,
+      documents: false,
+      documentIds: []
+    };
+    this.updateMainContextSummary();
+    this.closeContextConfig();
+    showMessage('success', 'Context cleared');
+  }
+  
+  showDetailedContextPreview() {
+    // Show the existing detailed preview modal
+    this.showContextPreview();
+  }
+  
   async getGraphContextText() {
-    if (state.selectedNodes.size === 0) {
+    if (!this.contextConfig.enabled) {
+      return null;
+    }
+    
+    // Check if any sources are configured
+    const hasNodes = this.contextConfig.sources.selectedNodes && state.selectedNodes.size > 0;
+    const hasEdges = this.contextConfig.sources.selectedEdges && state.selectedEdges?.size > 0;
+    const hasFiltered = this.contextConfig.sources.filteredView;
+    const hasDocs = this.contextConfig.sources.documents && this.contextConfig.sources.documentIds.length > 0;
+    
+    if (!hasNodes && !hasEdges && !hasFiltered && !hasDocs) {
       return null;
     }
     
     try {
-      const nodeIds = Array.from(state.selectedNodes);
-      const data = await API.getSubgraph(nodeIds);
+      let allNodes = new Map();
+      let allRelationships = new Map();
+      let selectedRelationships = [];
+      
+      // Collect nodes from selected nodes
+      if (hasNodes && state.selectedNodes.size > 0) {
+        const nodeIds = Array.from(state.selectedNodes);
+        const data = await API.getSubgraph(nodeIds);
+        
+        data.nodes.forEach(node => allNodes.set(node.id, node));
+        data.relationships.forEach(rel => allRelationships.set(rel.id, rel));
+      }
+      
+      // Collect nodes and relationships from selected edges
+      if (hasEdges && state.selectedEdges.size > 0) {
+        const edgeIds = Array.from(state.selectedEdges);
+        
+        // Get edge data from cytoscape
+        if (state.cy) {
+          edgeIds.forEach(edgeId => {
+            const edge = state.cy.getElementById(edgeId);
+            if (edge.length > 0) {
+              const edgeData = edge.data();
+              
+              // Add the relationship
+              selectedRelationships.push(edgeData);
+              allRelationships.set(edgeId, edgeData);
+              
+              // Add source and target nodes
+              const sourceNode = state.cy.getElementById(edgeData.source);
+              const targetNode = state.cy.getElementById(edgeData.target);
+              
+              if (sourceNode.length > 0) {
+                allNodes.set(edgeData.source, sourceNode.data());
+              }
+              if (targetNode.length > 0) {
+                allNodes.set(edgeData.target, targetNode.data());
+              }
+            }
+          });
+        }
+      }
+      
+      // Collect nodes and relationships from selected documents
+      if (hasDocs && this.contextConfig.sources.documentIds.length > 0) {
+        for (const docId of this.contextConfig.sources.documentIds) {
+          try {
+            // Fetch all entities and relationships for this document
+            const response = await fetch(`/api/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}`);
+            if (response.ok) {
+              const docData = await response.json();
+              
+              // Add all nodes from this document
+              if (docData.nodes) {
+                docData.nodes.forEach(node => allNodes.set(node.id, node));
+              }
+              
+              // Add all relationships from this document
+              if (docData.relationships) {
+                docData.relationships.forEach(rel => allRelationships.set(rel.id, rel));
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching document ${docId}:`, error);
+          }
+        }
+      }
+      
+      // Handle filtered view - use currently visible graph
+      if (hasFiltered && state.cy) {
+        // Get all visible nodes and edges from cytoscape
+        const visibleNodes = state.cy.nodes(':visible');
+        const visibleEdges = state.cy.edges(':visible');
+        
+        visibleNodes.forEach(node => {
+          allNodes.set(node.id(), node.data());
+        });
+        
+        visibleEdges.forEach(edge => {
+          allRelationships.set(edge.id(), edge.data());
+        });
+      }
+      
+      const nodes = Array.from(allNodes.values());
+      const relationships = Array.from(allRelationships.values());
       
       // Get 1-hop neighbors for richer context
-      const neighbors = this._getNeighbors(data.nodes, data.relationships);
+      const neighbors = this._getNeighbors(nodes, relationships);
+      
+      // Build intent instruction
+      const intentInstructions = this.buildIntentInstructions();
       
       let contextText = '=== EXISTING KNOWLEDGE GRAPH CONTEXT ===\n\n';
-      contextText += `This subgraph contains ${data.nodes.length} selected entities, ${neighbors.length} neighbor entities, and ${data.relationships.length} relationships:\n\n`;
+      contextText += intentInstructions;
+      contextText += `\nThis context contains ${nodes.length} concepts, ${neighbors.length} neighbor concepts, and ${relationships.length} relationships:\n\n`;
       
-      contextText += 'SELECTED ENTITIES:\n';
-      data.nodes.forEach(node => {
+      // Highlight selected relationships if any
+      if (selectedRelationships.length > 0) {
+        contextText += 'SELECTED RELATIONSHIPS (Focus on these):\n';
+        selectedRelationships.forEach(rel => {
+          const sourceNode = allNodes.get(rel.source) || neighbors.find(n => n.id === rel.source);
+          const targetNode = allNodes.get(rel.target) || neighbors.find(n => n.id === rel.target);
+          const sourceName = String(sourceNode ? sourceNode.label : rel.source).replace(/[^\w\s-]/g, '');
+          const targetName = String(targetNode ? targetNode.label : rel.target).replace(/[^\w\s-]/g, '');
+          const relation = String(rel.relation || 'RELATED_TO').replace(/[^\w\s-]/g, '');
+          const conf = rel.confidence ? ` (confidence: ${rel.confidence.toFixed(2)})` : '';
+          const evidence = rel.original_text ? `\n  Evidence: "${rel.original_text.substring(0, 100)}..."` : '';
+          
+          contextText += `- ${sourceName} -> [${relation}] -> ${targetName}${conf}${evidence}\n`;
+        });
+        contextText += '\n';
+      }
+      
+      contextText += 'SELECTED CONCEPTS:\n';
+      nodes.forEach(node => {
         const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
         const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
         const sig = node.significance ? ` (significance: ${node.significance}/5)` : '';
@@ -68,7 +375,7 @@ export class IngestionManager {
       });
       
       if (neighbors.length > 0) {
-        contextText += '\nNEIGHBOR ENTITIES:\n';
+        contextText += '\nNEIGHBOR CONCEPTS:\n';
         neighbors.forEach(node => {
           const label = String(node.label || 'Unknown').replace(/[^\w\s-]/g, '');
           const type = String(node.type || 'Concept').replace(/[^\w\s-]/g, '');
@@ -76,10 +383,10 @@ export class IngestionManager {
         });
       }
       
-      contextText += '\nRELATIONSHIPS:\n';
-      data.relationships.forEach(rel => {
-        const sourceNode = data.nodes.find(n => n.id === rel.source) || neighbors.find(n => n.id === rel.source);
-        const targetNode = data.nodes.find(n => n.id === rel.target) || neighbors.find(n => n.id === rel.target);
+      contextText += '\nALL RELATIONSHIPS:\n';
+      relationships.forEach(rel => {
+        const sourceNode = allNodes.get(rel.source) || neighbors.find(n => n.id === rel.source);
+        const targetNode = allNodes.get(rel.target) || neighbors.find(n => n.id === rel.target);
         const sourceName = String(sourceNode ? sourceNode.label : rel.source).replace(/[^\w\s-]/g, '');
         const targetName = String(targetNode ? targetNode.label : rel.target).replace(/[^\w\s-]/g, '');
         const relation = String(rel.relation || 'RELATED_TO').replace(/[^\w\s-]/g, '');
@@ -89,7 +396,7 @@ export class IngestionManager {
       });
       
       contextText += '\n=== END CONTEXT ===\n\n';
-      return { text: contextText, data, neighbors };
+      return { text: contextText, data: { nodes, relationships }, neighbors };
       
     } catch (error) {
       console.error('Error getting graph context:', error);
@@ -212,6 +519,28 @@ export class IngestionManager {
     }
   }
   
+  buildIntentInstructions() {
+    const intents = [];
+    if (this.contextConfig.intents.complements) {
+      intents.push('- COMPLEMENT: Find relationships that support, confirm, or align with the existing knowledge');
+    }
+    if (this.contextConfig.intents.conflicts) {
+      intents.push('- CONFLICT: Find relationships that contradict or disagree with the existing knowledge');
+    }
+    if (this.contextConfig.intents.extends) {
+      intents.push('- EXTEND: Find new relationships that add to or expand upon the existing knowledge');
+    }
+    if (this.contextConfig.intents.distinct) {
+      intents.push('- DISTINCT: Find relationships that are unrelated to the existing knowledge');
+    }
+    
+    if (intents.length === 0) {
+      return 'EXTRACTION INTENT: Neutral - extract all relevant relationships\n';
+    }
+    
+    return 'EXTRACTION INTENT:\n' + intents.join('\n') + '\n';
+  }
+  
   async ingestDocument() {
     const pdfFiles = document.getElementById('pdf-file').files;
     const text = document.getElementById('text-input').value.trim();
@@ -219,14 +548,14 @@ export class IngestionManager {
     const maxConcepts = parseInt(document.getElementById('max-concepts').value);
     const maxRelationships = parseInt(document.getElementById('max-relationships').value);
     const model = document.getElementById('model-select').value;
-    const useGraphContext = document.getElementById('use-graph-context').checked;
+    const useGraphContext = this.contextConfig.enabled;
     
     if (pdfFiles.length === 0 && !text) {
       this.showStatus('error', 'Please upload PDF file(s) or paste text');
       return;
     }
     
-    // Get graph context if checkbox is checked
+    // Get graph context if enabled
     if (useGraphContext) {
       const result = await this.getGraphContextText();
       if (result && result.text) {
@@ -236,7 +565,7 @@ export class IngestionManager {
           extractionContext = result.text;
         }
       } else {
-        this.showStatus('error', 'Failed to load graph context. Please try again or uncheck the option.');
+        this.showStatus('error', 'Failed to load graph context. Please configure context sources.');
         return;
       }
     }

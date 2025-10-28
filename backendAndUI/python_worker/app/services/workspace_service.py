@@ -152,12 +152,18 @@ class WorkspaceService:
 
     @staticmethod
     def list_user_workspaces(user_id: str, include_archived: bool = False) -> List[Workspace]:
-        """List all workspaces for a user."""
+        """List all workspaces for a user (includes workspaces they're members of AND public workspaces)."""
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             query = """
-            MATCH (u:User {user_id: $user_id})-[m:MEMBER_OF]->(w:Workspace)
-            WHERE w.archived = $archived OR $include_archived = true
-            RETURN w, m
+            MATCH (u:User {user_id: $user_id})
+            MATCH (w:Workspace)
+            WHERE (w.archived = $archived OR $include_archived = true)
+              AND (
+                (u)-[:MEMBER_OF]->(w) OR
+                w.privacy = 'public'
+              )
+            OPTIONAL MATCH (u)-[m:MEMBER_OF]->(w)
+            RETURN DISTINCT w, m
             ORDER BY w.updated_at DESC
             """
 
@@ -464,12 +470,16 @@ class WorkspaceService:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(
                 """
-                MATCH (d:Document)-[:BELONGS_TO]->(w:Workspace {workspace_id: $workspace_id})
-                OPTIONAL MATCH (d)<-[:EXTRACTED_FROM]-(e:Entity)
-                OPTIONAL MATCH (e)-[r]->()
-                WITH w, count(DISTINCT d) as doc_count, count(DISTINCT e) as entity_count, count(DISTINCT r) as rel_count
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                OPTIONAL MATCH (d:Document)-[:BELONGS_TO]->(w)
+                OPTIONAL MATCH (e:Entity)-[:BELONGS_TO]->(w)
+                OPTIONAL MATCH (r:Relationship)-[:BELONGS_TO]->(w)
                 OPTIONAL MATCH (u:User)-[:MEMBER_OF]->(w)
-                RETURN doc_count, entity_count, rel_count, count(DISTINCT u) as member_count
+                RETURN 
+                    count(DISTINCT d) as doc_count, 
+                    count(DISTINCT e) as entity_count, 
+                    count(DISTINCT r) as rel_count, 
+                    count(DISTINCT u) as member_count
                 """,
                 workspace_id=workspace_id,
             )
