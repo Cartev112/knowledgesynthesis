@@ -147,6 +147,27 @@ export class IngestionManager {
     }
   }
   
+  switchContextTab(tab) {
+    const graphTabBtn = document.getElementById('context-tab-btn-graph');
+    const userTabBtn = document.getElementById('context-tab-btn-user');
+    const graphPane = document.getElementById('context-tab-graph');
+    const userPane = document.getElementById('context-tab-user');
+
+    if (!graphPane || !userPane) return;
+
+    if (tab === 'user') {
+      graphPane.style.display = 'none';
+      userPane.style.display = 'block';
+      if (graphTabBtn) graphTabBtn.classList.remove('active');
+      if (userTabBtn) userTabBtn.classList.add('active');
+    } else {
+      graphPane.style.display = 'block';
+      userPane.style.display = 'none';
+      if (graphTabBtn) graphTabBtn.classList.add('active');
+      if (userTabBtn) userTabBtn.classList.remove('active');
+    }
+  }
+  
   getSelectedIntents() {
     const intents = [];
     if (document.getElementById('intent-complements')?.checked) intents.push('Complement');
