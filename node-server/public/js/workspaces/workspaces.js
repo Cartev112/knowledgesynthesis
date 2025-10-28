@@ -32,6 +32,7 @@ class WorkspacesManager {
 
   createGlobalViewCard() {
     const totals = this.computeTotals();
+    const workspaceCount = this.globalStats?.workspace_count || this.workspaces.length;
     const card = document.createElement('div');
     card.className = 'workspace-card';
     card.innerHTML = `
@@ -41,11 +42,11 @@ class WorkspacesManager {
       </div>
       <div class="workspace-description">View all content across all workspaces</div>
       <div class="workspace-stats">
-        <div class="stat"><span>📄</span><span>${totals.documents} docs</span></div>
-        <div class="stat"><span>🔗</span><span>${totals.entities} entities</span></div>
+        <div class="stat"><span>📄</span><span id="global-card-docs-count">${totals.documents} docs</span></div>
+        <div class="stat"><span>🔗</span><span id="global-card-entities-count">${totals.entities} entities</span></div>
       </div>
       <div class="workspace-footer">
-        <div class="last-activity">Across ${this.workspaces.length} workspaces</div>
+        <div class="last-activity">Across <span id="global-card-workspaces-count">${workspaceCount}</span> workspaces</div>
         <div class="workspace-actions">
           <button class="action-button primary" id="open-global">Open</button>
         </div>
@@ -205,11 +206,11 @@ class WorkspacesManager {
       // Hide loading
       loadingState.style.display = 'none';
 
-      // Render workspaces
-      this.renderWorkspaces();
+      // Load global stats FIRST so initial render uses real totals
+      await this.loadGlobalStats();
 
-      // Load global stats
-      this.loadGlobalStats();
+      // Render workspaces (Global card will use cached globalStats)
+      this.renderWorkspaces();
 
     } catch (error) {
       console.error('Failed to load workspaces:', error);
@@ -496,6 +497,14 @@ class WorkspacesManager {
       
       // Store for Global View card
       this.globalStats = stats;
+
+      // Update Global View card counts if present
+      const docsCountEl = document.getElementById('global-card-docs-count');
+      const entitiesCountEl = document.getElementById('global-card-entities-count');
+      const workspacesCountEl = document.getElementById('global-card-workspaces-count');
+      if (docsCountEl) docsCountEl.textContent = `${stats.document_count} docs`;
+      if (entitiesCountEl) entitiesCountEl.textContent = `${stats.entity_count} entities`;
+      if (workspacesCountEl) workspacesCountEl.textContent = `${stats.workspace_count}`;
     } catch (error) {
       console.error('Failed to load global stats:', error);
       // Fallback to computing from workspace stats
