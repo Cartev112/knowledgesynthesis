@@ -1,8 +1,14 @@
 BUGS
 
-- Global view workspace cards/modal is showing 0 entities + 0 relationships
+- Global view workspace cards/modal is showing 0 entities + 0 relationships [FIXED - NEEDS DEPLOY]
+  * Added /api/workspaces/global/stats endpoint to get real counts
+  * Updated frontend to call new endpoint
+  * Fixed workspace stats query to count relationships properly
+  * Files: workspaces.py, workspaces.js, workspace_service.py
 
-- public workspaces are not appearing to others
+- public workspaces are not appearing to others [FIXED - NEEDS DEPLOY]
+  * Updated list_user_workspaces query to include public workspaces
+  * File: workspace_service.py
 
 - ingestion container looks much smaller on someone elses computer
 
