@@ -148,7 +148,7 @@ export class IndexPanelManager {
         
         const toggleDiv = document.createElement('div');
         toggleDiv.className = 'doc-toggle';
-        toggleDiv.textContent = state.activeDocuments.has(doc.id) ? 'Γ£ô' : '';
+        toggleDiv.textContent = state.activeDocuments.has(doc.id) ? '✓' : '';
         toggleDiv.onclick = (e) => {
           e.stopPropagation();
           this.toggleDocument(doc.id);

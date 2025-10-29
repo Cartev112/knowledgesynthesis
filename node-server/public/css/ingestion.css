@@ -2,17 +2,28 @@
    INGESTION TAB STYLES
    ========================================== */
 #ingestion-panel {
+  flex: 1;
   max-width: 87.5rem;
+  width: min(90vw, 87.5rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vh, 3rem) 1.5rem clamp(2.5rem, 4vh, 4rem);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  box-sizing: border-box;
+  min-height: calc(100vh - 9rem);
+}
+
+#ingestion-panel > .card {
   width: 100%;
-  margin: 2rem auto 0;
-  padding: 0 1.5rem 2rem;
-  display: block;
+  max-width: 82rem;
+  margin: 0;
 }
 
 .ingestion-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 2.8vw, 3rem);
 }
 
 .custom-file-upload {
