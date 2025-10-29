@@ -224,6 +224,17 @@ class WorkspacesManager {
     }
   }
 
+  handleWorkspaceRefresh(event) {
+    const { workspaceId } = event?.detail || {};
+    if (this.workspaceRefreshTimeout) {
+      clearTimeout(this.workspaceRefreshTimeout);
+    }
+    this.workspaceRefreshTimeout = setTimeout(() => {
+      // Optionally we could filter by workspaceId in the future
+      this.loadWorkspaces();
+    }, 300);
+  }
+
   renderWorkspaces() {
     const grid = document.getElementById('workspaces-grid');
     grid.innerHTML = '';
