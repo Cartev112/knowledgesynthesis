@@ -58,6 +58,31 @@ export class VisualConfigManager {
     this.defaultEdgeColor = this.getStyleColor('edge', 'line-color', '#9ca3af');
     this.noDocumentNodeColor = '#9ca3af';
 
+    this.edgeLegendModalOverlay = document.getElementById('edge-legend-modal-overlay');
+    this.edgeLegendModalList = document.getElementById('edge-legend-modal-list');
+    this.edgeLegendCountElement = document.getElementById('edge-legend-count');
+    this.edgeLegendModalEntries = [];
+    this.edgeLegendSummaryElement = null;
+    this.edgeLegendViewAllButton = null;
+    this.handleEdgeLegendKeyClose = this.handleEdgeLegendKeyClose.bind(this);
+
+    const edgeLegendClose = document.getElementById('edge-legend-modal-close');
+    if (edgeLegendClose) {
+      edgeLegendClose.addEventListener('click', () => this.closeEdgeLegendModal());
+    }
+    const edgeLegendDone = document.getElementById('edge-legend-modal-done');
+    if (edgeLegendDone) {
+      edgeLegendDone.addEventListener('click', () => this.closeEdgeLegendModal());
+    }
+    if (this.edgeLegendModalOverlay) {
+      this.edgeLegendModalOverlay.addEventListener('click', (evt) => {
+        if (evt.target === this.edgeLegendModalOverlay) {
+          this.closeEdgeLegendModal();
+        }
+      });
+    }
+    document.addEventListener('keydown', this.handleEdgeLegendKeyClose);
+
     this.setupLegendUI();
   }
 
@@ -132,6 +157,21 @@ export class VisualConfigManager {
     edgePagination.id = 'edge-legend-pagination';
     edgePagination.className = 'legend-pagination';
     const edgeMappingSection = this.buildLegendSection('Edge Color Mapping', edgeLegend, edgePagination);
+    const edgeSummary = document.createElement('div');
+    edgeSummary.className = 'legend-summary hidden';
+    edgeSummary.id = 'edge-legend-summary';
+    edgeSummary.textContent = 'Select a relationship coloring option to view legend.';
+    edgeMappingSection.insertBefore(edgeSummary, edgeLegend);
+
+    const viewAllButton = document.createElement('button');
+    viewAllButton.type = 'button';
+    viewAllButton.className = 'legend-view-all-btn';
+    viewAllButton.textContent = 'Open Relationship Legend';
+    viewAllButton.addEventListener('click', () => this.openEdgeLegendModal());
+    edgeMappingSection.appendChild(viewAllButton);
+
+    this.edgeLegendSummaryElement = edgeSummary;
+    this.edgeLegendViewAllButton = viewAllButton;
 
     legendSections.appendChild(nodeStylesSection);
     legendSections.appendChild(nodeMappingSection);
@@ -302,7 +342,11 @@ export class VisualConfigManager {
       label,
       color,
       note: ''
-    }));
+    })).sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+
+    if (type === 'edge') {
+      this.edgeLegendModalEntries = entries.slice();
+    }
 
     legendState.entries = entries;
     legendState.page = 0;
@@ -331,6 +375,9 @@ export class VisualConfigManager {
       });
       pagination.innerHTML = '';
       pagination.classList.remove('visible');
+      if (type === 'edge') {
+        this.updateEdgeLegendMetadata(0);
+      }
       return;
     }
 
@@ -344,6 +391,10 @@ export class VisualConfigManager {
 
     this.setLegendContainer(container, pageEntries);
     this.renderPaginationControls(type, pagination, totalPages, state.page);
+
+    if (type === 'edge') {
+      this.updateEdgeLegendMetadata(entries.length);
+    }
   }
 
   renderPaginationControls(type, container, totalPages, currentPage) {
@@ -399,6 +450,67 @@ export class VisualConfigManager {
     this.renderPaginatedLegend(type);
   }
 
+  handleEdgeLegendKeyClose(evt) {
+    if (evt.key === 'Escape' && this.edgeLegendModalOverlay && this.edgeLegendModalOverlay.classList.contains('visible')) {
+      this.closeEdgeLegendModal();
+    }
+  }
+
+  openEdgeLegendModal() {
+    if (!this.edgeLegendModalOverlay || !Array.isArray(this.edgeLegendModalEntries) || this.edgeLegendModalEntries.length === 0) {
+      return;
+    }
+
+    this.renderEdgeLegendModal();
+    this.edgeLegendModalOverlay.classList.add('visible');
+  }
+
+  closeEdgeLegendModal() {
+    if (!this.edgeLegendModalOverlay) return;
+    this.edgeLegendModalOverlay.classList.remove('visible');
+  }
+
+  renderEdgeLegendModal() {
+    if (!this.edgeLegendModalList) return;
+    const entries = this.edgeLegendModalEntries || [];
+    this.edgeLegendModalList.innerHTML = entries.length
+      ? this.buildLegendItemsHtml(entries)
+      : '<div class="legend-empty">No relationship legend available.</div>';
+    this.edgeLegendModalList.classList.add('visible');
+    this.edgeLegendModalList.scrollTop = 0;
+    const count = entries.length;
+    if (this.edgeLegendCountElement) {
+      this.edgeLegendCountElement.textContent = count;
+    }
+  }
+
+  updateEdgeLegendMetadata(totalEntries) {
+    const pageSize = this.legendConfig.edge?.pageSize || LEGEND_PAGE_SIZE;
+
+    if (this.edgeLegendSummaryElement) {
+      if (totalEntries > 0) {
+        const visibleCount = Math.min(totalEntries, pageSize);
+        this.edgeLegendSummaryElement.textContent = totalEntries > pageSize
+          ? `${totalEntries} relationships found. Showing ${visibleCount} per page.`
+          : `${totalEntries} relationships found.`;
+        this.edgeLegendSummaryElement.classList.remove('hidden');
+      } else {
+        this.edgeLegendSummaryElement.textContent = 'Select a relationship coloring option to view legend.';
+        this.edgeLegendSummaryElement.classList.remove('hidden');
+      }
+    }
+
+    if (this.edgeLegendViewAllButton) {
+      const shouldShow = totalEntries > 0;
+      this.edgeLegendViewAllButton.classList.toggle('visible', shouldShow);
+      this.edgeLegendViewAllButton.disabled = totalEntries === 0;
+    }
+
+    if (this.edgeLegendCountElement) {
+      this.edgeLegendCountElement.textContent = totalEntries;
+    }
+  }
+
   clearLegend(type, message = '') {
     this.setupLegendUI();
     const containerId = type === 'node' ? 'color-legend' : 'edge-legend';
@@ -428,6 +540,11 @@ export class VisualConfigManager {
     if (pagination) {
       pagination.innerHTML = '';
       pagination.classList.remove('visible');
+    }
+
+    if (type === 'edge') {
+      this.edgeLegendModalEntries = [];
+      this.updateEdgeLegendMetadata(0);
     }
   }
 

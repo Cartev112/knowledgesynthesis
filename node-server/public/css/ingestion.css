@@ -3,12 +3,10 @@
    ========================================== */
 #ingestion-panel {
   max-width: 87.5rem;
-  margin: 1.25rem auto;
-  padding: 0 1.5rem;
-  height: min(calc(100vh - 11.25rem), 56.25rem);
-  min-height: 45rem;
-  display: flex;
-  align-items: center;
+  width: 100%;
+  margin: 2rem auto 0;
+  padding: 0 1.5rem 2rem;
+  display: block;
 }
 
 .ingestion-grid {
