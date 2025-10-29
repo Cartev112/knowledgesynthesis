@@ -68,8 +68,6 @@ class AppManager {
       this.initViewingTab();
     } else if (tabName === 'ai-query') {
       this.initAIQueryTab();
-    } else if (tabName === 'index') {
-      this.initIndexTab();
     }
     
     // Update UI visibility
@@ -109,17 +107,6 @@ class AppManager {
         this.restoreSelectionState();
       }, 100);
     }
-  }
-
-  async initIndexTab() {
-    if (!state.cy) {
-      await this.graphViewer.init();
-    }
-    
-    await this.graphViewer.loadAllData();
-    state.graphInitialized = true;
-    
-    await this.graphViewer.indexManager.populateIndex();
   }
   
   restoreSelectionState() {
