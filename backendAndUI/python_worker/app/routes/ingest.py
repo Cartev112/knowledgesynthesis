@@ -128,6 +128,7 @@ class IngestTextRequest(BaseModel):
     text: str
     document_id: str = "user-doc-1"
     document_title: str = "User Submitted"
+    workspace_id: Optional[str] = None
     user_id: Optional[str] = None
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
@@ -161,7 +162,8 @@ async def ingest_from_text(payload: IngestTextRequest, background_tasks: Backgro
             document_title=document_title,
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
-            user_last_name=payload.user_last_name
+            user_last_name=payload.user_last_name,
+            workspace_id=payload.workspace_id
         )
         
         # Send email notification in background
@@ -200,7 +202,8 @@ async def ingest_from_pdf(
     user_email: Optional[str] = Form(None),
     max_concepts: int = Form(100),
     max_relationships: int = Form(50),
-    extraction_context: Optional[str] = Form(None)
+    extraction_context: Optional[str] = Form(None),
+    workspace_id: Optional[str] = Form(None)
 ):
     try:
         logger.info(f"PDF ingest request received - user_id: {user_id}, user_first_name: '{user_first_name}', user_last_name: '{user_last_name}'")
@@ -255,7 +258,8 @@ async def ingest_from_pdf(
             document_title=document_title,
             user_id=user_id,
             user_first_name=user_first_name,
-            user_last_name=user_last_name
+            user_last_name=user_last_name,
+            workspace_id=workspace_id
         )
         logger.info(f"Database write complete. Wrote {writes.get('triplets_written', 0)} relationships")
         
@@ -294,4 +298,3 @@ async def ingest_from_pdf(
 @router.post("/graphjson")
 def ingest_graphjson(payload: IngestGraphJsonRequest):
     raise HTTPException(status_code=410, detail="/ingest/graphjson removed. Use /ingest/text or /ingest/pdf.")
-

@@ -19,6 +19,7 @@ class IngestJob(BaseModel):
     status: JobStatus
     document_id: Optional[str] = None
     document_title: Optional[str] = None
+    workspace_id: Optional[str] = None
     user_id: Optional[str] = None
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None

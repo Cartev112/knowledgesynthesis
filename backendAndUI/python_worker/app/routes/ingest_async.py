@@ -20,6 +20,7 @@ class IngestTextRequest(BaseModel):
     text: str
     document_id: Optional[str] = None
     document_title: Optional[str] = None
+    workspace_id: Optional[str] = None
     user_id: Optional[str] = None
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
@@ -45,6 +46,7 @@ async def ingest_text_async(payload: IngestTextRequest):
             status=JobStatus.PENDING,
             document_id=payload.document_id,
             document_title=payload.document_title,
+            workspace_id=payload.workspace_id,
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
             user_last_name=payload.user_last_name,
@@ -65,6 +67,7 @@ async def ingest_text_async(payload: IngestTextRequest):
             'text_content': payload.text,
             'document_id': payload.document_id,
             'document_title': payload.document_title,
+            'workspace_id': payload.workspace_id,
             'user_id': payload.user_id,
             'user_first_name': payload.user_first_name,
             'user_last_name': payload.user_last_name,
@@ -102,7 +105,8 @@ async def ingest_pdf_async(
     user_email: Optional[str] = Form(None),
     max_concepts: int = Form(100),
     max_relationships: int = Form(50),
-    extraction_context: Optional[str] = Form(None)
+    extraction_context: Optional[str] = Form(None),
+    workspace_id: Optional[str] = Form(None)
 ):
     """
     Submit a PDF document for async ingestion.
@@ -137,6 +141,7 @@ async def ingest_pdf_async(
             user_id=user_id,
             user_first_name=user_first_name,
             user_last_name=user_last_name,
+            workspace_id=workspace_id,
             user_email=user_email,
             max_concepts=max_concepts,
             max_relationships=max_relationships,
@@ -154,6 +159,7 @@ async def ingest_pdf_async(
             'user_id': user_id,
             'user_first_name': user_first_name,
             'user_last_name': user_last_name,
+            'workspace_id': workspace_id,
             'max_concepts': max_concepts,
             'max_relationships': max_relationships,
             'extraction_context': extraction_context
@@ -185,6 +191,7 @@ class IngestPdfUrlRequest(BaseModel):
     """Request model for PDF URL ingestion."""
     pdf_url: str
     document_title: Optional[str] = None
+    workspace_id: Optional[str] = None
     user_id: Optional[str] = None
     user_first_name: Optional[str] = None
     user_last_name: Optional[str] = None
@@ -210,6 +217,7 @@ async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
             job_id=job_id,
             status=JobStatus.PENDING,
             document_title=payload.document_title or "PDF from URL",
+            workspace_id=payload.workspace_id,
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
             user_last_name=payload.user_last_name,
@@ -227,7 +235,8 @@ async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
         job_data = {
             'job_id': job_id,
             'pdf_url': payload.pdf_url,
-            'document_title': payload.document_title,
+            'document_title': payload.document_title or "PDF from URL",
+            'workspace_id': payload.workspace_id,
             'user_id': payload.user_id,
             'user_first_name': payload.user_first_name,
             'user_last_name': payload.user_last_name,
@@ -270,6 +279,7 @@ async def get_job_status(job_id: str):
         return {
             "job_id": job.job_id,
             "status": job.status,
+            "workspace_id": job.workspace_id,
             "document_id": job.document_id,
             "document_title": job.document_title,
             "created_at": job.created_at,

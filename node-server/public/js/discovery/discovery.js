@@ -391,6 +391,7 @@ class DiscoveryManager {
         const useGraphContext = document.getElementById('discovery-use-graph-context')?.checked;
         const maxConcepts = parseInt(document.getElementById('discovery-max-concepts')?.value || '100');
         const maxRelationships = parseInt(document.getElementById('discovery-max-relationships')?.value || '50');
+        const workspaceId = sessionStorage.getItem('currentWorkspaceId') || null;
         
         let extractionContext = userContext;
         if (useGraphContext) {
@@ -417,7 +418,8 @@ class DiscoveryManager {
                         pdf_url: paper.pdf_url,
                         document_title: paper.title,
                         max_relationships: maxRelationships,
-                        extraction_context: extractionContext || undefined
+                        extraction_context: extractionContext || undefined,
+                        workspace_id: workspaceId || undefined
                     })
                 });
                 if (!response.ok) {
@@ -459,6 +461,10 @@ class DiscoveryManager {
                         window.ingestionManager?.updateProgress(50, 100, `Processing: ${paperTitle}`);
                     } else if (job.status === 'completed') {
                         window.ingestionManager?.updateProgress(100, 100, `Complete: ${paperTitle}`);
+                        const workspaceId = job.workspace_id || sessionStorage.getItem('currentWorkspaceId') || null;
+                        if (workspaceId) {
+                            window.ingestionManager?.notifyWorkspaceUpdated?.(workspaceId);
+                        }
                         // Show summary
                         const success = 1;
                         const failed = 0;
@@ -575,6 +581,7 @@ class DiscoveryManager {
                 return;
             }
         }
+        const workspaceId = sessionStorage.getItem('currentWorkspaceId') || null;
         // Show progress modal
         window.ingestionManager?.showProgress(true);
         window.ingestionManager?.updateProgress(1, 100, 'Queuing jobs...');
@@ -596,7 +603,13 @@ class DiscoveryManager {
                 if (paper.pdf_url) {
                     const resp = await fetch('/api/ingest/pdf_url_async', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ pdf_url: paper.pdf_url, document_title: paper.title, max_relationships: maxRelationships, extraction_context: extractionContext || undefined })
+                        body: JSON.stringify({
+                            pdf_url: paper.pdf_url,
+                            document_title: paper.title,
+                            max_relationships: maxRelationships,
+                            extraction_context: extractionContext || undefined,
+                            workspace_id: workspaceId || undefined
+                        })
                     });
                     if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).detail || 'Failed to queue PDF');
                     jobId = (await resp.json()).job_id;
@@ -703,13 +716,15 @@ class DiscoveryManager {
         /**
          * Ingest paper from PDF URL.
          */
+        const workspaceId = sessionStorage.getItem('currentWorkspaceId') || null;
         const response = await fetch('/api/ingest/pdf_url_async', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 pdf_url: paper.pdf_url,
                 document_title: paper.title,
-                max_relationships: 50
+                max_relationships: 50,
+                workspace_id: workspaceId || undefined
             })
         });
         
@@ -738,6 +753,7 @@ class DiscoveryManager {
         if (paper.doi) textContent += `DOI: ${paper.doi}\n`;
         textContent += `\nAbstract:\n${paper.abstract}`;
         
+        const workspaceId = sessionStorage.getItem('currentWorkspaceId') || null;
         const response = await fetch('/api/ingest/text_async', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -745,7 +761,8 @@ class DiscoveryManager {
                 text: textContent,
                 document_title: paper.title,
                 document_id: paper.pmid || paper.arxiv_id || paper.semantic_scholar_id,
-                max_relationships: 30  // Fewer for abstracts
+                max_relationships: 30,  // Fewer for abstracts
+                workspace_id: workspaceId || undefined
             })
         });
         

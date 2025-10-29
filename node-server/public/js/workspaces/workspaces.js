@@ -13,7 +13,10 @@ class WorkspacesManager {
     this.selectedIcon = '📊';
     this.selectedColor = '#3B82F6';
     this.editingWorkspaceId = null;
-    
+    this.workspaceRefreshTimeout = null;
+    this.handleWorkspaceRefresh = this.handleWorkspaceRefresh.bind(this);
+    window.addEventListener('workspaceNeedsRefresh', this.handleWorkspaceRefresh);
+
     this.init();
   }
 

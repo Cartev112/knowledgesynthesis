@@ -783,6 +783,7 @@ export class IngestionManager {
   async ingestDocument() {
     const pdfFiles = document.getElementById('pdf-file').files;
     const text = document.getElementById('text-input').value.trim();
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId') || null;
     let extractionContext = (this.contextConfig.userText || '').trim();
     const maxConcepts = parseInt(document.getElementById('max-concepts').value);
     const maxRelationships = parseInt(document.getElementById('max-relationships').value);
@@ -840,7 +841,8 @@ export class IngestionManager {
             user_email: state.currentUser.email || '',
             max_concepts: maxConcepts,
             max_relationships: maxRelationships,
-            extraction_context: extractionContext
+            extraction_context: extractionContext,
+            workspace_id: workspaceId || undefined
             // Note: model parameter removed - backend uses OPENAI_MODEL from env
           })
         });
@@ -853,7 +855,7 @@ export class IngestionManager {
         const result = await response.json();
         this.showStatus('processing', `✓ Job queued! ID: ${result.job_id}`);
         
-        await this.pollJobStatus(result.job_id, 'text');
+        await this.pollJobStatus(result.job_id, 'text', null, null, null, workspaceId);
         
         document.getElementById('text-input').value = '';
         this.contextConfig.userText = '';
@@ -916,6 +918,7 @@ export class IngestionManager {
             formData.append('max_relationships', maxRelationships);
             // Note: model parameter removed - backend uses OPENAI_MODEL from env
             if (extractionContext) formData.append('extraction_context', extractionContext);
+            if (workspaceId) formData.append('workspace_id', workspaceId);
             
             const response = await fetch('/api/ingest/pdf_async', {
               method: 'POST',
@@ -952,7 +955,7 @@ export class IngestionManager {
           const fileStatusEl = document.getElementById(`file-status-${index}`);
           
           try {
-            const jobResult = await this.pollJobStatus(jobId, 'pdf', fileName, index, totalFiles);
+            const jobResult = await this.pollJobStatus(jobId, 'pdf', fileName, index, totalFiles, workspaceId);
             
             if (jobResult.success) {
               results.successful++;
@@ -1015,7 +1018,7 @@ export class IngestionManager {
     }
   }
   
-  async pollJobStatus(jobId, type, fileName = null, fileIndex = null, totalFiles = null) {
+  async pollJobStatus(jobId, type, fileName = null, fileIndex = null, totalFiles = null, workspaceIdHint = null) {
     const maxAttempts = 300;
     let attempts = 0;
     
@@ -1052,6 +1055,10 @@ export class IngestionManager {
           }
           
           if (job.status === 'completed') {
+            const effectiveWorkspaceId = job.workspace_id || workspaceIdHint;
+            if (effectiveWorkspaceId) {
+              this.notifyWorkspaceUpdated(effectiveWorkspaceId);
+            }
             clearInterval(pollInterval);
             resolve({
               success: true,
@@ -1082,7 +1089,18 @@ export class IngestionManager {
       }, 1000);
     });
   }
-  
+
+  notifyWorkspaceUpdated(workspaceId) {
+    if (!workspaceId) return;
+    try {
+      window.dispatchEvent(new CustomEvent('workspaceNeedsRefresh', {
+        detail: { workspaceId }
+      }));
+    } catch (error) {
+      console.warn('Failed to dispatch workspace refresh event:', error);
+    }
+  }
+
   convertButtonToStatusBar(statusText) {
     const btn = document.getElementById('ingest-btn');
     btn.classList.add('as-status-bar');
