@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -28,25 +28,25 @@
     <h1>Knowledge Synthesis Platform</h1>
     <div id="workspace-switcher-container"></div>
     <div id="user-info">
-      <span>👤 <span id="username">Guest</span></span>
+      <span>≡ƒæñ <span id="username">Guest</span></span>
       <button onclick="window.authManager.logout()">Logout</button>
     </div>
   </div>
   
   <!-- === TAB NAVIGATION === -->
   <div id="tabs">
-    <div class="tab active" onclick="window.appManager.switchTab('ingestion')">📤 Ingestion</div>
-    <div class="tab" onclick="window.appManager.switchTab('viewing')">🔍 Viewing</div>
-    <div class="tab" onclick="window.appManager.switchTab('discovery')">🔬 Discovery</div>
-    <div class="tab" onclick="window.appManager.switchTab('ai-query')">🤖 AI Query</div>
-    <div class="tab" onclick="window.open('/review-ui', '_blank')">✅ Review Queue</div>
+    <div class="tab active" onclick="window.appManager.switchTab('ingestion')">≡ƒôñ Ingestion</div>
+    <div class="tab" onclick="window.appManager.switchTab('viewing')">≡ƒöì Viewing</div>
+    <div class="tab" onclick="window.appManager.switchTab('discovery')">≡ƒö¼ Discovery</div>
+    <div class="tab" onclick="window.appManager.switchTab('ai-query')">≡ƒñû AI Query</div>
+    <div class="tab" onclick="window.open('/review-ui', '_blank')">Γ£à Review Queue</div>
   </div>
   
   <!-- INGESTION TAB -->
   <div id="ingestion-tab" class="tab-content active">
     <div id="ingestion-panel">
       <div class="card">
-        <h2>📤 Document Ingestion & Knowledge Extraction</h2>
+        <h2>≡ƒôñ Document Ingestion & Knowledge Extraction</h2>
         
         <div class="ingestion-grid">
           <!-- Left Column: Document Upload -->
@@ -56,7 +56,7 @@
             <div class="form-group">
               <label>Upload PDF File(s)</label>
               <label for="pdf-file" class="custom-file-upload">
-                📄 Choose PDF Files
+                ≡ƒôä Choose PDF Files
               </label>
               <input type="file" id="pdf-file" accept=".pdf" multiple onchange="window.ingestionManager.displayFileName()" />
               <div id="file-name" class="file-name-display">No files selected</div>
@@ -70,7 +70,7 @@
             
             <div class="form-group">
               <button type="button" class="btn-secondary" onclick="window.ingestionManager.openContextConfig()" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600;">
-                🎯 Configure Context
+                ≡ƒÄ» Configure Context
               </button>
               <div class="help-text">Configure graph and user context used during extraction</div>
             </div>
@@ -81,7 +81,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <h3 class="section-heading" style="margin: 0;">Extraction Settings</h3>
               <button type="button" class="btn-gear-icon" onclick="window.ingestionManager.openAdvancedConfig()" title="Advanced Extraction Settings">
-                ⚙️
+                ΓÜÖ∩╕Å
               </button>
             </div>
             
@@ -122,7 +122,7 @@
             
             <div id="ingest-btn-container">
               <button class="primary" id="ingest-btn" onclick="window.ingestionManager.ingestDocument()">
-                🚀 Extract Knowledge
+                ≡ƒÜÇ Extract Knowledge
               </button>
             </div>
             
@@ -141,9 +141,9 @@
         <div id="graph3d-container" class="graph3d-container hidden"></div>
         <div id="graph3d-ui" class="graph3d-ui hidden">
           <div class="graph3d-ui-group">
-            <button class="graph3d-btn" id="btn-3d-fog" onclick="window.toggle3DFog()" title="Toggle Fog">🌫️</button>
-            <button class="graph3d-btn" id="btn-3d-layout" onclick="window.toggle3DLayout()" title="Run/Stop Force Layout">🧲</button>
-            <button class="graph3d-btn" id="btn-3d-reset" onclick="window.reset3DLayout()" title="Reset 3D Layout">🔄</button>
+            <button class="graph3d-btn" id="btn-3d-fog" onclick="window.toggle3DFog()" title="Toggle Fog">≡ƒî½∩╕Å</button>
+            <button class="graph3d-btn" id="btn-3d-layout" onclick="window.toggle3DLayout()" title="Run/Stop Force Layout">≡ƒº▓</button>
+            <button class="graph3d-btn" id="btn-3d-reset" onclick="window.reset3DLayout()" title="Reset 3D Layout">≡ƒöä</button>
           </div>
           <div class="graph3d-ui-row">
             <label for="range-3d-size">Size</label>
@@ -160,7 +160,7 @@
           </div>
           <div class="tooltip-info" id="tooltip-confidence"></div>
           <div class="tooltip-info" id="tooltip-significance"></div>
-          <button class="tooltip-btn" id="tooltip-read-more">📖 Read More</button>
+          <button class="tooltip-btn" id="tooltip-read-more">≡ƒôû Read More</button>
         </div>
         
         <!-- Node Hover Tooltip -->
@@ -168,33 +168,33 @@
           <div class="tooltip-header" id="node-tooltip-label"></div>
           <div class="tooltip-info" id="node-tooltip-type"></div>
           <div class="tooltip-info" id="node-tooltip-significance"></div>
-          <button class="tooltip-btn" id="node-tooltip-read-more">📖 Read More</button>
+          <button class="tooltip-btn" id="node-tooltip-read-more">≡ƒôû Read More</button>
         </div>
         
         <!-- FAB Container for 2-Node Actions -->
         <div id="fab-container-2node" class="hidden">
           <div class="fab-label">2 nodes selected</div>
           <button class="fab-btn" id="fab-create-relationship" onclick="window.appManager.createRelationship()" title="Create manual relationship between nodes">
-            ➕ Create Relationship
+            Γ₧ò Create Relationship
           </button>
           <button class="fab-btn" id="fab-find-path" onclick="window.appManager.findPathBetweenNodes()" title="Find shortest path between nodes">
-            🔗 Find Path
+            ≡ƒöù Find Path
           </button>
           <button class="fab-btn" id="fab-compare" onclick="window.appManager.compareNodes()" title="Compare selected nodes">
-            ⚖️ Compare
+            ΓÜû∩╕Å Compare
           </button>
           <button class="fab-btn" id="fab-merge" onclick="window.appManager.mergeNodes()" title="Merge selected nodes">
-            🔀 Merge
+            ≡ƒöÇ Merge
           </button>
         </div>
         
         <!-- Consolidated FAB Container - Bottom Left -->
         <div id="fab-container-left">
-          <button id="index-toggle-btn" onclick="toggleIndex()" title="Toggle Index">📋</button>
-          <button id="legend-toggle-btn" onclick="toggleLegend()" title="Visual Guide">📊</button>
-          <button id="export-toggle-btn" onclick="window.appManager.openExport()" title="Export Graph">💾</button>
-          <button id="review-toggle-btn" onclick="window.appManager.openReviewQueue()" title="Review Queue">✅</button>
-          <button id="three-toggle-btn" onclick="window.toggle3D()" title="Toggle 2D / 3D">🧭 3D</button>
+          <button id="index-toggle-btn" onclick="toggleIndex()" title="Toggle Index">≡ƒôï</button>
+          <button id="legend-toggle-btn" onclick="toggleLegend()" title="Visual Guide">≡ƒôè</button>
+          <button id="export-toggle-btn" onclick="window.appManager.openExport()" title="Export Graph">≡ƒÆ╛</button>
+          <button id="review-toggle-btn" onclick="window.appManager.openReviewQueue()" title="Review Queue">Γ£à</button>
+          <button id="three-toggle-btn" onclick="window.toggle3D()" title="Toggle 2D / 3D">≡ƒº¡ 3D</button>
         </div>
       </div>
     </div>
@@ -202,13 +202,13 @@
     <!-- Index Panel -->
     <div id="index-panel" class="hidden">
       <div class="index-header">
-        <h3 class="index-title">📋 Graph Index</h3>
+        <h3 class="index-title">≡ƒôï Graph Index</h3>
         <div class="index-count" id="index-count">0 concepts, 0 relationships, 0 documents</div>
       </div>
       
       <!-- Index Filters -->
       <div class="index-filters">
-        <input type="text" id="index-search" class="index-search-input" placeholder="🔍 Search..." />
+        <input type="text" id="index-search" class="index-search-input" placeholder="≡ƒöì Search..." />
         <select id="index-view-filter" onchange="filterIndex()" class="index-filter-select">
           <option value="all">All Items</option>
           <option value="documents">Documents Only</option>
@@ -222,24 +222,24 @@
       
       <div class="index-section" id="documents-section">
         <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('documents')">
-          <span class="section-arrow">▼</span>
-          📄 Documents (<span id="documents-count">0</span>)
+          <span class="section-arrow">Γû╝</span>
+          ≡ƒôä Documents (<span id="documents-count">0</span>)
         </div>
         <div id="documents-list" class="index-section-content"></div>
       </div>
       
       <div class="index-section" id="concepts-section">
         <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('concepts')">
-          <span class="section-arrow">▼</span>
-          🔵 Concepts (<span id="concepts-count">0</span>)
+          <span class="section-arrow">Γû╝</span>
+          ≡ƒö╡ Concepts (<span id="concepts-count">0</span>)
         </div>
         <ul class="index-list index-section-content" id="concepts-list"></ul>
       </div>
       
       <div class="index-section" id="relationships-section">
         <div class="index-section-title collapsible" onclick="window.viewingManager.indexManager.toggleSection('relationships')">
-          <span class="section-arrow">▼</span>
-          🔗 Relationships (<span id="relationships-count">0</span>)
+          <span class="section-arrow">Γû╝</span>
+          ≡ƒöù Relationships (<span id="relationships-count">0</span>)
         </div>
         <div id="relationships-list" class="index-section-content"></div>
       </div>
@@ -252,7 +252,7 @@
     <div id="edge-modal">
       <div class="modal-header">
         <h2 class="modal-title">Relationship Details</h2>
-        <button class="modal-close" onclick="closeEdgeModal()">×</button>
+        <button class="modal-close" onclick="closeEdgeModal()">├ù</button>
       </div>
       <div class="modal-body" id="edge-modal-content"></div>
     </div>
@@ -263,7 +263,7 @@
     <div id="node-modal">
       <div class="modal-header">
         <h2 class="modal-title">Node Details</h2>
-        <button class="modal-close" onclick="closeNodeModal()">×</button>
+        <button class="modal-close" onclick="closeNodeModal()">├ù</button>
       </div>
       <div class="modal-body" id="node-modal-content"></div>
     </div>
@@ -274,7 +274,7 @@
     <div id="document-modal">
       <div class="modal-header">
         <h2 class="modal-title">Document Details</h2>
-        <button class="modal-close" onclick="closeDocumentModal()">×</button>
+        <button class="modal-close" onclick="closeDocumentModal()">├ù</button>
       </div>
       <div class="modal-body" id="document-modal-content"></div>
     </div>
@@ -285,7 +285,7 @@
     <div class="modal-container">
       <div class="modal-header">
         <h2 class="modal-title">Create Manual Relationship</h2>
-        <button class="modal-close" onclick="window.appManager.closeCreateRelationshipModal()">×</button>
+        <button class="modal-close" onclick="window.appManager.closeCreateRelationshipModal()">├ù</button>
       </div>
       <div class="modal-body">
         <form id="create-edge-form" onsubmit="window.appManager.saveManualRelationship(event)">
@@ -339,14 +339,14 @@
   <div id="progress-modal" class="modal-overlay">
     <div class="modal-container progress-modal-container">
       <div class="modal-header">
-        <h2 class="modal-title">🚀 Knowledge Extraction in Progress</h2>
-        <button class="modal-close" onclick="window.ingestionManager.closeProgressModal()">×</button>
+        <h2 class="modal-title">≡ƒÜÇ Knowledge Extraction in Progress</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeProgressModal()">├ù</button>
       </div>
       <div class="modal-body">
         <!-- Email notification message -->
         <div class="email-notification">
           <div class="email-notification-inner">
-            <span class="email-icon">📧</span>
+            <span class="email-icon">≡ƒôº</span>
             <div class="email-text">
               <strong>Processing in background</strong><br>
               You'll receive an email summary with all extracted relationships when complete. Feel free to close this modal and continue working.
@@ -376,9 +376,9 @@
         <div id="progress-modal-summary" class="progress-summary">
           <div class="progress-summary-title">Summary</div>
           <div class="progress-summary-grid">
-            <div>✓ Successful: <strong id="progress-summary-success">0</strong></div>
-            <div>✗ Failed: <strong id="progress-summary-failed">0</strong></div>
-            <div class="progress-summary-full">📊 Total Relationships: <strong id="progress-summary-triplets">0</strong></div>
+            <div>Γ£ô Successful: <strong id="progress-summary-success">0</strong></div>
+            <div>Γ£ù Failed: <strong id="progress-summary-failed">0</strong></div>
+            <div class="progress-summary-full">≡ƒôè Total Relationships: <strong id="progress-summary-triplets">0</strong></div>
           </div>
         </div>
         
@@ -394,8 +394,8 @@
     <div id="discovery-bulk-ingest-modal" class="modal-overlay">
       <div class="modal-container" style="max-width: 56rem;">
         <div class="modal-header">
-          <h2 class="modal-title">Ingest Selected Papers — Parameters</h2>
-          <button class="modal-close" onclick="window.discoveryManager?.closeBulkIngestModal()">×</button>
+          <h2 class="modal-title">Ingest Selected Papers ΓÇö Parameters</h2>
+          <button class="modal-close" onclick="window.discoveryManager?.closeBulkIngestModal()">├ù</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -408,7 +408,7 @@
                 <div>
                   <strong>Context Ready:</strong> <span id="discovery-bulk-graph-context-count">0</span> nodes selected
                 </div>
-                <button type="button" onclick="window.ingestionManager?.showContextPreview()" class="preview-btn">👁️ Preview</button>
+                <button type="button" onclick="window.ingestionManager?.showContextPreview()" class="preview-btn">≡ƒæü∩╕Å Preview</button>
               </div>
             </div>
           </div>
@@ -426,8 +426,8 @@
   <div id="context-config-modal" class="modal-overlay">
     <div class="modal-container" style="max-width: 900px; width: 90%;">
       <div class="modal-header">
-        <h2 class="modal-title">🎯 Configure Graph Context for Extraction</h2>
-        <button class="modal-close" onclick="window.ingestionManager.closeContextConfig()">×</button>
+        <h2 class="modal-title">≡ƒÄ» Configure Graph Context for Extraction</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeContextConfig()">├ù</button>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
         <!-- Tabs -->
@@ -510,7 +510,7 @@
                 <div id="context-preview-details">No context configured yet</div>
               </div>
               <button type="button" onclick="window.ingestionManager.showDetailedContextPreview()" class="btn-secondary" style="margin-top: 12px; width: 100%;">
-                👁️ View Detailed Preview
+                ≡ƒæü∩╕Å View Detailed Preview
               </button>
             </div>
           </div>
@@ -539,8 +539,8 @@
   <div id="context-preview-modal" class="modal-overlay">
     <div class="modal-container context-preview-container">
       <div class="modal-header">
-        <h2 class="modal-title">📊 Graph Context Preview</h2>
-        <button class="modal-close" onclick="window.ingestionManager.closeContextPreview()">×</button>
+        <h2 class="modal-title">≡ƒôè Graph Context Preview</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeContextPreview()">├ù</button>
       </div>
       <div class="modal-body">
         <div class="modal-section">
@@ -569,7 +569,7 @@
         </div>
         
         <div class="modal-footer">
-          <button type="button" onclick="window.ingestionManager.copyContextText()" class="btn-secondary">📋 Copy Text</button>
+          <button type="button" onclick="window.ingestionManager.copyContextText()" class="btn-secondary">≡ƒôï Copy Text</button>
           <button type="button" onclick="window.ingestionManager.closeContextPreview()" class="btn-primary">Close</button>
         </div>
       </div>
@@ -580,8 +580,8 @@
   <div id="legend-modal-overlay">
     <div id="legend-modal">
       <div class="modal-header">
-        <h2 class="modal-title">🎨 Visual Configuration</h2>
-        <button class="modal-close" onclick="closeLegendModal()">×</button>
+        <h2 class="modal-title">≡ƒÄ¿ Visual Configuration</h2>
+        <button class="modal-close" onclick="closeLegendModal()">├ù</button>
       </div>
       <div class="modal-body">
         <!-- Configuration Controls -->
@@ -664,8 +664,8 @@
   <div id="advanced-extraction-modal-overlay" class="modal-overlay">
     <div id="advanced-extraction-modal" class="modal-dialog">
       <div class="modal-header">
-        <h2 class="modal-title">⚙️ Advanced Extraction Settings</h2>
-        <button class="modal-close" onclick="window.ingestionManager.closeAdvancedConfig()">×</button>
+        <h2 class="modal-title">ΓÜÖ∩╕Å Advanced Extraction Settings</h2>
+        <button class="modal-close" onclick="window.ingestionManager.closeAdvancedConfig()">├ù</button>
       </div>
       <div class="modal-body">
         <p class="modal-description">
@@ -854,15 +854,15 @@
               <div class="discovery-sources-group">
                 <div class="discovery-checkbox-group">
                   <input type="checkbox" id="discovery-source-pubmed" checked />
-                  <label for="discovery-source-pubmed">📚 PubMed (Biomedical)</label>
+                  <label for="discovery-source-pubmed">≡ƒôÜ PubMed (Biomedical)</label>
                 </div>
                 <div class="discovery-checkbox-group">
                   <input type="checkbox" id="discovery-source-arxiv" checked />
-                  <label for="discovery-source-arxiv">📄 ArXiv (Preprints)</label>
+                  <label for="discovery-source-arxiv">≡ƒôä ArXiv (Preprints)</label>
                 </div>
                 <div class="discovery-checkbox-group">
                   <input type="checkbox" id="discovery-source-semantic-scholar" />
-                  <label for="discovery-source-semantic-scholar">🎓 Semantic Scholar (All)</label>
+                  <label for="discovery-source-semantic-scholar">≡ƒÄô Semantic Scholar (All)</label>
                 </div>
               </div>
               <small style="color: #666; font-size: 12px; margin-top: 5px;">Semantic Scholar may be rate-limited</small>
@@ -872,13 +872,13 @@
               <label>Options</label>
               <div class="discovery-checkbox-group">
                 <input type="checkbox" id="discovery-use-semantic-ranking" checked />
-                <label for="discovery-use-semantic-ranking">🤖 AI Relevance Ranking</label>
+                <label for="discovery-use-semantic-ranking">≡ƒñû AI Relevance Ranking</label>
               </div>
             </div>
           </div>
           
           <div class="discovery-button-group">
-            <button type="submit" class="discovery-btn discovery-btn-primary" style="width: 100%;">🔍 Search Papers</button>
+            <button type="submit" class="discovery-btn discovery-btn-primary" style="width: 100%;">≡ƒöì Search Papers</button>
           </div>
         </form>
       </div>
@@ -894,7 +894,7 @@
               class="discovery-btn discovery-btn-primary discovery-btn-small" 
               style="display: none;"
               onclick="window.discoveryManager?.ingestSelected()">
-              ⚡ Ingest Selected (<span id="discovery-selected-count">0</span>)
+              ΓÜí Ingest Selected (<span id="discovery-selected-count">0</span>)
             </button>
           </div>
         </div>
@@ -908,13 +908,13 @@
       <div class="discovery-modal" onclick="event.stopPropagation()">
         <div class="discovery-modal-header">
           <h2 class="discovery-modal-title" id="discovery-modal-title"></h2>
-          <button class="discovery-modal-close" onclick="window.discoveryManager?.closeModal()">×</button>
+          <button class="discovery-modal-close" onclick="window.discoveryManager?.closeModal()">├ù</button>
         </div>
         <div class="discovery-modal-body" id="discovery-modal-body"></div>
         <div class="discovery-modal-footer">
           <button class="discovery-btn discovery-btn-secondary" onclick="window.discoveryManager?.closeModal()">Close</button>
           <button class="discovery-btn discovery-btn-primary" id="discovery-modal-ingest-btn" onclick="window.discoveryManager?.ingestFromModal()">
-            ⚡ Ingest This Paper
+            ΓÜí Ingest This Paper
           </button>
         </div>
       </div>
@@ -924,8 +924,8 @@
     <div id="discovery-ingest-modal" class="modal-overlay">
       <div class="modal-container">
         <div class="modal-header">
-          <h2 class="modal-title">Ingest Paper — Parameters</h2>
-          <button class="modal-close" onclick="window.discoveryManager?.closeIngestParamsModal()">×</button>
+          <h2 class="modal-title">Ingest Paper ΓÇö Parameters</h2>
+          <button class="modal-close" onclick="window.discoveryManager?.closeIngestParamsModal()">├ù</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -942,7 +942,7 @@
                 <div>
                   <strong>Context Ready:</strong> <span id="discovery-graph-context-count">0</span> nodes selected
                 </div>
-                <button type="button" onclick="window.ingestionManager?.showContextPreview()" class="preview-btn">👁️ Preview</button>
+                <button type="button" onclick="window.ingestionManager?.showContextPreview()" class="preview-btn">≡ƒæü∩╕Å Preview</button>
               </div>
             </div>
           </div>

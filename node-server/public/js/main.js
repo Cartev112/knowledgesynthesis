@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Main Application Entry Point
  */
 import { AuthManager } from './auth.js';
@@ -398,7 +398,7 @@ class AppManager {
       
       this.closeCreateRelationshipModal();
       this.graphViewer.clearSelection();
-      alert('✓ Manual relationship created successfully!');
+      alert('Γ£ô Manual relationship created successfully!');
       
       // Reload the graph to show the new relationship
       await this.graphViewer.loadAllData();

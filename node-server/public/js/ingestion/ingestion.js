@@ -27,6 +27,77 @@ export class IngestionManager {
     };
   }
 
+  async _appendDocumentGraphToMaps(docId, allNodes, allRelationships) {
+    if (!docId) return;
+
+    const pageSize = 1000;
+    let pageNumber = 1;
+
+    while (true) {
+      const params = new URLSearchParams({
+        doc_ids: docId,
+        limit: String(pageSize),
+        page_number: String(pageNumber)
+      });
+
+      let response;
+      try {
+        response = await fetch(`/query/graph_by_docs?${params.toString()}`);
+      } catch (error) {
+        console.error(`Network error fetching document graph for ${docId}:`, error);
+        break;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.error(
+          `Failed to fetch document graph for ${docId} (page ${pageNumber}): ${response.status} ${response.statusText}. ${errorText}`
+        );
+        break;
+      }
+
+      let docData;
+      try {
+        docData = await response.json();
+      } catch (error) {
+        console.error(`Error parsing document graph response for ${docId} (page ${pageNumber}):`, error);
+        break;
+      }
+
+      const nodesBatch = Array.isArray(docData.nodes) ? docData.nodes : [];
+      const relsBatch = Array.isArray(docData.relationships) ? docData.relationships : [];
+
+      let addedSomething = false;
+      nodesBatch.forEach(node => {
+        if (node?.id && !allNodes.has(node.id)) {
+          addedSomething = true;
+        }
+        if (node?.id) {
+          allNodes.set(node.id, node);
+        }
+      });
+      relsBatch.forEach(rel => {
+        if (rel?.id && !allRelationships.has(rel.id)) {
+          addedSomething = true;
+        }
+        if (rel?.id) {
+          allRelationships.set(rel.id, rel);
+        }
+      });
+
+      if ((nodesBatch.length < pageSize && relsBatch.length < pageSize) || (!nodesBatch.length && !relsBatch.length)) {
+        break;
+      }
+
+      if (!addedSomething) {
+        // Prevent infinite loops if API keeps returning the same page
+        break;
+      }
+
+      pageNumber += 1;
+    }
+  }
+
   _readModalConfig() {
     const docIds = Array.from(document.querySelectorAll('.context-doc-checkbox:checked')).map(cb => cb.dataset.docId);
     const docsToggle = document.getElementById('context-use-documents')?.checked || false;
@@ -95,16 +166,7 @@ export class IngestionManager {
       // Collect nodes and relationships from selected documents (ALL entities/relationships)
       if (hasDocs && config.sources.documentIds.length > 0) {
         for (const docId of config.sources.documentIds) {
-          try {
-            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}&limit=10000`);
-            if (response.ok) {
-              const docData = await response.json();
-              if (docData.nodes) docData.nodes.forEach(node => allNodes.set(node.id, node));
-              if (docData.relationships) docData.relationships.forEach(rel => allRelationships.set(rel.id, rel));
-            }
-          } catch (error) {
-            console.error(`Error fetching document ${docId}:`, error);
-          }
+          await this._appendDocumentGraphToMaps(docId, allNodes, allRelationships);
         }
       }
       
@@ -499,25 +561,7 @@ export class IngestionManager {
       // Collect nodes and relationships from selected documents
       if (hasDocs && this.contextConfig.sources.documentIds.length > 0) {
         for (const docId of this.contextConfig.sources.documentIds) {
-          try {
-            // Fetch all entities and relationships for this document
-            const response = await fetch(`/query/graph_by_docs?doc_ids=${encodeURIComponent(docId)}&limit=10000`);
-            if (response.ok) {
-              const docData = await response.json();
-              
-              // Add all nodes from this document
-              if (docData.nodes) {
-                docData.nodes.forEach(node => allNodes.set(node.id, node));
-              }
-              
-              // Add all relationships from this document
-              if (docData.relationships) {
-                docData.relationships.forEach(rel => allRelationships.set(rel.id, rel));
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching document ${docId}:`, error);
-          }
+          await this._appendDocumentGraphToMaps(docId, allNodes, allRelationships);
         }
       }
       
