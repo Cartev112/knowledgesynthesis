@@ -549,6 +549,8 @@
   border-radius: 0.75rem;
   max-width: 75rem;
   width: 90%;
+  transform: scale(0.7);
+  transform-origin: center;
   box-shadow: 0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1);
 }
 

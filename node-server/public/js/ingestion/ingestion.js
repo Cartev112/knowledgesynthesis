@@ -64,32 +64,24 @@ export class IngestionManager {
         break;
       }
 
-      const nodesBatch = Array.isArray(docData.nodes) ? docData.nodes : [];
       const relsBatch = Array.isArray(docData.relationships) ? docData.relationships : [];
+      // Intentionally skip populating document nodes; context pull should remain relationship-only.
 
-      let addedSomething = false;
-      nodesBatch.forEach(node => {
-        if (node?.id && !allNodes.has(node.id)) {
-          addedSomething = true;
-        }
-        if (node?.id) {
-          allNodes.set(node.id, node);
-        }
-      });
+      let newRelationships = 0;
       relsBatch.forEach(rel => {
         if (rel?.id && !allRelationships.has(rel.id)) {
-          addedSomething = true;
+          newRelationships++;
         }
         if (rel?.id) {
           allRelationships.set(rel.id, rel);
         }
       });
 
-      if ((nodesBatch.length < pageSize && relsBatch.length < pageSize) || (!nodesBatch.length && !relsBatch.length)) {
+      if (!relsBatch.length || relsBatch.length < pageSize) {
         break;
       }
 
-      if (!addedSomething) {
+      if (!newRelationships) {
         // Prevent infinite loops if API keeps returning the same page
         break;
       }
@@ -357,7 +349,7 @@ export class IngestionManager {
       parts.push('filtered view');
     }
     if (docsActive && checkedDocCount > 0) {
-      parts.push(`all entities and relationships from ${checkedDocCount} document(s)`);
+      parts.push(`relationships from ${checkedDocCount} document(s)`);
     }
     
     const detailsEl = document.getElementById('context-preview-details');

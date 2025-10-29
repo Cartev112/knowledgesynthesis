@@ -306,10 +306,10 @@
   font-weight: 600;
 }
 
-#index-panel .index-relationship .rel-arrow {
+#index-panel .index-relationship .rel-label {
   color: #8b5cf6;
   font-weight: 700;
-  margin: 0 0.25rem;
+  margin: 0 0.35rem;
 }
 
 /* FAB Container - Vertical pill aligned with left border */

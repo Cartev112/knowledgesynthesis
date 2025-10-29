@@ -70,13 +70,21 @@ export class IndexPanelManager {
       sources: n.data().sources || []
     }));
     
-    state.indexData.edges = edges.map(e => ({
-      id: e.id(),
-      source: state.cy.getElementById(e.data().source).data().label,
-      target: state.cy.getElementById(e.data().target).data().label,
-      relation: e.data().relation || 'relates to',
-      sources: e.data().sources || []
-    }));
+    state.indexData.edges = edges.map(e => {
+      const data = e.data();
+      const sourceNode = state.cy.getElementById(data.source);
+      const targetNode = state.cy.getElementById(data.target);
+      const sourceLabel = sourceNode && sourceNode.length ? (sourceNode.data().label || data.source) : data.source;
+      const targetLabel = targetNode && targetNode.length ? (targetNode.data().label || data.target) : data.target;
+
+      return {
+        id: e.id(),
+        source: sourceLabel,
+        target: targetLabel,
+        relation: data.relation || 'relates to',
+        sources: data.sources || []
+      };
+    });
     
     // Fetch documents
     try {
@@ -239,18 +247,6 @@ export class IndexPanelManager {
     const showingRels = Math.min(this.relsPage * this.pageSize, totalRels);
     const displayEdges = filteredEdges.slice(0, showingRels);
     
-    displayEdges.forEach(edge => {
-      const div = document.createElement('div');
-      div.className = 'index-relationship';
-      div.innerHTML = `${edge.source}<span class="rel-arrow">ΓåÆ</span>${edge.target}`;
-      div.title = edge.relation;
-      div.style.cursor = 'pointer';
-      div.onclick = () => {
-        console.log('Clicked edge:', edge.id, edge);
-        this.highlightAndZoomToEdge(edge.id);
-      };
-      relsList.appendChild(div);
-    });
     
     // Add "Show More" button if needed
     if (showingRels < totalRels) {
@@ -439,3 +435,28 @@ export class IndexPanelManager {
     }
   }
 }
+    displayEdges.forEach(edge => {
+      const div = document.createElement('div');
+      div.className = 'index-relationship';
+
+      const sourceSpan = document.createElement('span');
+      sourceSpan.className = 'rel-source';
+      sourceSpan.textContent = edge.source;
+
+      const relationSpan = document.createElement('span');
+      relationSpan.className = 'rel-label';
+      relationSpan.textContent = `[${edge.relation}]`;
+
+      const targetSpan = document.createElement('span');
+      targetSpan.className = 'rel-target';
+      targetSpan.textContent = edge.target;
+
+      div.append(sourceSpan, relationSpan, targetSpan);
+      div.title = `${edge.source} [${edge.relation}] ${edge.target}`;
+      div.style.cursor = 'pointer';
+      div.onclick = () => {
+        console.log('Clicked edge:', edge.id, edge);
+        this.highlightAndZoomToEdge(edge.id);
+      };
+      relsList.appendChild(div);
+    });
