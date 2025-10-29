@@ -159,14 +159,15 @@ class WorkspaceService:
         """List all workspaces for a user (includes workspaces they're members of AND public workspaces)."""
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             query = """
-            MATCH (u:User {user_id: $user_id})
             MATCH (w:Workspace)
             WHERE (w.archived = $archived OR $include_archived = true)
               AND (
-                (u)-[:MEMBER_OF]->(w) OR
-                coalesce(w.privacy, 'private') IN $collaborative_privacies
+                coalesce(w.privacy, 'private') IN $collaborative_privacies OR
+                EXISTS {
+                  MATCH (:User {user_id: $user_id})-[:MEMBER_OF]->(w)
+                }
               )
-            OPTIONAL MATCH (u)-[m:MEMBER_OF]->(w)
+            OPTIONAL MATCH (u:User {user_id: $user_id})-[m:MEMBER_OF]->(w)
             RETURN DISTINCT w, m
             ORDER BY w.updated_at DESC
             """
