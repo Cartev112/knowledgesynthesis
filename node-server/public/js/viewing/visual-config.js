@@ -3,6 +3,26 @@
  * Handles visual customization of the graph (colors, sizes, layouts)
  */
 import { state } from '../state.js';
+import { cytoscapeStyles } from './cytoscape-config.js';
+
+const LEGEND_PAGE_SIZE = 8;
+
+const STATIC_NODE_LEGEND = [
+  { selector: 'node', label: 'Default Node', prop: 'background-color' },
+  { selector: 'node.highlighted', label: 'Search Highlight', prop: 'background-color' },
+  { selector: 'node.neighbor', label: 'Neighbor Highlight', prop: 'background-color' },
+  { selector: 'node.multi-selected', label: 'Multi-selected Node', prop: 'background-color' },
+  { selector: 'node.manual-selected', label: 'Manual Selection', prop: 'background-color', note: 'Dashed border' },
+  { selector: 'node:selected', label: 'Active Selection', prop: 'background-color' }
+];
+
+const STATIC_EDGE_LEGEND = [
+  { selector: 'edge', label: 'Default Edge', prop: 'line-color' },
+  { selector: 'edge[status = \"verified\"]', label: 'Verified Edge', prop: 'line-color' },
+  { selector: 'edge[status = \"incorrect\"]', label: 'Incorrect Edge', prop: 'line-color', note: 'Dashed line' },
+  { selector: 'edge.multi-selected', label: 'Multi-selected Edge', prop: 'line-color' },
+  { selector: 'edge:selected', label: 'Active Selection', prop: 'line-color' }
+];
 
 export class VisualConfigManager {
   constructor(cy) {
@@ -26,10 +46,394 @@ export class VisualConfigManager {
         '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95'
       ]
     };
+
+    this.legendConfig = {
+      node: { entries: [], page: 0, pageSize: LEGEND_PAGE_SIZE },
+      edge: { entries: [], page: 0, pageSize: LEGEND_PAGE_SIZE }
+    };
+    this.legendInitialized = false;
+    this.tabButtons = [];
+    this.tabContents = [];
+    this.defaultNodeColor = this.getStyleColor('node', 'background-color', '#8b5cf6');
+    this.defaultEdgeColor = this.getStyleColor('edge', 'line-color', '#9ca3af');
+    this.noDocumentNodeColor = '#9ca3af';
+
+    this.setupLegendUI();
+  }
+
+  ensureLegendLayout() {
+    const modal = document.getElementById('legend-modal');
+    const modalBody = modal?.querySelector('.modal-body');
+    if (!modalBody || modalBody.querySelector('.visual-config-tab-bar')) {
+      return;
+    }
+
+    const configGrid = modalBody.querySelector('.config-grid');
+    const configActions = modalBody.querySelector('.config-actions');
+    const colorLegend = configGrid?.querySelector('#color-legend');
+    const edgeLegend = configGrid?.querySelector('#edge-legend');
+
+    if (!configGrid || !configActions || !colorLegend || !edgeLegend) {
+      return;
+    }
+
+    colorLegend.classList.remove('visible');
+    edgeLegend.classList.remove('visible');
+
+    const tabBar = document.createElement('div');
+    tabBar.className = 'visual-config-tab-bar';
+
+    const configTab = document.createElement('button');
+    configTab.type = 'button';
+    configTab.className = 'visual-config-tab active';
+    configTab.setAttribute('data-visual-config-tab', 'config');
+    configTab.textContent = 'Configuration';
+
+    const legendTab = document.createElement('button');
+    legendTab.type = 'button';
+    legendTab.className = 'visual-config-tab';
+    legendTab.setAttribute('data-visual-config-tab', 'legend');
+    legendTab.textContent = 'Legend';
+
+    tabBar.appendChild(configTab);
+    tabBar.appendChild(legendTab);
+
+    const configContent = document.createElement('div');
+    configContent.className = 'visual-config-tab-content active';
+    configContent.setAttribute('data-visual-config-content', 'config');
+    configContent.appendChild(configGrid);
+    configContent.appendChild(configActions);
+
+    const legendContent = document.createElement('div');
+    legendContent.className = 'visual-config-tab-content';
+    legendContent.setAttribute('data-visual-config-content', 'legend');
+
+    const legendSections = document.createElement('div');
+    legendSections.className = 'legend-sections';
+
+    const staticNodeLegend = document.createElement('div');
+    staticNodeLegend.id = 'static-node-legend';
+    staticNodeLegend.className = 'color-legend-container';
+
+    const nodeStylesSection = this.buildLegendSection('Node Styles', staticNodeLegend);
+
+    const nodePagination = document.createElement('div');
+    nodePagination.id = 'color-legend-pagination';
+    nodePagination.className = 'legend-pagination';
+    const nodeMappingSection = this.buildLegendSection('Node Color Mapping', colorLegend, nodePagination);
+
+    const staticEdgeLegend = document.createElement('div');
+    staticEdgeLegend.id = 'static-edge-legend';
+    staticEdgeLegend.className = 'color-legend-container';
+
+    const edgeStylesSection = this.buildLegendSection('Edge Styles', staticEdgeLegend);
+
+    const edgePagination = document.createElement('div');
+    edgePagination.id = 'edge-legend-pagination';
+    edgePagination.className = 'legend-pagination';
+    const edgeMappingSection = this.buildLegendSection('Edge Color Mapping', edgeLegend, edgePagination);
+
+    legendSections.appendChild(nodeStylesSection);
+    legendSections.appendChild(nodeMappingSection);
+    legendSections.appendChild(edgeStylesSection);
+    legendSections.appendChild(edgeMappingSection);
+
+    legendContent.appendChild(legendSections);
+
+    modalBody.innerHTML = '';
+    modalBody.appendChild(tabBar);
+    modalBody.appendChild(configContent);
+    modalBody.appendChild(legendContent);
+  }
+
+  buildLegendSection(title, contentElement, paginationElement) {
+    const section = document.createElement('div');
+    section.className = 'legend-section';
+
+    if (title || paginationElement) {
+      const header = document.createElement('div');
+      header.className = 'legend-section-header';
+
+      if (title) {
+        const heading = document.createElement('h3');
+        heading.className = 'legend-section-title';
+        heading.textContent = title;
+        header.appendChild(heading);
+      }
+
+      if (paginationElement) {
+        paginationElement.classList.remove('visible');
+        header.appendChild(paginationElement);
+      }
+
+      section.appendChild(header);
+    }
+
+    section.appendChild(contentElement);
+    return section;
+  }
+
+  setupLegendUI() {
+    this.ensureLegendLayout();
+    if (this.legendInitialized) return;
+
+    const tabButtons = document.querySelectorAll('[data-visual-config-tab]');
+    const tabContents = document.querySelectorAll('[data-visual-config-content]');
+
+    if (!tabButtons.length || !tabContents.length) {
+      return;
+    }
+
+    this.legendInitialized = true;
+    this.tabButtons = Array.from(tabButtons);
+    this.tabContents = Array.from(tabContents);
+
+    this.tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-visual-config-tab') || 'config';
+        this.switchLegendTab(targetTab);
+      });
+    });
+
+    this.switchLegendTab('config');
+    this.renderStaticLegends();
+  }
+
+  switchLegendTab(tabName) {
+    if (!this.tabButtons.length || !this.tabContents.length) return;
+
+    this.tabButtons.forEach(button => {
+      const isActive = button.getAttribute('data-visual-config-tab') === tabName;
+      button.classList.toggle('active', isActive);
+    });
+
+    this.tabContents.forEach(content => {
+      const isActive = content.getAttribute('data-visual-config-content') === tabName;
+      content.classList.toggle('active', isActive);
+    });
+  }
+
+  getStyleColor(selector, property, fallback) {
+    const entry = cytoscapeStyles.find(style => style.selector === selector);
+    if (entry && entry.style) {
+      const value = entry.style[property];
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
+    }
+    return fallback;
+  }
+
+  renderStaticLegends() {
+    const nodeContainer = document.getElementById('static-node-legend');
+    const edgeContainer = document.getElementById('static-edge-legend');
+
+    if (nodeContainer) {
+      const nodeEntries = this.buildStaticLegendEntries(STATIC_NODE_LEGEND);
+      this.setLegendContainer(nodeContainer, nodeEntries, {
+        showWhenEmpty: true,
+        emptyMessage: 'No node styles available.'
+      });
+    }
+
+    if (edgeContainer) {
+      const edgeEntries = this.buildStaticLegendEntries(STATIC_EDGE_LEGEND);
+      this.setLegendContainer(edgeContainer, edgeEntries, {
+        showWhenEmpty: true,
+        emptyMessage: 'No edge styles available.'
+      });
+    }
+  }
+
+  buildStaticLegendEntries(configList) {
+    return configList.map(item => {
+      const styleEntry = cytoscapeStyles.find(entry => entry.selector === item.selector);
+      if (!styleEntry || !styleEntry.style) return null;
+
+      const rawValue = styleEntry.style[item.prop];
+      if (typeof rawValue === 'function') return null;
+
+      const color = rawValue;
+      if (!color) return null;
+
+      return {
+        label: item.label,
+        color,
+        note: item.note || ''
+      };
+    }).filter(Boolean);
+  }
+
+  setLegendContainer(container, entries, options = {}) {
+    const { showWhenEmpty = false, emptyMessage = 'No legend data available.' } = options;
+
+    if (!container) return;
+
+    if (!entries || entries.length === 0) {
+      container.innerHTML = showWhenEmpty ? `
+        <div class="legend-empty">${this.escapeHtml(emptyMessage)}</div>
+      ` : '';
+      container.classList.toggle('visible', showWhenEmpty);
+      return;
+    }
+
+    container.innerHTML = this.buildLegendItemsHtml(entries);
+    container.classList.add('visible');
+  }
+
+  buildLegendItemsHtml(entries) {
+    return entries.map(item => `
+      <div class="color-legend-item">
+        <div class="color-legend-swatch" style="background-color: ${item.color}"></div>
+        <div class="color-legend-text">
+          <span class="color-legend-label">${this.escapeHtml(item.label)}</span>
+          ${item.note ? `<span class="legend-note">${this.escapeHtml(item.note)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  updateLegendData(type, legendData) {
+    this.setupLegendUI();
+    const legendState = this.legendConfig[type];
+    if (!legendState) return;
+
+    const entries = Object.entries(legendData || {}).map(([label, color]) => ({
+      label,
+      color,
+      note: ''
+    }));
+
+    legendState.entries = entries;
+    legendState.page = 0;
+
+    this.renderPaginatedLegend(type);
+  }
+
+  renderPaginatedLegend(type) {
+    const state = this.legendConfig[type];
+    if (!state) return;
+
+    const containerId = type === 'node' ? 'color-legend' : 'edge-legend';
+    const paginationId = type === 'node' ? 'color-legend-pagination' : 'edge-legend-pagination';
+
+    const container = document.getElementById(containerId);
+    const pagination = document.getElementById(paginationId);
+
+    if (!container || !pagination) return;
+
+    const entries = state.entries || [];
+
+    if (!entries.length) {
+      this.setLegendContainer(container, [], {
+        showWhenEmpty: true,
+        emptyMessage: 'Select a color scheme to view legend details.'
+      });
+      pagination.innerHTML = '';
+      pagination.classList.remove('visible');
+      return;
+    }
+
+    const totalPages = Math.ceil(entries.length / state.pageSize);
+    if (state.page >= totalPages) {
+      state.page = totalPages - 1;
+    }
+
+    const start = state.page * state.pageSize;
+    const pageEntries = entries.slice(start, start + state.pageSize);
+
+    this.setLegendContainer(container, pageEntries);
+    this.renderPaginationControls(type, pagination, totalPages, state.page);
+  }
+
+  renderPaginationControls(type, container, totalPages, currentPage) {
+    container.innerHTML = '';
+
+    if (totalPages <= 1) {
+      container.classList.remove('visible');
+      return;
+    }
+
+    container.classList.add('visible');
+
+    const prevButton = this.createPaginationButton('Previous', currentPage === 0, () => {
+      this.changeLegendPage(type, currentPage - 1);
+    });
+
+    const indicator = document.createElement('span');
+    indicator.className = 'legend-page-indicator';
+    indicator.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+
+    const nextButton = this.createPaginationButton('Next', currentPage >= totalPages - 1, () => {
+      this.changeLegendPage(type, currentPage + 1);
+    });
+
+    container.appendChild(prevButton);
+    container.appendChild(indicator);
+    container.appendChild(nextButton);
+  }
+
+  createPaginationButton(label, disabled, handler) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'legend-page-btn';
+    button.textContent = label;
+    button.disabled = disabled;
+
+    if (!disabled) {
+      button.addEventListener('click', handler);
+    }
+
+    return button;
+  }
+
+  changeLegendPage(type, newPage) {
+    const state = this.legendConfig[type];
+    if (!state) return;
+
+    const totalPages = Math.ceil((state.entries || []).length / state.pageSize);
+    if (totalPages === 0) return;
+
+    const clampedPage = Math.max(0, Math.min(newPage, totalPages - 1));
+    state.page = clampedPage;
+    this.renderPaginatedLegend(type);
+  }
+
+  clearLegend(type, message = '') {
+    this.setupLegendUI();
+    const containerId = type === 'node' ? 'color-legend' : 'edge-legend';
+    const paginationId = type === 'node' ? 'color-legend-pagination' : 'edge-legend-pagination';
+
+    const container = document.getElementById(containerId);
+    const pagination = document.getElementById(paginationId);
+
+    const legendState = this.legendConfig[type];
+    if (legendState) {
+      legendState.entries = [];
+      legendState.page = 0;
+    }
+
+    if (container) {
+      if (message) {
+        this.setLegendContainer(container, [], {
+          showWhenEmpty: true,
+          emptyMessage: message
+        });
+      } else {
+        container.innerHTML = '';
+        container.classList.remove('visible');
+      }
+    }
+
+    if (pagination) {
+      pagination.innerHTML = '';
+      pagination.classList.remove('visible');
+    }
   }
 
   applyVisualConfig() {
     if (!this.cy) return;
+    this.setupLegendUI();
 
     // Read current config from UI
     this.config.nodeColorScheme = document.getElementById('node-color-scheme')?.value || 'default';
@@ -45,8 +449,8 @@ export class VisualConfigManager {
   }
 
   applyNodeColors() {
+    this.setupLegendUI();
     const scheme = this.config.nodeColorScheme;
-    const colorLegend = document.getElementById('color-legend');
     
     switch (scheme) {
       case 'by-type':
@@ -67,12 +471,12 @@ export class VisualConfigManager {
         break;
       default:
         this.colorNodesDefault();
-        if (colorLegend) colorLegend.classList.remove('visible');
+        this.clearLegend('node', 'Default scheme uses the base node style.');
     }
   }
 
   colorNodesDefault() {
-    this.cy.nodes().style('background-color', '#8b5cf6');
+    this.cy.nodes().style('background-color', this.defaultNodeColor);
   }
 
   colorNodesByType() {
@@ -116,31 +520,55 @@ export class VisualConfigManager {
 
   colorNodesByDocument() {
     const docs = new Set();
+    const docLabels = new Map();
+
     this.cy.nodes().forEach(n => {
       const sources = n.data('sources') || [];
-      sources.forEach(s => {
-        const docId = typeof s === 'object' ? s.id : s;
-        docs.add(docId);
+      sources.forEach(source => {
+        const info = this.normalizeDocumentSource(source);
+        if (info && info.id) {
+          docs.add(info.id);
+          if (!docLabels.has(info.id)) {
+            docLabels.set(info.id, info.label);
+          }
+        }
       });
     });
     
     const docArray = Array.from(docs);
     const colorMap = {};
-    docArray.forEach((doc, i) => {
-      colorMap[doc] = this.colorPalettes.categorical[i % this.colorPalettes.categorical.length];
+    docArray.forEach((docId, i) => {
+      colorMap[docId] = this.colorPalettes.categorical[i % this.colorPalettes.categorical.length];
     });
 
+    let hasUnattributedNodes = false;
     this.cy.nodes().forEach(node => {
       const sources = node.data('sources') || [];
       if (sources.length > 0) {
-        const firstDoc = typeof sources[0] === 'object' ? sources[0].id : sources[0];
-        node.style('background-color', colorMap[firstDoc] || '#8b5cf6');
+        const info = this.normalizeDocumentSource(sources[0]);
+        if (info && info.id && colorMap[info.id]) {
+          node.style('background-color', colorMap[info.id]);
+        } else {
+          node.style('background-color', this.defaultNodeColor);
+        }
       } else {
-        node.style('background-color', '#9ca3af');
+        node.style('background-color', this.noDocumentNodeColor);
+        hasUnattributedNodes = true;
       }
     });
 
-    return colorMap;
+    const legend = {};
+    docArray.forEach(docId => {
+      const baseLabel = docLabels.get(docId) || this.getDocumentTitleById(docId);
+      const label = this.createUniqueLegendLabel(legend, baseLabel, docId);
+      legend[label] = colorMap[docId];
+    });
+
+    if (hasUnattributedNodes) {
+      legend['No Document Source'] = this.noDocumentNodeColor;
+    }
+
+    return legend;
   }
 
   colorNodesByDegree() {
@@ -224,8 +652,8 @@ export class VisualConfigManager {
   }
 
   applyEdgeStyles() {
+    this.setupLegendUI();
     const scheme = this.config.edgeStyleScheme;
-    const edgeLegend = document.getElementById('edge-legend');
     
     switch (scheme) {
       case 'by-type':
@@ -238,12 +666,15 @@ export class VisualConfigManager {
         break;
       default:
         this.colorEdgesDefault();
-        if (edgeLegend) edgeLegend.classList.remove('visible');
+        this.clearLegend('edge', 'Default scheme uses the base edge style.');
     }
   }
 
   colorEdgesDefault() {
-    this.cy.edges().style('line-color', '#9ca3af');
+    this.cy.edges().style({
+      'line-color': this.defaultEdgeColor,
+      'target-arrow-color': this.defaultEdgeColor
+    });
   }
 
   colorEdgesByType() {
@@ -259,6 +690,7 @@ export class VisualConfigManager {
     this.cy.edges().forEach(edge => {
       const type = edge.data('relation') || 'relates to';
       edge.style('line-color', colorMap[type]);
+      edge.style('target-arrow-color', colorMap[type]);
     });
 
     return colorMap;
@@ -266,11 +698,17 @@ export class VisualConfigManager {
 
   colorEdgesByDocument() {
     const docs = new Set();
+    const docLabels = new Map();
     this.cy.edges().forEach(e => {
       const sources = e.data('sources') || [];
-      sources.forEach(s => {
-        const docId = typeof s === 'object' ? s.id : s;
-        docs.add(docId);
+      sources.forEach(source => {
+        const info = this.normalizeDocumentSource(source);
+        if (info && info.id) {
+          docs.add(info.id);
+          if (!docLabels.has(info.id)) {
+            docLabels.set(info.id, info.label);
+          }
+        }
       });
     });
     
@@ -280,17 +718,37 @@ export class VisualConfigManager {
       colorMap[doc] = this.colorPalettes.categorical[i % this.colorPalettes.categorical.length];
     });
 
+    let hasUnattributedEdges = false;
     this.cy.edges().forEach(edge => {
       const sources = edge.data('sources') || [];
       if (sources.length > 0) {
-        const firstDoc = typeof sources[0] === 'object' ? sources[0].id : sources[0];
-        edge.style('line-color', colorMap[firstDoc] || '#9ca3af');
+        const info = this.normalizeDocumentSource(sources[0]);
+        if (info && info.id && colorMap[info.id]) {
+          edge.style('line-color', colorMap[info.id]);
+          edge.style('target-arrow-color', colorMap[info.id]);
+        } else {
+          edge.style('line-color', this.defaultEdgeColor);
+          edge.style('target-arrow-color', this.defaultEdgeColor);
+        }
       } else {
-        edge.style('line-color', '#9ca3af');
+        edge.style('line-color', this.defaultEdgeColor);
+        edge.style('target-arrow-color', this.defaultEdgeColor);
+        hasUnattributedEdges = true;
       }
     });
 
-    return colorMap;
+    const legend = {};
+    docArray.forEach(docId => {
+      const baseLabel = docLabels.get(docId) || this.getDocumentTitleById(docId);
+      const label = this.createUniqueLegendLabel(legend, baseLabel, docId);
+      legend[label] = colorMap[docId];
+    });
+
+    if (hasUnattributedEdges) {
+      legend['No Document Source'] = this.defaultEdgeColor;
+    }
+
+    return legend;
   }
 
   applyLabelDisplay() {
@@ -351,31 +809,21 @@ export class VisualConfigManager {
   }
 
   showColorLegend(legendData) {
-    const container = document.getElementById('color-legend');
-    if (!container || !legendData) return;
+    if (!legendData || Object.keys(legendData).length === 0) {
+      this.clearLegend('node');
+      return;
+    }
 
-    container.innerHTML = Object.entries(legendData).map(([key, color]) => `
-      <div class="color-legend-item">
-        <div class="color-legend-swatch" style="background-color: ${color}"></div>
-        <span class="color-legend-label">${this.escapeHtml(key)}</span>
-      </div>
-    `).join('');
-    
-    container.classList.add('visible');
+    this.updateLegendData('node', legendData);
   }
 
   showEdgeLegend(legendData) {
-    const container = document.getElementById('edge-legend');
-    if (!container || !legendData) return;
+    if (!legendData || Object.keys(legendData).length === 0) {
+      this.clearLegend('edge');
+      return;
+    }
 
-    container.innerHTML = Object.entries(legendData).map(([key, color]) => `
-      <div class="color-legend-item">
-        <div class="color-legend-swatch" style="background-color: ${color}"></div>
-        <span class="color-legend-label">${this.escapeHtml(key)}</span>
-      </div>
-    `).join('');
-    
-    container.classList.add('visible');
+    this.updateLegendData('edge', legendData);
   }
 
   getTypeLegend() {
@@ -404,6 +852,92 @@ export class VisualConfigManager {
 
   getEdgeDocumentLegend() {
     return this.colorEdgesByDocument();
+  }
+
+  normalizeDocumentSource(source) {
+    if (!source) return null;
+
+    if (typeof source === 'object') {
+      const rawId = source.id ?? source.document_id ?? source.uuid ?? source._id ?? source.slug ?? source.identifier ?? null;
+      const id = rawId != null ? String(rawId) : null;
+      const labelCandidates = [
+        source.title,
+        source.name,
+        source.displayName,
+        source.filename,
+        source.label
+      ];
+      const candidateLabel = labelCandidates.find(val => typeof val === 'string' && val.trim().length > 0);
+      const label = candidateLabel || (id ? this.getDocumentTitleById(id) : '');
+      const finalLabel = label || 'Untitled Document';
+      const finalId = id || `doc:${finalLabel}`;
+      return { id: finalId, label: finalLabel };
+    }
+
+    const id = String(source);
+    return {
+      id,
+      label: this.getDocumentTitleById(id)
+    };
+  }
+
+  getDocumentTitleById(docId) {
+    if (docId === undefined || docId === null) {
+      return 'Unknown Document';
+    }
+
+    const normalizedId = String(docId);
+    const docs = Array.isArray(state.documents) ? state.documents : [];
+
+    for (const doc of docs) {
+      if (!doc) continue;
+      const candidateIds = [
+        doc.id,
+        doc.document_id,
+        doc.uuid,
+        doc._id,
+        doc.external_id
+      ];
+
+      const matches = candidateIds.some(candidate => {
+        if (candidate === undefined || candidate === null) return false;
+        return String(candidate) === normalizedId;
+      });
+
+      if (matches) {
+        const titleCandidates = [
+          doc.title,
+          doc.name,
+          doc.displayName,
+          doc.filename,
+          doc.metadata?.title
+        ];
+
+        const title = titleCandidates.find(value => typeof value === 'string' && value.trim().length > 0);
+        return title || normalizedId;
+      }
+    }
+
+    return normalizedId;
+  }
+
+  createUniqueLegendLabel(legend, baseLabel, identifier) {
+    if (!legend || !legend[baseLabel]) return baseLabel;
+
+    const normalizedId = identifier ? String(identifier).slice(0, 8) : '';
+    let attempt = 1;
+    let candidate = normalizedId
+      ? `${baseLabel} (${normalizedId})`
+      : `${baseLabel} (${attempt})`;
+
+    while (legend[candidate]) {
+      attempt += 1;
+      candidate = normalizedId
+        ? `${baseLabel} (${normalizedId}-${attempt})`
+        : `${baseLabel} (${attempt})`;
+    }
+
+    return candidate;
   }
 
   resetVisualConfig() {
