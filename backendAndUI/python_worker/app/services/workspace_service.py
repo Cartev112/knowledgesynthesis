@@ -21,6 +21,9 @@ from .neo4j_client import neo4j_client
 
 logger = logging.getLogger(__name__)
 
+COLLABORATIVE_PRIVACIES = {"public", "shared", "organization"}
+SHARED_OPEN_WRITE_PERMISSIONS = {"view", "add_documents", "edit_relationships"}
+
 
 class WorkspaceService:
     """Service for managing workspaces."""
@@ -110,9 +113,10 @@ class WorkspaceService:
 
             w = record["w"]
             membership = record["m"]
+            privacy = w.get("privacy", "private")
 
-            if not membership:
-                # User is not a member
+            if not membership and privacy not in COLLABORATIVE_PRIVACIES:
+                # User is not a member and workspace is not openly shared
                 return None
 
             # Get members
@@ -141,7 +145,7 @@ class WorkspaceService:
                 description=w.get("description"),
                 icon=w.get("icon", "📊"),
                 color=w.get("color", "#3B82F6"),
-                privacy=w.get("privacy", "private"),
+                privacy=privacy,
                 created_by=w["created_by"],
                 created_at=created_at,
                 updated_at=updated_at,
@@ -160,7 +164,7 @@ class WorkspaceService:
             WHERE (w.archived = $archived OR $include_archived = true)
               AND (
                 (u)-[:MEMBER_OF]->(w) OR
-                w.privacy = 'public'
+                coalesce(w.privacy, 'private') IN $collaborative_privacies
               )
             OPTIONAL MATCH (u)-[m:MEMBER_OF]->(w)
             RETURN DISTINCT w, m
@@ -172,6 +176,7 @@ class WorkspaceService:
                 user_id=user_id,
                 archived=False,
                 include_archived=include_archived,
+                collaborative_privacies=sorted(COLLABORATIVE_PRIVACIES),
             )
 
             workspaces = []
@@ -508,8 +513,9 @@ class WorkspaceService:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(
                 """
-                MATCH (u:User {user_id: $user_id})-[m:MEMBER_OF]->(w:Workspace {workspace_id: $workspace_id})
-                RETURN m.permissions as permissions, m.role as role
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                OPTIONAL MATCH (u:User {user_id: $user_id})-[m:MEMBER_OF]->(w)
+                RETURN w.privacy as privacy, m.permissions as permissions, m.role as role
                 """,
                 user_id=user_id,
                 workspace_id=workspace_id,
@@ -519,15 +525,28 @@ class WorkspaceService:
             if not record:
                 return False
 
+            privacy = record.get("privacy") or "private"
+            role = record.get("role")
+            perms_data = record.get("permissions")
+
+            if role is None:
+                normalized_privacy = privacy.lower()
+                # Allow read-only access to collaborative workspaces without explicit membership
+                if permission == 'view' and normalized_privacy in COLLABORATIVE_PRIVACIES:
+                    return True
+                # Shared workspaces enable collaborative editing even without explicit membership
+                if normalized_privacy == "shared" and permission in SHARED_OPEN_WRITE_PERMISSIONS:
+                    return True
+                return False
+
             # Owner has all permissions
-            if record["role"] == "owner":
+            if role == "owner":
                 return True
 
-            perms = record["permissions"]
-            if isinstance(perms, list):
-                return permission in perms
-            elif isinstance(perms, dict):
-                return perms.get(permission, False)
+            if isinstance(perms_data, list):
+                return permission in perms_data
+            if isinstance(perms_data, dict):
+                return perms_data.get(permission, False)
 
         return False
 

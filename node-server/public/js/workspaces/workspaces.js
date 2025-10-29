@@ -261,7 +261,9 @@ class WorkspacesManager {
     card.className = 'workspace-card';
     card.style.setProperty('--workspace-color', workspace.color);
 
-    const isShared = workspace.members && workspace.members.length > 1;
+    const privacy = (workspace.privacy || 'private').toLowerCase();
+    const hasMultipleMembers = workspace.members && workspace.members.length > 1;
+    const isShared = privacy !== 'private' || hasMultipleMembers;
     const stats = workspace.stats || {};
     const owner = (workspace.members || []).find(m => m.role === 'owner');
     const createdByMe = owner && owner.user_id === this.currentUser.user_id;
