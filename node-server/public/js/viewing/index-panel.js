@@ -246,6 +246,32 @@ export class IndexPanelManager {
     const totalRels = filteredEdges.length;
     const showingRels = Math.min(this.relsPage * this.pageSize, totalRels);
     const displayEdges = filteredEdges.slice(0, showingRels);
+
+    displayEdges.forEach(edge => {
+      const div = document.createElement('div');
+      div.className = 'index-relationship';
+
+      const sourceSpan = document.createElement('span');
+      sourceSpan.className = 'rel-source';
+      sourceSpan.textContent = edge.source;
+
+      const relationSpan = document.createElement('span');
+      relationSpan.className = 'rel-label';
+      relationSpan.textContent = `[${edge.relation}]`;
+
+      const targetSpan = document.createElement('span');
+      targetSpan.className = 'rel-target';
+      targetSpan.textContent = edge.target;
+
+      div.append(sourceSpan, relationSpan, targetSpan);
+      div.title = `${edge.source} [${edge.relation}] ${edge.target}`;
+      div.style.cursor = 'pointer';
+      div.onclick = () => {
+        console.log('Clicked edge:', edge.id, edge);
+        this.highlightAndZoomToEdge(edge.id);
+      };
+      relsList.appendChild(div);
+    });
     
     
     // Add "Show More" button if needed
