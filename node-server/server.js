@@ -549,6 +549,67 @@ app.get('/api/workspaces/:id/relationships', requireAuth, async (req, res) => {
   }
 })
 
+// Add document to workspace
+app.post('/api/workspaces/:id/documents', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.post(`${fastapiBase}/api/workspaces/${req.params.id}/documents`, req.body, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Add document to workspace error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+// Remove document from workspace
+app.delete('/api/workspaces/:id/documents/:docId', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.delete(`${fastapiBase}/api/workspaces/${req.params.id}/documents/${req.params.docId}`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Remove document from workspace error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
+// List available documents
+app.get('/api/documents/available', requireAuth, async (req, res) => {
+  try {
+    const user = req.session.user
+    const response = await axios.get(`${fastapiBase}/api/documents/available`, {
+      headers: { 
+        'X-User-ID': user.user_id || user.email,
+        'X-User-Email': user.email,
+        'X-User-First-Name': user.first_name || '',
+        'X-User-Last-Name': user.last_name || '',
+        'X-User-Roles': (user.roles || ['user']).join(',')
+      }
+    })
+    res.json(response.data)
+  } catch (err) {
+    console.error('Available documents error:', err.message)
+    res.status(err.response?.status || 500).json(err.response?.data || { detail: err.message })
+  }
+})
+
 // Global stats across workspaces (proxy to FastAPI)
 app.get('/api/workspaces/global/stats', requireAuth, async (req, res) => {
   try {
@@ -588,10 +649,10 @@ app.post('/api/sync-user', requireAuth, async (req, res) => {
   }
 })
 
-// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async, /api/workspaces)
+// Proxy API requests to Python FastAPI backend (but NOT /api/me, /api/login, /api/logout, /api/ingest/pdf_async, /api/workspaces, /api/documents)
 app.use('/api', (req, res, next) => {
   // Skip proxy for Node-handled endpoints
-  if (req.path === '/me' || req.path === '/login' || req.path === '/logout' || req.path === '/ingest/pdf_async' || req.path.startsWith('/workspaces')) {
+  if (req.path === '/me' || req.path === '/login' || req.path === '/logout' || req.path === '/ingest/pdf_async' || req.path.startsWith('/workspaces') || req.path.startsWith('/documents')) {
     return next()
   }
   
