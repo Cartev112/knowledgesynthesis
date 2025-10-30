@@ -2,22 +2,17 @@
    INGESTION TAB STYLES
    ========================================== */
 #ingestion-panel {
-  flex: 1;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   padding: 48px 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   box-sizing: border-box;
-  min-height: 100%;
+  overflow-y: auto;
 }
 
 #ingestion-panel > .card {
   width: 100%;
-  max-width: 82rem;
-  margin: 0;
+  margin: 0 auto;
 }
 
 .ingestion-grid {
