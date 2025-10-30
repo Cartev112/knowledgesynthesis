@@ -392,7 +392,7 @@ export class IndexPanelManager {
     // Filter nodes
     state.cy.nodes().forEach(node => {
       const sources = node.data().sources || [];
-      const hasActiveDoc = sources.some(s => {
+      const hasActiveDoc = sources.length === 0 || sources.some(s => {
         const sourceId = typeof s === 'object' ? s.id : s;
         return state.activeDocuments.has(sourceId);
       });
@@ -403,7 +403,7 @@ export class IndexPanelManager {
     // Filter edges
     state.cy.edges().forEach(edge => {
       const sources = edge.data().sources || [];
-      const hasActiveDoc = sources.some(s => {
+      const hasActiveDoc = sources.length === 0 || sources.some(s => {
         const sourceId = typeof s === 'object' ? s.id : s;
         return state.activeDocuments.has(sourceId);
       });
