@@ -574,103 +574,86 @@
     </div>
   </div>
   
-  <!-- Visual Configuration Modal -->
-  <div id="legend-modal-overlay">
-    <div id="legend-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">🎨 Visual Configuration</h2>
-        <button class="modal-close" onclick="closeLegendModal()">×</button>
+  <!-- Visual Configuration Panel (Side Panel) -->
+  <div id="legend-modal-overlay" class="visual-panel-overlay">
+    <div id="legend-modal" class="visual-panel">
+      <div class="visual-panel-header">
+        <h3 class="visual-panel-title">🎨 Visual Config</h3>
+        <button class="visual-panel-close" onclick="closeLegendModal()">×</button>
       </div>
-      <div class="modal-body">
+      <div class="visual-panel-body">
         <!-- Configuration Controls -->
-        <div class="config-grid">
-          <div class="config-section">
-            <div class="config-section-title">Node Color Scheme</div>
-            <div class="config-control">
-              <select id="node-color-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-                <option value="default">Default (Purple)</option>
-                <option value="by-type">By Entity Type</option>
-                <option value="by-user">By User/Creator</option>
-                <option value="by-document">By Document Source</option>
-                <option value="by-degree">By Connection Count</option>
-              </select>
-            </div>
-            <div id="color-legend" class="color-legend-container"></div>
-          </div>
+        <div class="config-section">
+          <div class="config-section-title">Node Color</div>
+          <select id="node-color-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+            <option value="default">Default</option>
+            <option value="by-type">By Type</option>
+            <option value="by-user">By User</option>
+            <option value="by-document">By Document</option>
+            <option value="by-degree">By Degree</option>
+          </select>
+          <div id="color-legend" class="inline-legend"></div>
+        </div>
 
-          <div class="config-section">
-            <div class="config-section-title">Node Size</div>
-            <div class="config-control">
-              <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-                <option value="by-significance">By Significance (Default)</option>
-                <option value="uniform">Uniform</option>
-                <option value="by-degree">By Connection Count</option>
-                <option value="by-importance">By Centrality</option>
-              </select>
-            </div>
-          </div>
+        <div class="config-section">
+          <div class="config-section-title">Node Size</div>
+          <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+            <option value="by-significance">By Significance</option>
+            <option value="uniform">Uniform</option>
+            <option value="by-degree">By Degree</option>
+            <option value="by-importance">By Centrality</option>
+          </select>
+        </div>
 
-          <div class="config-section">
-            <div class="config-section-title">Edge Style</div>
-            <div class="config-control">
-              <select id="edge-style-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-                <option value="default">Default (Gray)</option>
-                <option value="by-type">By Relationship Type</option>
-                <option value="by-document">By Document Source</option>
-              </select>
-            </div>
-            <div id="edge-legend" class="color-legend-container"></div>
-          </div>
+        <div class="config-section">
+          <div class="config-section-title">Edge Color</div>
+          <select id="edge-style-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+            <option value="default">Default</option>
+            <option value="by-type">By Type</option>
+            <option value="by-document">By Document</option>
+          </select>
+          <div id="edge-legend" class="inline-legend"></div>
+        </div>
 
-          <div class="config-section">
-            <div class="config-section-title">Label Display</div>
-            <div class="config-control">
-              <select id="label-display-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-                <option value="hover">Show on Hover</option>
-                <option value="always">Always Show</option>
-                <option value="selected">Selected Only</option>
-                <option value="never">Hide All</option>
-              </select>
-            </div>
-          </div>
+        <div class="config-section">
+          <div class="config-section-title">Labels</div>
+          <select id="label-display-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+            <option value="hover">On Hover</option>
+            <option value="always">Always</option>
+            <option value="selected">Selected Only</option>
+            <option value="never">Never</option>
+          </select>
+        </div>
 
-          <div class="config-section">
-            <div class="config-section-title">Layout Algorithm</div>
-            <div class="config-control">
-              <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.onLayoutChange()">
-                <option value="cose-bilkent">Compound Spring (Recommended)</option>
-                <option value="cose">Force-Directed (COSE)</option>
-                <option value="fcose">Fast Force-Directed</option>
-                <option value="cola">Constraint-Based</option>
-                <option value="dagre">Hierarchical (Dagre)</option>
-                <option value="breadthfirst">Hierarchical (Breadth-First)</option>
-                <option value="concentric">Concentric (By Degree)</option>
-                <option value="circle">Circular</option>
-                <option value="grid">Grid</option>
-              </select>
-            </div>
-          </div>
+        <div class="config-section">
+          <div class="config-section-title">Layout</div>
+          <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.onLayoutChange()">
+            <option value="cose-bilkent">Compound Spring</option>
+            <option value="dagre">Hierarchical</option>
+            <option value="concentric">Concentric</option>
+            <option value="cose">Force-Directed</option>
+            <option value="fcose">Fast Force</option>
+            <option value="cola">Constraint</option>
+            <option value="breadthfirst">Breadth-First</option>
+            <option value="circle">Circular</option>
+            <option value="grid">Grid</option>
+          </select>
+        </div>
 
-          <div class="config-section" id="layout-spread-section" style="display: none;">
-            <div class="config-section-title">Node Spread</div>
-            <div class="config-control">
-              <input type="range" id="layout-spread-slider" class="config-slider" 
-                     min="50" max="500" value="200" step="10"
-                     oninput="window.viewingManager.updateSpreadLabel(this.value)"
-                     onchange="window.viewingManager.applyLayout()">
-              <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #6b7280;">
-                <span>Compact</span>
-                <span id="spread-value-label">200</span>
-                <span>Spread Out</span>
-              </div>
-            </div>
+        <div class="config-section" id="layout-spread-section" style="display: none;">
+          <div class="config-section-title">Spread</div>
+          <input type="range" id="layout-spread-slider" class="config-slider" 
+                 min="50" max="500" value="200" step="10"
+                 oninput="window.viewingManager.updateSpreadLabel(this.value)"
+                 onchange="window.viewingManager.applyLayout()">
+          <div class="spread-labels">
+            <span>Compact</span>
+            <span id="spread-value-label">200</span>
+            <span>Spread</span>
           </div>
         </div>
 
-        <div class="config-actions">
-          <button class="config-btn config-btn-secondary" onclick="window.viewingManager.resetVisualConfig()">Reset to Default</button>
-          <button class="config-btn config-btn-primary" onclick="closeLegendModal()">Done</button>
-        </div>
+        <button class="config-reset-btn" onclick="window.viewingManager.resetVisualConfig()">Reset</button>
       </div>
     </div>
   </div>
