@@ -87,23 +87,8 @@ export class VisualConfigManager {
   }
 
   ensureLegendLayout() {
-    const modal = document.getElementById('legend-modal');
-    const modalBody = modal?.querySelector('.modal-body');
-    if (!modalBody || modalBody.querySelector('.visual-config-tab-bar')) {
-      return;
-    }
-
-    const configGrid = modalBody.querySelector('.config-grid');
-    const configActions = modalBody.querySelector('.config-actions');
-    const colorLegend = configGrid?.querySelector('#color-legend');
-    const edgeLegend = configGrid?.querySelector('#edge-legend');
-
-    if (!configGrid || !configActions || !colorLegend || !edgeLegend) {
-      return;
-    }
-
-    colorLegend.classList.remove('visible');
-    edgeLegend.classList.remove('visible');
+    // For the new compact panel, legends are inline - no complex setup needed
+    return;
 
     const tabBar = document.createElement('div');
     tabBar.className = 'visual-config-tab-bar';
@@ -334,7 +319,6 @@ export class VisualConfigManager {
   }
 
   updateLegendData(type, legendData) {
-    this.setupLegendUI();
     const legendState = this.legendConfig[type];
     if (!legendState) return;
 
@@ -897,11 +881,11 @@ export class VisualConfigManager {
   }
 
   onLayoutChange() {
-    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose-bilkent';
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
     const spreadSection = document.getElementById('layout-spread-section');
     
     // Show spread slider for layouts that support spacing control
-    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'cose-bilkent', 'dagre', 'concentric', 'breadthfirst'];
+    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'dagre', 'concentric', 'breadthfirst'];
     if (spreadSection) {
       spreadSection.style.display = layoutsWithSpread.includes(algorithm) ? 'block' : 'none';
     }
@@ -910,11 +894,11 @@ export class VisualConfigManager {
   }
 
   initializeSliderVisibility() {
-    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose-bilkent';
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
     const spreadSection = document.getElementById('layout-spread-section');
     
     // Show spread slider for layouts that support spacing control
-    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'cose-bilkent', 'dagre', 'concentric', 'breadthfirst'];
+    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'dagre', 'concentric', 'breadthfirst'];
     if (spreadSection) {
       spreadSection.style.display = layoutsWithSpread.includes(algorithm) ? 'block' : 'none';
     }
@@ -1166,7 +1150,7 @@ export class VisualConfigManager {
     document.getElementById('node-size-scheme').value = 'by-significance';
     document.getElementById('edge-style-scheme').value = 'default';
     document.getElementById('label-display-scheme').value = 'hover';
-    document.getElementById('layout-algorithm').value = 'cose-bilkent';
+    document.getElementById('layout-algorithm').value = 'cose';
     document.getElementById('layout-spread-slider').value = '200';
 
     // Reset config
@@ -1175,7 +1159,7 @@ export class VisualConfigManager {
       nodeSizeScheme: 'by-significance',
       edgeStyleScheme: 'default',
       labelDisplayScheme: 'hover',
-      layoutAlgorithm: 'cose-bilkent'
+      layoutAlgorithm: 'cose'
     };
 
     // Initialize slider visibility

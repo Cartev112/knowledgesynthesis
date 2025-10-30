@@ -33,9 +33,12 @@ export class GraphViewer {
   async init() {
     console.log('Initializing Cytoscape graph viewer...');
     
-    // Register dagre extension
+    // Register extensions
     if (window.cytoscape && window.cytoscapeDagre) {
       window.cytoscape.use(window.cytoscapeDagre);
+    }
+    if (window.cytoscape && window.cytoscapeCoseBilkent) {
+      window.cytoscape.use(window.cytoscapeCoseBilkent);
     }
     
     // Initialize Cytoscape
@@ -77,6 +80,28 @@ export class GraphViewer {
     if (this.visualConfig) {
       this.visualConfig.updateSpreadLabel(value);
     }
+  }
+
+  switchVisualTab(tabName) {
+    // Switch tabs
+    const tabs = document.querySelectorAll('.visual-panel-tab');
+    const contents = document.querySelectorAll('.visual-tab-content');
+    
+    tabs.forEach(tab => {
+      if (tab.dataset.tab === tabName) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+    
+    contents.forEach(content => {
+      if (content.id === `visual-tab-${tabName}`) {
+        content.classList.add('active');
+      } else {
+        content.classList.remove('active');
+      }
+    });
   }
 
   resetVisualConfig() {
