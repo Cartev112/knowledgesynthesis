@@ -12,13 +12,10 @@ from ..models.workspace import (
     WorkspaceMember,
     WorkspacePermissions,
     WorkspaceStats,
-    WorkspaceViewConfig,
     CreateWorkspaceRequest,
     UpdateWorkspaceRequest,
     InviteMemberRequest,
     UpdateMemberRequest,
-    AddDocumentsToWorkspaceRequest,
-    RemoveDocumentsFromWorkspaceRequest,
 )
 from .neo4j_client import neo4j_client
 
@@ -143,14 +140,6 @@ class WorkspaceService:
                 elif isinstance(updated_at, str):
                     updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
             
-            # Parse view_config if present
-            view_config = None
-            if w.get("view_config"):
-                try:
-                    view_config = WorkspaceViewConfig(**w["view_config"])
-                except Exception as e:
-                    logger.warning(f"Failed to parse view_config for workspace {workspace_id}: {e}")
-            
             return Workspace(
                 workspace_id=w["workspace_id"],
                 name=w["name"],
@@ -164,7 +153,6 @@ class WorkspaceService:
                 archived=w.get("archived", False),
                 members=members,
                 stats=stats,
-                view_config=view_config,
             )
 
     @staticmethod
@@ -309,8 +297,6 @@ class WorkspaceService:
             updates["color"] = request.color
         if request.privacy is not None:
             updates["privacy"] = request.privacy
-        if request.view_config is not None:
-            updates["view_config"] = request.view_config.dict()
 
         if not updates:
             return WorkspaceService.get_workspace(workspace_id, user_id)
@@ -727,118 +713,143 @@ class WorkspaceService:
             return relationships
 
     @staticmethod
-    def add_documents_to_workspace(workspace_id: str, user_id: str, request: AddDocumentsToWorkspaceRequest) -> bool:
-        """Add existing documents to a workspace (creates BELONGS_TO relationships)."""
+    def add_document_to_workspace(workspace_id: str, document_id: str, user_id: str) -> dict:
+        """Add a document to a workspace."""
+        # Check if user has permission to add documents
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'add_documents'):
+            raise PermissionError(f"User {user_id} does not have permission to add documents to workspace {workspace_id}")
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            # Check if document exists
+            doc_check = session.run(
+                "MATCH (d:Document {document_id: $document_id}) RETURN d",
+                document_id=document_id
+            ).single()
+            
+            if not doc_check:
+                raise ValueError(f"Document {document_id} not found")
+
+            # Check if already in workspace
+            existing = session.run(
+                """
+                MATCH (d:Document {document_id: $document_id})-[r:IN_WORKSPACE]->(w:Workspace {workspace_id: $workspace_id})
+                RETURN r
+                """,
+                document_id=document_id,
+                workspace_id=workspace_id
+            ).single()
+            
+            if existing:
+                return {"message": "Document already in workspace", "already_exists": True}
+
+            # Add document to workspace
+            now = datetime.utcnow()
+            session.run(
+                """
+                MATCH (d:Document {document_id: $document_id})
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                CREATE (d)-[:IN_WORKSPACE {added_at: datetime($added_at), added_by: $user_id}]->(w)
+                """,
+                document_id=document_id,
+                workspace_id=workspace_id,
+                added_at=now.isoformat(),
+                user_id=user_id
+            )
+
+            logger.info(f"Added document {document_id} to workspace {workspace_id} by user {user_id}")
+            return {"message": "Document added to workspace", "already_exists": False}
+
+    @staticmethod
+    def remove_document_from_workspace(workspace_id: str, document_id: str, user_id: str) -> dict:
+        """Remove a document from a workspace."""
         # Check if user has permission
         if not WorkspaceService._user_has_permission(workspace_id, user_id, 'add_documents'):
-            logger.warning(f"User {user_id} does not have permission to add documents to workspace {workspace_id}")
-            return False
+            raise PermissionError(f"User {user_id} does not have permission to remove documents from workspace {workspace_id}")
 
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
-            # Add BELONGS_TO relationships for documents and their entities
             result = session.run(
                 """
-                MATCH (w:Workspace {workspace_id: $workspace_id})
-                MATCH (d:Document)
-                WHERE d.document_id IN $document_ids
-                MERGE (d)-[:BELONGS_TO]->(w)
-                WITH d, w
-                OPTIONAL MATCH (e:Entity)-[:EXTRACTED_FROM]->(d)
-                FOREACH (_ IN CASE WHEN e IS NOT NULL THEN [1] ELSE [] END |
-                    MERGE (e)-[:BELONGS_TO]->(w)
-                )
-                SET w.updated_at = datetime()
-                RETURN count(DISTINCT d) as docs_added, count(DISTINCT e) as entities_linked
-                """,
-                workspace_id=workspace_id,
-                document_ids=request.document_ids
-            )
-
-            record = result.single()
-            if record:
-                logger.info(f"Added {record['docs_added']} documents and {record['entities_linked']} entities to workspace {workspace_id}")
-                return True
-
-        return False
-
-    @staticmethod
-    def remove_documents_from_workspace(workspace_id: str, user_id: str, request: RemoveDocumentsFromWorkspaceRequest) -> bool:
-        """Remove documents from a workspace (deletes BELONGS_TO relationships)."""
-        # Check if user has permission
-        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'edit_relationships'):
-            logger.warning(f"User {user_id} does not have permission to remove documents from workspace {workspace_id}")
-            return False
-
-        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
-            # Remove BELONGS_TO relationships for documents and their entities
-            result = session.run(
-                """
-                MATCH (w:Workspace {workspace_id: $workspace_id})
-                MATCH (d:Document)-[r:BELONGS_TO]->(w)
-                WHERE d.document_id IN $document_ids
+                MATCH (d:Document {document_id: $document_id})-[r:IN_WORKSPACE]->(w:Workspace {workspace_id: $workspace_id})
                 DELETE r
-                WITH d, w
-                OPTIONAL MATCH (e:Entity)-[:EXTRACTED_FROM]->(d)
-                OPTIONAL MATCH (e)-[er:BELONGS_TO]->(w)
-                DELETE er
-                SET w.updated_at = datetime()
-                RETURN count(DISTINCT d) as docs_removed, count(DISTINCT e) as entities_unlinked
+                RETURN count(r) as deleted_count
                 """,
-                workspace_id=workspace_id,
-                document_ids=request.document_ids
-            )
+                document_id=document_id,
+                workspace_id=workspace_id
+            ).single()
 
-            record = result.single()
-            if record:
-                logger.info(f"Removed {record['docs_removed']} documents and {record['entities_unlinked']} entities from workspace {workspace_id}")
-                return True
+            deleted_count = result["deleted_count"] if result else 0
+            
+            if deleted_count == 0:
+                return {"message": "Document not found in workspace", "deleted": False}
 
-        return False
+            logger.info(f"Removed document {document_id} from workspace {workspace_id} by user {user_id}")
+            return {"message": "Document removed from workspace", "deleted": True}
 
     @staticmethod
-    def list_available_documents(user_id: str, workspace_id: Optional[str] = None) -> List[dict]:
-        """List all documents available to add to a workspace (public + user's private documents)."""
+    def list_workspace_documents(workspace_id: str, user_id: str) -> List[dict]:
+        """List all documents in a workspace."""
+        # Check if user has access
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'view'):
+            raise PermissionError(f"User {user_id} does not have permission to view workspace {workspace_id}")
+
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
-            # If workspace_id provided, exclude documents already in that workspace
-            workspace_filter = ""
-            if workspace_id:
-                workspace_filter = """
-                AND NOT EXISTS {
-                    MATCH (d)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
-                }
-                """
-
-            query = f"""
-            MATCH (d:Document)
-            WHERE (
-                NOT EXISTS {{ (d)-[:BELONGS_TO]->(:Workspace {{privacy: 'private'}}) }}
-                OR EXISTS {{ (d)-[:CREATED_BY]->(:User {{user_id: $user_id}}) }}
-            )
-            {workspace_filter}
-            OPTIONAL MATCH (d)-[:CREATED_BY]->(u:User)
-            OPTIONAL MATCH (d)-[:BELONGS_TO]->(w:Workspace)
-            RETURN d, u.user_email as creator_email, collect(DISTINCT w.name) as workspaces
-            ORDER BY d.created_at DESC
-            LIMIT 200
-            """
-
             result = session.run(
-                query,
-                user_id=user_id,
+                """
+                MATCH (d:Document)-[r:IN_WORKSPACE]->(w:Workspace {workspace_id: $workspace_id})
+                OPTIONAL MATCH (u:User {user_id: r.added_by})
+                RETURN d.document_id as document_id, 
+                       d.title as title,
+                       r.added_at as added_at,
+                       r.added_by as added_by,
+                       u.user_first_name as added_by_first_name,
+                       u.user_last_name as added_by_last_name
+                ORDER BY r.added_at DESC
+                """,
                 workspace_id=workspace_id
             )
 
             documents = []
             for record in result:
-                doc = record["d"]
+                added_by_name = None
+                if record.get("added_by_first_name") or record.get("added_by_last_name"):
+                    added_by_name = f"{record.get('added_by_first_name', '')} {record.get('added_by_last_name', '')}".strip()
+
                 documents.append({
-                    "document_id": doc.get("document_id"),
-                    "title": doc.get("title") or doc.get("name"),
-                    "name": doc.get("name"),
-                    "summary": doc.get("summary"),
-                    "created_at": doc.get("created_at").to_native() if doc.get("created_at") else None,
-                    "creator_email": record.get("creator_email"),
-                    "workspaces": record.get("workspaces", []),
+                    "document_id": record["document_id"],
+                    "title": record["title"],
+                    "added_at": record["added_at"],
+                    "added_by": record["added_by"],
+                    "added_by_name": added_by_name
+                })
+
+            return documents
+
+    @staticmethod
+    def list_available_documents(user_id: str) -> List[dict]:
+        """List all documents available to add to workspaces (public + user's private)."""
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            result = session.run(
+                """
+                MATCH (d:Document)
+                WHERE d.created_by = $user_id 
+                   OR NOT EXISTS { (d)-[:IN_WORKSPACE]->(:Workspace {privacy: 'private'}) }
+                   OR EXISTS { (d)-[:IN_WORKSPACE]->(w:Workspace {privacy: 'private'})<-[:MEMBER_OF]-(:User {user_id: $user_id}) }
+                RETURN DISTINCT d.document_id as document_id, 
+                       d.title as title,
+                       d.created_at as created_at,
+                       d.created_by as created_by
+                ORDER BY d.created_at DESC
+                """,
+                user_id=user_id
+            )
+
+            documents = []
+            for record in result:
+                documents.append({
+                    "document_id": record["document_id"],
+                    "title": record["title"],
+                    "created_at": record["created_at"],
+                    "created_by": record["created_by"]
                 })
 
             return documents

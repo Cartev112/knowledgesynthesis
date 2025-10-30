@@ -317,6 +317,7 @@
   cursor: pointer;
   transition: all 0.15s ease;
   background: white;
+  position: relative;
 }
 
 .ws-item:hover { background: #f9fafb; border-color: #d1d5db; }
@@ -374,6 +375,32 @@
   color: #9ca3af;
   font-size: 0.875rem;
   padding: 1rem;
+}
+
+/* Gear icon for workspace settings */
+.ws-item-settings {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.5;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ws-item-settings:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+  transform: rotate(30deg);
+}
+
+.ws-item:hover .ws-item-settings {
+  opacity: 0.7;
 }
 
 /* Responsive */

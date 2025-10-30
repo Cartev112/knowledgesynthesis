@@ -79,6 +79,7 @@ class WorkspaceSwitcher {
           <span class="ws-item-icon">${workspace.icon}</span>
           <span class="ws-item-name">${this.escapeHtml(workspace.name)}</span>
           ${workspace.members && workspace.members.length > 1 ? '<span class="ws-shared">Shared</span>' : ''}
+          <button class="ws-item-settings" data-workspace-id="${workspace.workspace_id}" title="Workspace Settings">⚙️</button>
         </div>
       `).join('');
 
@@ -109,6 +110,7 @@ class WorkspaceSwitcher {
                 <span class="ws-item-icon">${this.currentWorkspace.icon}</span>
                 <span class="ws-item-name">${this.escapeHtml(this.currentWorkspace.name)}</span>
                 <span class="ws-check">✓</span>
+                <button class="ws-item-settings" data-workspace-id="${this.currentWorkspace.workspace_id}" title="Workspace Settings">⚙️</button>
               </div>` : ''}
             </div>
 
@@ -121,8 +123,6 @@ class WorkspaceSwitcher {
           </div>
           <div class="ws-modal-footer">
             <button class="ws-action" id="create-workspace-action">➕ Create New</button>
-            <button class="ws-action" id="manage-workspaces-action">🏠 Manage</button>
-            ${this.currentWorkspace ? '<button class="ws-action" id="workspace-settings-action">⚙️ Settings</button>' : ''}
           </div>
         </div>
       </div>
@@ -156,9 +156,22 @@ class WorkspaceSwitcher {
 
     // Workspace selection
     modal?.querySelectorAll('.ws-item[data-workspace-id]')?.forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        // Don't switch if clicking the settings button
+        if (e.target.closest('.ws-item-settings')) return;
+        
         const workspaceId = item.dataset.workspaceId;
         this.switchWorkspace(workspaceId);
+        this.closeModal();
+      });
+    });
+
+    // Gear icon clicks for workspace settings
+    modal?.querySelectorAll('.ws-item-settings')?.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const workspaceId = btn.dataset.workspaceId;
+        this.openWorkspaceSettingsForId(workspaceId);
         this.closeModal();
       });
     });
@@ -167,29 +180,7 @@ class WorkspaceSwitcher {
     const createAction = document.getElementById('create-workspace-action');
     if (createAction) {
       createAction.addEventListener('click', () => {
-
-        
         this.openCreateWorkspaceModal();
-      });
-    }
-
-    // Manage workspaces action
-    const manageAction = document.getElementById('manage-workspaces-action');
-    if (manageAction) {
-      manageAction.addEventListener('click', () => {
-        if (window.appManager) {
-          window.appManager.switchTab('workspaces');
-        }
-        this.closeModal();
-      });
-    }
-
-    // Workspace settings action
-    const settingsAction = document.getElementById('workspace-settings-action');
-    if (settingsAction) {
-      settingsAction.addEventListener('click', () => {
-        this.openWorkspaceSettings();
-        this.closeModal();
       });
     }
   }
@@ -244,12 +235,15 @@ class WorkspaceSwitcher {
     window.dispatchEvent(event);
   }
 
-  async openWorkspaceSettings() {
-    if (!this.currentWorkspace || !this.currentWorkspace.workspace_id) return;
+  async openWorkspaceSettingsForId(workspaceId) {
+    if (!workspaceId) return;
     
     try {
       // Load workspace details
-      const ws = await API.get(`/api/workspaces/${encodeURIComponent(this.currentWorkspace.workspace_id)}`);
+      const ws = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}`);
+      
+      // Store workspace ID for saving
+      this.settingsWorkspaceId = workspaceId;
       
       // Populate modal fields
       document.getElementById('app-ws-name').value = ws.name || '';
@@ -274,6 +268,12 @@ class WorkspaceSwitcher {
       console.error('Failed to load workspace settings:', e);
       alert('Failed to load workspace settings');
     }
+  }
+  
+  async openWorkspaceSettings() {
+    // Deprecated - use openWorkspaceSettingsForId instead
+    if (!this.currentWorkspace || !this.currentWorkspace.workspace_id) return;
+    return this.openWorkspaceSettingsForId(this.currentWorkspace.workspace_id);
   }
   
   renderAppSettingsIconColor(selectedIcon, selectedColor) {
@@ -338,7 +338,7 @@ class WorkspaceSwitcher {
   }
   
   async saveAppWorkspaceSettings() {
-    if (!this.currentWorkspace || !this.currentWorkspace.workspace_id) return;
+    if (!this.settingsWorkspaceId) return;
     
     const name = document.getElementById('app-ws-name').value.trim();
     const description = document.getElementById('app-ws-description').value.trim();
@@ -353,7 +353,7 @@ class WorkspaceSwitcher {
     };
     
     try {
-      await API.put(`/api/workspaces/${encodeURIComponent(this.currentWorkspace.workspace_id)}`, payload);
+      await API.put(`/api/workspaces/${encodeURIComponent(this.settingsWorkspaceId)}`, payload);
       this.closeAppSettingsModal();
       
       // Reload to reflect changes

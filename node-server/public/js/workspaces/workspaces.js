@@ -66,7 +66,7 @@ class WorkspacesManager {
   async init() {
     console.log('🔧 Initializing WorkspacesManager');
     // Check authentication
-    await this.checkAuth();
+    // await this.checkAuth();
     
     // Set up event listeners
     this.setupEventListeners();
@@ -698,6 +698,7 @@ class WorkspacesManager {
     const closeBtn = document.getElementById('ws-detail-close');
     const closeBtnFooter = document.getElementById('ws-detail-close-btn');
     const openBtn = document.getElementById('ws-detail-open');
+    const addDocsBtn = document.getElementById('add-documents-btn');
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.closeDetailModal());
@@ -715,11 +716,18 @@ class WorkspacesManager {
       });
     }
 
+    if (addDocsBtn) {
+      addDocsBtn.addEventListener('click', () => this.openAddDocumentsModal());
+    }
+
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) this.closeDetailModal();
       });
     }
+
+    // Setup add documents modal listeners
+    this.setupAddDocumentsModalListeners()
 
     // Main tab switching (Overview / Content)
     const mainTabs = document.querySelectorAll('.detail-main-tab');
@@ -774,23 +782,35 @@ class WorkspacesManager {
     listEl.innerHTML = '<div class="detail-loading">Loading documents...</div>';
 
     try {
-      const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
-      const documents = response.documents || response || [];
+      const documents = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
 
-      if (documents.length === 0) {
-        listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">📄</div><p>No documents yet</p></div>';
+      if (!documents || documents.length === 0) {
+        listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">📄</div><p>No documents yet</p><p style="font-size: 0.875rem; color: #6b7280;">Click "Add Documents" to get started</p></div>';
         return;
       }
 
       listEl.innerHTML = documents.map(doc => `
-        <div class="detail-item">
-          <div class="detail-item-header">
-            <div class="detail-item-title">${this.escapeHtml(doc.title || doc.name || 'Untitled')}</div>
-            <div class="detail-item-meta">${this.formatLastActivity(doc.created_at)}</div>
+        <div class="detail-item" style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="flex: 1; min-width: 0;">
+            <div class="detail-item-header">
+              <div class="detail-item-title">📄 ${this.escapeHtml(doc.title || 'Untitled')}</div>
+              <div class="detail-item-meta">${doc.added_by_name ? `Added by ${this.escapeHtml(doc.added_by_name)}` : ''} ${this.formatLastActivity(doc.added_at)}</div>
+            </div>
           </div>
-          ${doc.summary ? `<div class="detail-item-content">${this.escapeHtml(doc.summary)}</div>` : ''}
+          <button class="remove-doc-btn" data-doc-id="${doc.document_id}" title="Remove from workspace" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 8px; font-size: 1.25rem; opacity: 0.7; transition: opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">❌</button>
         </div>
       `).join('');
+
+      // Add event listeners for remove buttons
+      listEl.querySelectorAll('.remove-doc-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const docId = btn.dataset.docId;
+          if (confirm('Remove this document from the workspace?')) {
+            await this.removeDocumentFromWorkspace(workspaceId, docId);
+          }
+        });
+      });
     } catch (error) {
       console.error('Failed to load documents:', error);
       listEl.innerHTML = '<div class="detail-empty"><p>Failed to load documents</p></div>';
@@ -853,6 +873,158 @@ class WorkspacesManager {
     } catch (error) {
       console.error('Failed to load relationships:', error);
       listEl.innerHTML = '<div class="detail-empty"><p>Failed to load relationships</p></div>';
+    }
+  }
+
+  setupAddDocumentsModalListeners() {
+    const modal = document.getElementById('add-documents-modal');
+    const closeBtn = document.getElementById('add-docs-close');
+    const cancelBtn = document.getElementById('add-docs-cancel');
+    const submitBtn = document.getElementById('add-docs-submit');
+    const searchInput = document.getElementById('doc-search');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeAddDocumentsModal());
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => this.closeAddDocumentsModal());
+    }
+
+    if (submitBtn) {
+      submitBtn.addEventListener('click', () => this.addSelectedDocuments());
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeAddDocumentsModal();
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => this.filterAvailableDocuments(e.target.value));
+    }
+  }
+
+  async openAddDocumentsModal() {
+    const modal = document.getElementById('add-documents-modal');
+    if (!modal) return;
+
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+
+    // Load available documents
+    await this.loadAvailableDocuments();
+  }
+
+  closeAddDocumentsModal() {
+    const modal = document.getElementById('add-documents-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
+    // Clear search
+    const searchInput = document.getElementById('doc-search');
+    if (searchInput) searchInput.value = '';
+  }
+
+  async loadAvailableDocuments() {
+    const listEl = document.getElementById('available-documents-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="detail-loading">Loading available documents...</div>';
+
+    try {
+      const documents = await API.get('/api/documents/available');
+      this.availableDocuments = documents || [];
+
+      if (this.availableDocuments.length === 0) {
+        listEl.innerHTML = '<div class="detail-empty"><p>No documents available</p></div>';
+        return;
+      }
+
+      this.renderAvailableDocuments(this.availableDocuments);
+    } catch (error) {
+      console.error('Failed to load available documents:', error);
+      listEl.innerHTML = '<div class="detail-empty"><p>Failed to load documents</p></div>';
+    }
+  }
+
+  renderAvailableDocuments(documents) {
+    const listEl = document.getElementById('available-documents-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = documents.map(doc => `
+      <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+        <input type="checkbox" class="doc-checkbox" data-doc-id="${doc.document_id}" style="margin-right: 12px; cursor: pointer;" />
+        <div style="flex: 1;">
+          <div style="font-weight: 500; color: #111827;">${this.escapeHtml(doc.title || 'Untitled')}</div>
+          <div style="font-size: 0.875rem; color: #6b7280; margin-top: 4px;">${this.formatLastActivity(doc.created_at)}</div>
+        </div>
+      </label>
+    `).join('');
+  }
+
+  filterAvailableDocuments(query) {
+    if (!this.availableDocuments) return;
+
+    const filtered = this.availableDocuments.filter(doc => {
+      const title = (doc.title || '').toLowerCase();
+      const q = query.toLowerCase();
+      return title.includes(q);
+    });
+
+    this.renderAvailableDocuments(filtered);
+  }
+
+  async addSelectedDocuments() {
+    const checkboxes = document.querySelectorAll('.doc-checkbox:checked');
+    const docIds = Array.from(checkboxes).map(cb => cb.dataset.docId);
+
+    if (docIds.length === 0) {
+      alert('Please select at least one document');
+      return;
+    }
+
+    const submitBtn = document.getElementById('add-docs-submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
+    try {
+      // Add each document
+      for (const docId of docIds) {
+        await API.post(`/api/workspaces/${encodeURIComponent(this.currentDetailWorkspaceId)}/documents`, {
+          document_id: docId
+        });
+      }
+
+      // Close modal
+      this.closeAddDocumentsModal();
+
+      // Reload documents list
+      await this.loadWorkspaceDocuments(this.currentDetailWorkspaceId);
+
+      // Show success message
+      alert(`Successfully added ${docIds.length} document(s)`);
+    } catch (error) {
+      console.error('Failed to add documents:', error);
+      alert('Failed to add some documents. Please try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  }
+
+  async removeDocumentFromWorkspace(workspaceId, documentId) {
+    try {
+      await API.delete(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}`);
+      
+      // Reload documents list
+      await this.loadWorkspaceDocuments(workspaceId);
+    } catch (error) {
+      console.error('Failed to remove document:', error);
+      alert('Failed to remove document. Please try again.');
     }
   }
 }

@@ -5,7 +5,6 @@ import { AuthManager } from './auth.js';
 import { IngestionManager } from './ingestion/ingestion.js';
 import { GraphViewer } from './viewing/graph-viewer.js';
 import { AIQuery } from './ai-query/ai-query.js';
-import { WorkspaceTabManager } from './workspaces/workspace-tab-manager.js';
 import { state } from './state.js';
 import { API } from './utils/api.js';
 
@@ -15,7 +14,6 @@ class AppManager {
     this.ingestionManager = new IngestionManager();
     this.graphViewer = new GraphViewer();
     this.aiQuery = new AIQuery();
-    this.workspaceTabManager = null; // Lazy-loaded
     this.currentTab = 'ingestion';
     // 3D viewer state (lazy-loaded)
     this.graph3D = null;
@@ -76,17 +74,6 @@ class AppManager {
     
     // Update UI visibility
     this.updateUIVisibility(tabName);
-  }
-  
-  async initWorkspacesTab() {
-    if (!this.workspaceTabManager) {
-      console.log('Initializing workspace tab manager...');
-      this.workspaceTabManager = new WorkspaceTabManager();
-      await this.workspaceTabManager.init();
-    } else {
-      // Refresh workspaces when tab is opened
-      await this.workspaceTabManager.loadWorkspaces();
-    }
   }
   
   async initViewingTab() {
@@ -210,6 +197,21 @@ class AppManager {
     }
   }
   
+  async initWorkspacesTab() {
+    if (this.workspacesInitialized) return;
+    
+    console.log('Initializing workspaces tab...');
+    
+    try {
+      // Load workspaces manager dynamically
+      const { default: WorkspacesManager } = await import('./workspaces/workspaces.js');
+      this.workspacesManager = new WorkspacesManager();
+      this.workspacesInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize workspaces tab:', error);
+    }
+  }
+
   wireGlobalEvents() {
     // ESC key handler
     window.addEventListener('keydown', (e) => {
