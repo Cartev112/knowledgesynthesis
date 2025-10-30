@@ -897,26 +897,26 @@ export class VisualConfigManager {
   }
 
   onLayoutChange() {
-    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose-bilkent';
     const spreadSection = document.getElementById('layout-spread-section');
     
-    // Show spread slider only for force-directed layouts
-    const forceDirectedLayouts = ['cose', 'fcose', 'cola'];
+    // Show spread slider for layouts that support spacing control
+    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'cose-bilkent', 'dagre', 'concentric', 'breadthfirst'];
     if (spreadSection) {
-      spreadSection.style.display = forceDirectedLayouts.includes(algorithm) ? 'block' : 'none';
+      spreadSection.style.display = layoutsWithSpread.includes(algorithm) ? 'block' : 'none';
     }
     
     this.applyLayout();
   }
 
   initializeSliderVisibility() {
-    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose-bilkent';
     const spreadSection = document.getElementById('layout-spread-section');
     
-    // Show spread slider only for force-directed layouts
-    const forceDirectedLayouts = ['cose', 'fcose', 'cola'];
+    // Show spread slider for layouts that support spacing control
+    const layoutsWithSpread = ['cose', 'fcose', 'cola', 'cose-bilkent', 'dagre', 'concentric', 'breadthfirst'];
     if (spreadSection) {
-      spreadSection.style.display = forceDirectedLayouts.includes(algorithm) ? 'block' : 'none';
+      spreadSection.style.display = layoutsWithSpread.includes(algorithm) ? 'block' : 'none';
     }
   }
 
@@ -944,11 +944,40 @@ export class VisualConfigManager {
     const edgeLengthMultiplier = spreadValue / 200; // Range: 0.25 to 2.5
 
     switch (algorithm) {
+      case 'cose-bilkent':
+        // CoSE-Bilkent is better for compound graphs with many overlapping nodes
+        return {
+          ...baseOptions,
+          name: 'cose-bilkent',
+          nodeRepulsion: 4500,
+          idealEdgeLength: 150 * edgeLengthMultiplier,
+          edgeElasticity: 0.45,
+          nestingFactor: 0.1,
+          gravity: 0.25,
+          numIter: 2500,
+          tile: true,
+          tilingPaddingVertical: 10,
+          tilingPaddingHorizontal: 10,
+          gravityRangeCompound: 1.5,
+          gravityCompound: 1.0,
+          gravityRange: 3.8
+        };
+      case 'dagre':
+        // Dagre creates hierarchical layouts - excellent for ontologies
+        return {
+          ...baseOptions,
+          name: 'dagre',
+          rankDir: 'TB',  // Top to bottom
+          ranker: 'network-simplex',
+          nodeSep: 50 * edgeLengthMultiplier,
+          edgeSep: 10,
+          rankSep: 75 * edgeLengthMultiplier
+        };
       case 'cose':
         return { 
           ...baseOptions,
-          nodeRepulsion: 8000,  // Keep constant
-          idealEdgeLength: 100 * edgeLengthMultiplier,  // Scale: 25 to 250
+          nodeRepulsion: 8000,
+          idealEdgeLength: 100 * edgeLengthMultiplier,
           nodeOverlap: 20,
           gravity: 1,
           numIter: 1000,
@@ -960,29 +989,40 @@ export class VisualConfigManager {
           ...baseOptions, 
           quality: 'default',
           randomize: false,
-          nodeSeparation: 75,  // Keep constant
-          idealEdgeLength: 50 * edgeLengthMultiplier,  // Scale: 12.5 to 125
-          nodeRepulsion: 4500,  // Keep constant
+          nodeSeparation: 75,
+          idealEdgeLength: 50 * edgeLengthMultiplier,
+          nodeRepulsion: 4500,
           gravity: 0.25,
           numIter: 2500
         };
       case 'cola':
         return { 
           ...baseOptions,
-          edgeLength: 100 * edgeLengthMultiplier,  // Scale: 25 to 250
-          nodeSpacing: 50,  // Keep constant
+          edgeLength: 100 * edgeLengthMultiplier,
+          nodeSpacing: 50,
           convergenceThreshold: 0.01,
           maxSimulationTime: 4000,
           avoidOverlap: true
+        };
+      case 'concentric':
+        // Place high-degree nodes (hubs) in center, low-degree on outside
+        return { 
+          ...baseOptions, 
+          concentric: n => n.degree(), 
+          levelWidth: () => 2,
+          minNodeSpacing: 50 * edgeLengthMultiplier
         };
       case 'circle':
         return { ...baseOptions, radius: 300 };
       case 'grid':
         return { ...baseOptions, rows: undefined, cols: undefined };
-      case 'concentric':
-        return { ...baseOptions, concentric: n => n.degree(), levelWidth: () => 2 };
       case 'breadthfirst':
-        return { ...baseOptions, directed: true, spacingFactor: 1.5 };
+        return { 
+          ...baseOptions, 
+          directed: true, 
+          spacingFactor: 1.5 * edgeLengthMultiplier,
+          circle: false
+        };
       default:
         return baseOptions;
     }
@@ -1126,7 +1166,8 @@ export class VisualConfigManager {
     document.getElementById('node-size-scheme').value = 'by-significance';
     document.getElementById('edge-style-scheme').value = 'default';
     document.getElementById('label-display-scheme').value = 'hover';
-    document.getElementById('layout-algorithm').value = 'cose';
+    document.getElementById('layout-algorithm').value = 'cose-bilkent';
+    document.getElementById('layout-spread-slider').value = '200';
 
     // Reset config
     this.config = {
@@ -1134,9 +1175,12 @@ export class VisualConfigManager {
       nodeSizeScheme: 'by-significance',
       edgeStyleScheme: 'default',
       labelDisplayScheme: 'hover',
-      layoutAlgorithm: 'cose'
+      layoutAlgorithm: 'cose-bilkent'
     };
 
+    // Initialize slider visibility
+    this.initializeSliderVisibility();
+    
     // Apply defaults
     this.applyVisualConfig();
   }

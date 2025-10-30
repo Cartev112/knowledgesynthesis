@@ -638,13 +638,15 @@
             <div class="config-section-title">Layout Algorithm</div>
             <div class="config-control">
               <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.onLayoutChange()">
+                <option value="cose-bilkent">Compound Spring (Recommended)</option>
                 <option value="cose">Force-Directed (COSE)</option>
                 <option value="fcose">Fast Force-Directed</option>
                 <option value="cola">Constraint-Based</option>
+                <option value="dagre">Hierarchical (Dagre)</option>
+                <option value="breadthfirst">Hierarchical (Breadth-First)</option>
+                <option value="concentric">Concentric (By Degree)</option>
                 <option value="circle">Circular</option>
                 <option value="grid">Grid</option>
-                <option value="concentric">Concentric</option>
-                <option value="breadthfirst">Hierarchical (Breadth-First)</option>
               </select>
             </div>
           </div>
