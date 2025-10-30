@@ -359,37 +359,80 @@ class WorkspacesManager {
   }
 
   openCreateModal() {
-    const modal = document.getElementById('create-workspace-modal');
+    const modal = document.getElementById('app-create-workspace-modal') || document.getElementById('create-workspace-modal');
+    if (!modal) return;
+    
     modal.classList.add('show');
     document.body.classList.add('modal-open');
 
     // Reset form
-    document.getElementById('create-workspace-form').reset();
+    const form = document.getElementById('app-create-workspace-form') || document.getElementById('create-workspace-form');
+    if (form) form.reset();
+    
     this.selectedIcon = '📊';
     this.selectedColor = '#3B82F6';
-    document.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
-    document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
-    document.querySelector('.icon-option[data-icon="📊"]').classList.add('selected');
-    document.querySelector('.color-option[data-color="#3B82F6"]').classList.add('selected');
+    
+    // Populate icon and color selectors
+    this.renderCreateIconColor();
+  }
+  
+  renderCreateIconColor() {
+    const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
+    const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+    const iconSel = document.getElementById('app-create-icon-selector') || document.getElementById('create-icon-selector');
+    const colorSel = document.getElementById('app-create-color-selector') || document.getElementById('create-color-selector');
+    
+    if (!iconSel || !colorSel) return;
+    
+    iconSel.innerHTML = icons.map(ic => `<button type="button" class="icon-option ${ic===this.selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`).join('');
+    colorSel.innerHTML = colors.map(c => `<button type="button" class="color-option ${c===this.selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+
+    iconSel.querySelectorAll('.icon-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        iconSel.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.selectedIcon = btn.dataset.icon;
+      });
+    });
+    colorSel.querySelectorAll('.color-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorSel.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.selectedColor = btn.dataset.color;
+      });
+    });
   }
 
   closeModal() {
-    const modal = document.getElementById('create-workspace-modal');
-    modal.classList.remove('show');
-    document.body.classList.remove('modal-open');
+    const modal = document.getElementById('app-create-workspace-modal') || document.getElementById('create-workspace-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
   }
 
   async createWorkspace() {
-    const submitButton = document.getElementById('submit-button');
+    const submitButton = document.getElementById('app-create-submit') || document.getElementById('submit-button');
+    if (!submitButton) return;
+    
     const originalText = submitButton.textContent;
 
     try {
       submitButton.disabled = true;
       submitButton.textContent = 'Creating...';
 
-      const name = document.getElementById('workspace-name').value.trim();
-      const description = document.getElementById('workspace-description').value.trim();
-      const privacy = document.querySelector('input[name="privacy"]:checked').value;
+      const nameInput = document.getElementById('app-create-name') || document.getElementById('workspace-name');
+      const descInput = document.getElementById('app-create-description') || document.getElementById('workspace-description');
+      const privacyRadio = document.querySelector('input[name="app-create-privacy"]:checked') || document.querySelector('input[name="privacy"]:checked');
+      
+      const name = nameInput ? nameInput.value.trim() : '';
+      const description = descInput ? descInput.value.trim() : '';
+      const privacy = privacyRadio ? privacyRadio.value : 'private';
+
+      if (!name) {
+        alert('Please enter a workspace name');
+        return;
+      }
 
       const payload = {
         name,
@@ -435,22 +478,28 @@ class WorkspacesManager {
   async loadWorkspaceAndOpenSettings(workspaceId) {
     try {
       const ws = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}`);
-      // Populate fields
-      document.getElementById('ws-settings-name').value = ws.name || '';
-      document.getElementById('ws-settings-description').value = ws.description || '';
+      
+      // Populate fields (support both ID conventions)
+      const nameInput = document.getElementById('app-ws-name') || document.getElementById('ws-settings-name');
+      const descInput = document.getElementById('app-ws-description') || document.getElementById('ws-settings-description');
+      
+      if (nameInput) nameInput.value = ws.name || '';
+      if (descInput) descInput.value = ws.description || '';
 
       // Render icon/color selectors with current selected
       this.renderSettingsIconColor(ws.icon, ws.color);
 
       // Set privacy
       const privacy = ws.privacy || 'private';
-      const radios = document.querySelectorAll('input[name="ws-settings-privacy"]');
+      const radios = document.querySelectorAll('input[name="ws-settings-privacy"], input[name="app-ws-privacy"]');
       radios.forEach(r => { r.checked = (r.value === privacy); });
 
       // Open modal
-      const modal = document.getElementById('workspace-settings-modal');
-      modal.classList.add('show');
-      document.body.classList.add('modal-open');
+      const modal = document.getElementById('app-workspace-settings-modal') || document.getElementById('workspace-settings-modal');
+      if (modal) {
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+      }
     } catch (e) {
       console.error('Failed to load workspace for settings', e);
       alert('Failed to load workspace settings');
@@ -460,8 +509,11 @@ class WorkspacesManager {
   renderSettingsIconColor(selectedIcon, selectedColor) {
     const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
     const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
-    const iconSel = document.getElementById('ws-settings-icon-selector');
-    const colorSel = document.getElementById('ws-settings-color-selector');
+    const iconSel = document.getElementById('app-ws-icon-selector') || document.getElementById('ws-settings-icon-selector');
+    const colorSel = document.getElementById('app-ws-color-selector') || document.getElementById('ws-settings-color-selector');
+    
+    if (!iconSel || !colorSel) return;
+    
     iconSel.innerHTML = icons.map(ic => `<button type="button" class="icon-option ${ic===selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`).join('');
     colorSel.innerHTML = colors.map(c => `<button type="button" class="color-option ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`).join('');
 
@@ -481,11 +533,13 @@ class WorkspacesManager {
 
   async saveWorkspaceSettings() {
     if (!this.editingWorkspaceId) return;
-    const name = document.getElementById('ws-settings-name').value.trim();
-    const description = document.getElementById('ws-settings-description').value.trim();
-    const iconBtn = document.querySelector('#ws-settings-icon-selector .icon-option.selected');
-    const colorBtn = document.querySelector('#ws-settings-color-selector .color-option.selected');
-    const privacy = document.querySelector('input[name="ws-settings-privacy"]:checked')?.value;
+    const nameInput = document.getElementById('app-ws-name') || document.getElementById('ws-settings-name');
+    const descInput = document.getElementById('app-ws-description') || document.getElementById('ws-settings-description');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const description = descInput ? descInput.value.trim() : '';
+    const iconBtn = document.querySelector('#app-ws-icon-selector .icon-option.selected, #ws-settings-icon-selector .icon-option.selected');
+    const colorBtn = document.querySelector('#app-ws-color-selector .color-option.selected, #ws-settings-color-selector .color-option.selected');
+    const privacy = document.querySelector('input[name="app-ws-privacy"]:checked, input[name="ws-settings-privacy"]:checked')?.value;
 
     const payload = {
       name: name || undefined,
@@ -506,9 +560,11 @@ class WorkspacesManager {
   }
 
   closeSettingsModal() {
-    const modal = document.getElementById('workspace-settings-modal');
-    modal.classList.remove('show');
-    document.body.classList.remove('modal-open');
+    const modal = document.getElementById('app-workspace-settings-modal') || document.getElementById('workspace-settings-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
     this.editingWorkspaceId = null;
   }
 
@@ -801,7 +857,8 @@ class WorkspacesManager {
     listEl.innerHTML = '<div class="detail-loading">Loading documents...</div>';
 
     try {
-      const documents = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
+      const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
+      const documents = Array.isArray(response) ? response : (response.documents || []);
 
       if (!documents || documents.length === 0) {
         listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">📄</div><p>No documents yet</p><p style="font-size: 0.875rem; color: #6b7280;">Click "Add Documents" to get started</p></div>';
