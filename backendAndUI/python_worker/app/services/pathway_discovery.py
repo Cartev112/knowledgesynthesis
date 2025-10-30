@@ -42,39 +42,47 @@ def find_shortest_path(
     """
     status_filter = "AND r.status = 'verified'" if verified_only else ""
     
-    # Using Neo4j's shortestPath algorithm
     cypher = f"""
     MATCH (source:Entity), (target:Entity)
     WHERE toLower(source.name) CONTAINS toLower($source_name)
       AND toLower(target.name) CONTAINS toLower($target_name)
     
-    // Find shortest path
     MATCH path = shortestPath((source)-[*1..{max_hops}]->(target))
     WHERE all(r IN relationships(path) WHERE $verified_only = false OR r.status = 'verified')
     
-    // Extract nodes and relationships from path
-    WITH path, source, target, 
-         [n IN nodes(path) | {{
-           id: coalesce(n.id, n.name, elementId(n)),
-           name: n.name,
-           type: n.type,
-           significance: n.significance
-         }}] AS path_nodes,
+    WITH path, source, target, length(path) AS path_length,
          [r IN relationships(path) | {{
-           id: elementId(r),
-           source: coalesce(startNode(r).id, startNode(r).name, elementId(startNode(r))),
-           target: coalesce(endNode(r).id, endNode(r).name, elementId(endNode(r))),
-           relation: type(r),
-           confidence: r.confidence,
-           significance: r.significance,
-           status: r.status,
-           polarity: coalesce(r.polarity, 'positive')
-         }}] AS path_rels
+            id: elementId(r),
+            source: coalesce(startNode(r).id, startNode(r).name, elementId(startNode(r))),
+            target: coalesce(endNode(r).id, endNode(r).name, elementId(endNode(r))),
+            relation: type(r),
+            confidence: r.confidence,
+            significance: r.significance,
+            status: r.status,
+            polarity: coalesce(r.polarity, 'positive')
+         }}] AS path_rels,
+         CASE WHEN size(nodes(path)) = 0 THEN [] ELSE range(0, size(nodes(path)) - 1) END AS idxs
     
-    RETURN 
+    UNWIND idxs AS idx
+    WITH path, source, target, path_length, path_rels, idx, nodes(path)[idx] AS node
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    WITH source, target, path_length, path_rels, idx, node, collect(DISTINCT type.name) AS type_names
+    WITH source, target, path_length, path_rels,
+         collect({{
+            idx: idx,
+            id: coalesce(node.id, node.name, elementId(node)),
+            name: node.name,
+            types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+            type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
+            significance: node.significance
+         }}) AS nodes_with_idx
+    WITH source, target, path_length, path_rels,
+         [n IN nodes_with_idx ORDER BY n.idx | n{{.id, .name, .types, .type, .significance}}] AS path_nodes
+    
+    RETURN
       source.name AS source,
       target.name AS target,
-      length(path) AS path_length,
+      path_length,
       path_nodes,
       path_rels
     ORDER BY path_length ASC
@@ -143,32 +151,42 @@ def find_all_paths(
     WHERE toLower(source.name) CONTAINS toLower($source_name)
       AND toLower(target.name) CONTAINS toLower($target_name)
     
-    // Find all simple paths (no repeated nodes)
     MATCH path = allShortestPaths((source)-[*1..{max_hops}]->(target))
     WHERE all(r IN relationships(path) WHERE $verified_only = false OR r.status = 'verified')
     
-    WITH path, source, target,
-         [n IN nodes(path) | {{
-           id: coalesce(n.id, n.name, elementId(n)),
-           name: n.name,
-           type: n.type,
-           significance: n.significance
-         }}] AS path_nodes,
+    WITH path, source, target, length(path) AS path_length,
          [r IN relationships(path) | {{
-           id: elementId(r),
-           source: coalesce(startNode(r).id, startNode(r).name, elementId(startNode(r))),
-           target: coalesce(endNode(r).id, endNode(r).name, elementId(endNode(r))),
-           relation: type(r),
-           confidence: r.confidence,
-           significance: r.significance,
-           status: r.status,
-           polarity: coalesce(r.polarity, 'positive')
-         }}] AS path_rels
+            id: elementId(r),
+            source: coalesce(startNode(r).id, startNode(r).name, elementId(startNode(r))),
+            target: coalesce(endNode(r).id, endNode(r).name, elementId(endNode(r))),
+            relation: type(r),
+            confidence: r.confidence,
+            significance: r.significance,
+            status: r.status,
+            polarity: coalesce(r.polarity, 'positive')
+         }}] AS path_rels,
+         CASE WHEN size(nodes(path)) = 0 THEN [] ELSE range(0, size(nodes(path)) - 1) END AS idxs
+    
+    UNWIND idxs AS idx
+    WITH path, source, target, path_length, path_rels, idx, nodes(path)[idx] AS node
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    WITH source, target, path_length, path_rels, idx, node, collect(DISTINCT type.name) AS type_names
+    WITH source, target, path_length, path_rels,
+         collect({{
+            idx: idx,
+            id: coalesce(node.id, node.name, elementId(node)),
+            name: node.name,
+            types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+            type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
+            significance: node.significance
+         }}) AS nodes_with_idx
+    WITH source, target, path_length, path_rels,
+         [n IN nodes_with_idx ORDER BY n.idx | n{{.id, .name, .types, .type, .significance}}] AS path_nodes
     
     RETURN 
       source.name AS source,
       target.name AS target,
-      length(path) AS path_length,
+      path_length,
       path_nodes,
       path_rels
     ORDER BY path_length ASC
@@ -253,13 +271,17 @@ def find_connecting_concepts(
     LIMIT 20
     
     OPTIONAL MATCH (connector)-[:EXTRACTED_FROM]->(doc:Document)
+    WITH connector, total_hops, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id)}) AS sources
+    OPTIONAL MATCH (connector)-[:IS_A]->(type:Type)
+    WITH connector, total_hops, sources, collect(DISTINCT type.name) AS type_names
     
     RETURN {{
       id: coalesce(connector.id, connector.name, elementId(connector)),
       name: connector.name,
-      type: connector.type,
+      types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+      type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
       significance: connector.significance,
-      sources: collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id)}}),
+      sources: sources,
       hops: total_hops
     }} AS connector
     ORDER BY total_hops ASC
@@ -329,6 +351,8 @@ def explore_multi_hop(
     OPTIONAL MATCH (entity)-[:EXTRACTED_FROM]->(doc:Document)
     
     WITH center, hop_distance, entity, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id)}}) AS sources
+    OPTIONAL MATCH (entity)-[:IS_A]->(type:Type)
+    WITH center, hop_distance, entity, sources, collect(DISTINCT type.name) AS type_names
     
     RETURN 
       center.name AS center_concept,
@@ -336,7 +360,8 @@ def explore_multi_hop(
       collect({{
         id: coalesce(entity.id, entity.name, elementId(entity)),
         name: entity.name,
-        type: entity.type,
+        types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+        type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
         significance: entity.significance,
         sources: sources
       }}) AS entities
@@ -438,13 +463,17 @@ def pattern_query(
         # Build node patterns
         n1_pattern = "n1:Entity"
         if node1_type:
-            n1_pattern = f"n1:Entity {{type: $node1_type}}"
             params["node1_type"] = node1_type
-        
+            where_clauses.append(
+                "(EXISTS { (n1)-[:IS_A]->(:Type {name: $node1_type}) } OR ($node1_type = 'Concept' AND NOT EXISTS { (n1)-[:IS_A]->(:Type) }))"
+            )
+    
         n2_pattern = "n2:Entity"
         if node2_type:
-            n2_pattern = f"n2:Entity {{type: $node2_type}}"
             params["node2_type"] = node2_type
+            where_clauses.append(
+                "(EXISTS { (n2)-[:IS_A]->(:Type {name: $node2_type}) } OR ($node2_type = 'Concept' AND NOT EXISTS { (n2)-[:IS_A]->(:Type) }))"
+            )
         
         # Build relationship pattern
         if rel_type:
@@ -461,13 +490,25 @@ def pattern_query(
         MATCH ({n1_pattern}){rel_pattern}({n2_pattern})
         {where_clause}
         
-        RETURN {{
-          node1: {{id: coalesce(n1.id, n1.name, elementId(n1)), name: n1.name, type: n1.type}},
-          relationship: {{type: type(r), confidence: r.confidence, status: r.status}},
-          node2: {{id: coalesce(n2.id, n2.name, elementId(n2)), name: n2.name, type: n2.type}}
-        }} AS match
-        LIMIT $limit
-        """
+          WITH n1, n2, r
+          CALL {{
+            WITH n1
+            OPTIONAL MATCH (n1)-[:IS_A]->(t1:Type)
+            RETURN CASE WHEN count(t1) = 0 THEN ['Concept'] ELSE collect(DISTINCT t1.name) END AS node1_types
+          }}
+          CALL {{
+            WITH n2
+            OPTIONAL MATCH (n2)-[:IS_A]->(t2:Type)
+            RETURN CASE WHEN count(t2) = 0 THEN ['Concept'] ELSE collect(DISTINCT t2.name) END AS node2_types
+          }}
+          
+          RETURN {{
+            node1: {{id: coalesce(n1.id, n1.name, elementId(n1)), name: n1.name, types: node1_types, type: head(node1_types)}},
+            relationship: {{type: type(r), confidence: r.confidence, status: r.status}},
+            node2: {{id: coalesce(n2.id, n2.name, elementId(n2)), name: n2.name, types: node2_types, type: head(node2_types)}}
+          }} AS match
+          LIMIT $limit
+          """
         
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(cypher, **params)

@@ -54,7 +54,12 @@ export class API {
   }
   
   static async getDocuments() {
-    return this.get('/query/documents');
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId');
+    let url = '/query/documents';
+    if (workspaceId) {
+      url += `?workspace_id=${encodeURIComponent(workspaceId)}`;
+    }
+    return this.get(url);
   }
   
   static async getAllGraph(limit = 1000, page = 1) {

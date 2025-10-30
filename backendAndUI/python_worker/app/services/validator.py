@@ -81,12 +81,15 @@ def sanitize_triplet(triplet: Triplet) -> Triplet:
     """
     Clean and normalize a triplet's fields.
     """
+    subject_types = [t.strip() for t in (triplet.subject_types or []) if isinstance(t, str) and t.strip()]
+    object_types = [t.strip() for t in (triplet.object_types or []) if isinstance(t, str) and t.strip()]
+
     return Triplet(
         subject=normalize_entity_name(triplet.subject),
         predicate=normalize_predicate(triplet.predicate),
         object=normalize_entity_name(triplet.object),
-        subject_type=triplet.subject_type.strip() if triplet.subject_type else None,
-        object_type=triplet.object_type.strip() if triplet.object_type else None,
+        subject_types=subject_types,
+        object_types=object_types,
         source_document_id=triplet.source_document_id,
         extracted_by=triplet.extracted_by,
         confidence_score=triplet.confidence_score,

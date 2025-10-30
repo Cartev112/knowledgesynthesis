@@ -61,59 +61,115 @@ export class IndexPanelManager {
     
     const nodes = state.cy.nodes();
     const edges = state.cy.edges();
+    const workspaceId = sessionStorage.getItem('currentWorkspaceId');
     
     // Store data for filtering
-    state.indexData.nodes = nodes.map(n => ({
-      id: n.id(),
-      label: n.data().label,
-      type: n.data().type || 'Entity',
-      sources: n.data().sources || []
-    }));
-    
-    state.indexData.edges = edges.map(e => {
-      const data = e.data();
-      const sourceNode = state.cy.getElementById(data.source);
-      const targetNode = state.cy.getElementById(data.target);
-      const sourceLabel = sourceNode && sourceNode.length ? (sourceNode.data().label || data.source) : data.source;
-      const targetLabel = targetNode && targetNode.length ? (targetNode.data().label || data.target) : data.target;
-
-      return {
-        id: e.id(),
-        source: sourceLabel,
-        target: targetLabel,
-        relation: data.relation || 'relates to',
-        sources: data.sources || []
-      };
-    });
+    // We'll populate after fetching documents so workspace filtering can apply
     
     // Fetch documents
     try {
       const data = await API.getDocuments();
       state.indexData.documents = data.documents || [];
-      
-      // Initialize all documents as active by default
-      if (state.activeDocuments.size === 0) {
-        state.indexData.documents.forEach(doc => {
-          state.activeDocuments.add(doc.id);
-        });
-      }
     } catch (e) {
       console.error('Failed to load documents for index:', e);
       state.indexData.documents = [];
     }
+
+    // Build lookup of workspace documents; empty set implies global view
+    const workspaceDocIds = new Set((state.indexData.documents || []).map(doc => doc.id));
+    const includeAllDocs = workspaceDocIds.size === 0;
+
+    // Reset active documents to the current workspace set
+    state.activeDocuments = new Set(workspaceDocIds);
+    if (includeAllDocs && state.indexData.documents.length === 0) {
+      // Global view without explicit workspace: include all doc ids found on nodes/edges as we encounter them
+      state.activeDocuments = new Set();
+    }
+
+    const belongsToWorkspace = (sources = []) => {
+      if (includeAllDocs) return true;
+      return sources.some((source) => {
+        if (!source) return false;
+        const sourceId = typeof source === 'object' ? source.id : source;
+        return workspaceDocIds.has(sourceId);
+      });
+    };
+
+    state.indexData.nodes = nodes.reduce((acc, n) => {
+      const sources = n.data().sources || [];
+      if (!belongsToWorkspace(sources)) return acc;
+
+      const entry = {
+        id: n.id(),
+        label: n.data().label,
+        type: n.data().type || 'Entity',
+        sources
+      };
+      acc.push(entry);
+      if (includeAllDocs) {
+        sources.forEach((src) => {
+          const srcId = typeof src === 'object' ? src.id : src;
+          if (srcId) {
+            state.activeDocuments.add(srcId);
+          }
+        });
+      }
+      return acc;
+    }, []);
+    
+    const allowedNodeIds = new Set(state.indexData.nodes.map(n => n.id));
+    
+    state.indexData.edges = edges.reduce((acc, e) => {
+      const data = e.data();
+      const sources = data.sources || [];
+      if (!belongsToWorkspace(sources)) return acc;
+
+      if (!allowedNodeIds.has(data.source) || !allowedNodeIds.has(data.target)) {
+        return acc;
+      }
+
+      const sourceNode = state.cy.getElementById(data.source);
+      const targetNode = state.cy.getElementById(data.target);
+      const sourceLabel = sourceNode && sourceNode.length ? (sourceNode.data().label || data.source) : data.source;
+      const targetLabel = targetNode && targetNode.length ? (targetNode.data().label || data.target) : data.target;
+
+      acc.push({
+        id: e.id(),
+        source: sourceLabel,
+        target: targetLabel,
+        relation: data.relation || 'relates to',
+        sources
+      });
+
+      if (includeAllDocs) {
+        sources.forEach((src) => {
+          const srcId = typeof src === 'object' ? src.id : src;
+          if (srcId) {
+            state.activeDocuments.add(srcId);
+          }
+        });
+      }
+
+      return acc;
+    }, []);
+    
+    // Ensure active document set only contains docs present in current workspace view
+    if (!includeAllDocs) {
+      state.activeDocuments = new Set(workspaceDocIds);
+    }
     
     // Update counts
     document.getElementById('index-count').textContent = 
-      `${nodes.length} concepts, ${edges.length} relationships, ${state.indexData.documents.length} documents`;
-    document.getElementById('concepts-count').textContent = nodes.length;
-    document.getElementById('relationships-count').textContent = edges.length;
+      `${state.indexData.nodes.length} concepts, ${state.indexData.edges.length} relationships, ${state.indexData.documents.length} documents`;
+    document.getElementById('concepts-count').textContent = state.indexData.nodes.length;
+    document.getElementById('relationships-count').textContent = state.indexData.edges.length;
     document.getElementById('documents-count').textContent = state.indexData.documents.length;
     
     // Populate type filter dropdown
     const typeFilter = document.getElementById('index-type-filter');
     const types = new Set();
-    nodes.forEach(n => types.add(n.data().type || 'Entity'));
-    edges.forEach(e => types.add(e.data().relation || 'relates to'));
+    state.indexData.nodes.forEach(n => types.add(n.type || 'Entity'));
+    state.indexData.edges.forEach(e => types.add(e.relation || 'relates to'));
     
     typeFilter.innerHTML = '<option value="">All Types</option>' + 
       Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');

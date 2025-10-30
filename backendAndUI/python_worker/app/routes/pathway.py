@@ -254,8 +254,9 @@ def get_graph_schema():
         # Query node types
         node_types_cypher = """
         MATCH (n:Entity)
-        WHERE n.type IS NOT NULL AND n.type <> ''
-        RETURN DISTINCT n.type AS node_type
+        OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+        WITH CASE WHEN type IS NULL THEN 'Concept' ELSE type.name END AS node_type
+        RETURN DISTINCT node_type
         ORDER BY node_type
         """
         

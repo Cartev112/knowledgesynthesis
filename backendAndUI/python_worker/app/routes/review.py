@@ -71,16 +71,28 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         AND (coalesce(s.id, s.name, elementId(s)) IN $node_ids 
              OR coalesce(o.id, o.name, elementId(o)) IN $node_ids)
         {workspace_filter}
-        WITH s, r, o, type(r) as rel_type
+        WITH s, r, o, type(r) AS rel_type
         OPTIONAL MATCH (d:Document) WHERE d.document_id IN r.sources
         WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
+        CALL {{
+            WITH s
+            OPTIONAL MATCH (s)-[:IS_A]->(stype:Type)
+            RETURN CASE WHEN count(stype) = 0 THEN ['Concept'] ELSE collect(DISTINCT stype.name) END AS subject_types
+        }}
+        CALL {{
+            WITH o
+            OPTIONAL MATCH (o)-[:IS_A]->(otype:Type)
+            RETURN CASE WHEN count(otype) = 0 THEN ['Concept'] ELSE collect(DISTINCT otype.name) END AS object_types
+        }}
         RETURN 
             elementId(r) AS relationship_id,
             s.name AS subject,
-            s.type AS subject_type,
+            subject_types AS subject_types,
+            head(subject_types) AS subject_type,
             rel_type AS predicate,
             o.name AS object,
-            o.type AS object_type,
+            object_types AS object_types,
+            head(object_types) AS object_type,
             coalesce(r.confidence, 0.0) AS confidence,
             coalesce(r.original_text, '') AS original_text,
             coalesce(r.sources, []) AS sources,
@@ -111,13 +123,25 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         WITH s, r, o, type(r) as rel_type
         OPTIONAL MATCH (d:Document) WHERE d.document_id IN r.sources
         WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
+        CALL {{
+            WITH s
+            OPTIONAL MATCH (s)-[:IS_A]->(stype:Type)
+            RETURN CASE WHEN count(stype) = 0 THEN ['Concept'] ELSE collect(DISTINCT stype.name) END AS subject_types
+        }}
+        CALL {{
+            WITH o
+            OPTIONAL MATCH (o)-[:IS_A]->(otype:Type)
+            RETURN CASE WHEN count(otype) = 0 THEN ['Concept'] ELSE collect(DISTINCT otype.name) END AS object_types
+        }}
         RETURN 
             elementId(r) AS relationship_id,
             s.name AS subject,
-            s.type AS subject_type,
+            subject_types AS subject_types,
+            head(subject_types) AS subject_type,
             rel_type AS predicate,
             o.name AS object,
-            o.type AS object_type,
+            object_types AS object_types,
+            head(object_types) AS object_type,
             coalesce(r.confidence, 0.0) AS confidence,
             coalesce(r.original_text, '') AS original_text,
             coalesce(r.sources, []) AS sources,
@@ -141,9 +165,11 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
                     "relationship_id": record["relationship_id"],
                     "subject": record["subject"],
                     "subject_type": record["subject_type"],
+                    "subject_types": record.get("subject_types") or [record["subject_type"]] if record["subject_type"] else [],
                     "predicate": record["predicate"],
                     "object": record["object"],
                     "object_type": record["object_type"],
+                    "object_types": record.get("object_types") or [record["object_type"]] if record["object_type"] else [],
                     "confidence": record["confidence"],
                     "original_text": record["original_text"],
                     "sources": record["sources"],

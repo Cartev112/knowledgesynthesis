@@ -21,26 +21,25 @@ def consolidate_identical_entities() -> Dict[str, Any]:
         Dict containing consolidation statistics
     """
     consolidation_cypher = """
-    // Find entities with identical names and types that should be merged
+    // Find entities with identical names and identical type sets
     MATCH (n:Entity)
-    WITH n.name AS entity_name, n.type AS entity_type, collect(n) AS nodes
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    WITH n, collect(DISTINCT type.name) AS type_names
+    WITH n,
+         n.name AS entity_name,
+         apoc.coll.sort(CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END) AS entity_types
+    WITH entity_name, entity_types, collect(n) AS nodes
     WHERE size(nodes) > 1
     
-    // For each group of identical entities, merge them using APOC
     CALL apoc.refactor.mergeNodes(nodes, {
         mergeRels: true,
         properties: {
             name: 'discard',
-            type: 'discard',
-            // Keep the highest significance score
             significance: 'combine',
-            // Keep the most recent creation date
             created_at: 'combine',
-            // Merge arrays of source documents
             sources: 'combine'
         },
         mergeRelsConfig: {
-            // Merge relationship properties
             sources: 'combine',
             confidence: 'combine',
             significance: 'combine'
@@ -48,7 +47,7 @@ def consolidate_identical_entities() -> Dict[str, Any]:
     }) YIELD node
     
     RETURN count(node) AS merged_nodes, 
-           collect(entity_name) AS entity_names
+           collect({name: entity_name, types: entity_types}) AS entity_groups
     """
     
     try:
@@ -58,15 +57,16 @@ def consolidate_identical_entities() -> Dict[str, Any]:
             
             if record:
                 merged_count = record["merged_nodes"] or 0
-                entity_names = record["entity_names"] or []
+                entity_groups = record["entity_groups"] or []
                 
                 logger.info(f"APOC consolidation completed: {merged_count} entity groups merged")
-                logger.info(f"Merged entity names: {entity_names}")
+                logger.info(f"Merged entity groups: {entity_groups}")
                 
                 return {
                     "success": True,
                     "merged_entity_groups": merged_count,
-                    "merged_entity_names": entity_names,
+                    "merged_entity_names": [group.get("name") for group in entity_groups],
+                    "merged_entity_details": entity_groups,
                     "message": f"Successfully consolidated {merged_count} groups of identical entities"
                 }
             else:
@@ -75,6 +75,7 @@ def consolidate_identical_entities() -> Dict[str, Any]:
                     "success": True,
                     "merged_entity_groups": 0,
                     "merged_entity_names": [],
+                    "merged_entity_details": [],
                     "message": "No duplicate entities found"
                 }
                 
@@ -96,17 +97,25 @@ def find_duplicate_entities() -> List[Dict[str, Any]]:
     """
     find_duplicates_cypher = """
     MATCH (n:Entity)
-    WITH n.name AS entity_name, n.type AS entity_type, collect({
-        id: elementId(n),
-        name: n.name,
-        type: n.type,
-        significance: n.significance,
-        created_at: n.created_at,
-        sources: [doc IN [(n)-[:EXTRACTED_FROM]->(doc:Document) | doc.document_id]
-    }) AS entities
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    WITH n, collect(DISTINCT type.name) AS type_names
+    WITH n,
+         CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
+    OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document)
+    WITH n, types, collect(DISTINCT doc.document_id) AS doc_ids
+    WITH n.name AS entity_name,
+         apoc.coll.sort(types) AS entity_types,
+         collect({
+            id: elementId(n),
+            name: n.name,
+            types: types,
+            significance: n.significance,
+            created_at: n.created_at,
+            sources: doc_ids
+         }) AS entities
     WHERE size(entities) > 1
-    RETURN entity_name, entity_type, entities
-    ORDER BY entity_name, entity_type
+    RETURN entity_name, entity_types, entities
+    ORDER BY entity_name, entity_types
     """
     
     try:
@@ -117,7 +126,7 @@ def find_duplicate_entities() -> List[Dict[str, Any]]:
             for record in result:
                 duplicates.append({
                     "entity_name": record["entity_name"],
-                    "entity_type": record["entity_type"],
+                    "entity_types": record["entity_types"],
                     "entities": record["entities"],
                     "duplicate_count": len(record["entities"])
                 })
@@ -156,7 +165,6 @@ def merge_specific_entities(entity_ids: List[str]) -> Dict[str, Any]:
         mergeRels: true,
         properties: {
             name: 'discard',
-            type: 'discard',
             significance: 'combine',
             created_at: 'combine'
         },
@@ -166,8 +174,9 @@ def merge_specific_entities(entity_ids: List[str]) -> Dict[str, Any]:
             significance: 'combine'
         }
     }) YIELD node
-    
-    RETURN node, elementId(node) AS merged_id
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    WITH node, collect(DISTINCT type.name) AS type_names
+    RETURN node, elementId(node) AS merged_id, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS merged_types
     """
     
     try:
@@ -178,14 +187,16 @@ def merge_specific_entities(entity_ids: List[str]) -> Dict[str, Any]:
             if record:
                 merged_node = record["node"]
                 merged_id = record["merged_id"]
+                merged_types = record["merged_types"] or ["Concept"]
                 
-                logger.info(f"Successfully merged entities into: {merged_node['name']} ({merged_id})")
+                logger.info(f"Successfully merged entities into: {merged_node['name']} ({merged_id}) with types {merged_types}")
                 
                 return {
                     "success": True,
                     "merged_entity_id": merged_id,
                     "merged_entity_name": merged_node["name"],
-                    "merged_entity_type": merged_node["type"],
+                    "merged_entity_type": merged_types[0],
+                    "merged_entity_types": merged_types,
                     "message": f"Successfully merged {len(entity_ids)} entities into {merged_node['name']}"
                 }
             else:
@@ -216,13 +227,20 @@ def get_consolidation_stats() -> Dict[str, Any]:
     MATCH (n:Entity)
     WITH count(n) AS total_entities
     
-    // Duplicate groups
-    MATCH (n:Entity)
-    WITH total_entities, n.name AS entity_name, n.type AS entity_type, collect(n) AS nodes
-    WHERE size(nodes) > 1
-    WITH total_entities, count(*) AS duplicate_groups, sum(size(nodes)) AS entities_in_duplicates
+    CALL {
+        MATCH (m:Entity)
+        OPTIONAL MATCH (m)-[:IS_A]->(type:Type)
+        WITH m.name AS entity_name,
+             apoc.coll.sort(CASE WHEN count(type) = 0 THEN ['Concept'] ELSE collect(DISTINCT type.name) END) AS entity_types,
+             collect(m) AS nodes
+        WHERE size(nodes) > 1
+        RETURN count(*) AS duplicate_groups, sum(size(nodes)) AS entities_in_duplicates
+        UNION
+        RETURN 0 AS duplicate_groups, 0 AS entities_in_duplicates
+        ORDER BY duplicate_groups DESC, entities_in_duplicates DESC
+        LIMIT 1
+    }
     
-    // Total relationships
     MATCH ()-[r]->()
     WITH total_entities, duplicate_groups, entities_in_duplicates, count(r) AS total_relationships
     

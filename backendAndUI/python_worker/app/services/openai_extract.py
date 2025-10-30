@@ -18,12 +18,14 @@ def _create_prompt(max_triplets: int = 50) -> str:
         "\n\n"
         "Rules for extraction:\n"
         "1) Return ONLY a JSON object with a single field 'triplets' which is an array of objects.\n"
-        "2) Each triplet object MUST include: subject, predicate, object, original_text, subject_type, object_type.\n"
-        "3) CONCEPT TYPES: For subject_type and object_type, classify each concept based on its role in the text:\n"
+        "2) Each triplet object MUST include: subject, predicate, object, original_text, subject_types, object_types.\n"
+        "   - subject_types and object_types must each be an array of strings (no empty strings)\n"
+        "3) CONCEPT TYPES: For subject_types and object_types, classify each concept based on its role in the text:\n"
         "   - Use descriptive, domain-appropriate type names (e.g., 'Algorithm', 'Theory', 'Metric', 'Framework', 'Process', 'Entity', 'Property', 'Outcome')\n"
         "   - Types should reflect the FUNCTION or CATEGORY of the concept in context, not predetermined domain labels\n"
         "   - Be consistent with type names across similar concepts\n"
-        "   - If uncertain about the type, use 'Concept' as a general fallback\n"
+        "   - If uncertain about a type, include 'Concept' in the list\n"
+        "   - Include multiple types when the text clearly indicates different facets (e.g., both 'Gene' and 'Protein')\n"
         "4) SIGNIFICANCE SCORES (REQUIRED): For each triplet, provide:\n"
         "   - relationship_significance: Integer 1-5, where 5=critical finding/core result, 3=important supporting detail, 1=minor mention\n"
         "   - subject_significance: Integer 1-5, how important is the subject concept (5=central concept, 1=peripheral)\n"
@@ -59,8 +61,8 @@ def _fake_extract(text: str) -> TripletExtractionResult:
             subject="Machine Learning",
             predicate="improves",
             object="Prediction Accuracy",
-            subject_type="Method",
-            object_type="Metric",
+            subject_types=["Method"],
+            object_types=["Metric"],
             original_text="Machine learning techniques significantly improve prediction accuracy in complex datasets.",
             relationship_significance=5,
             subject_significance=4,
@@ -71,8 +73,8 @@ def _fake_extract(text: str) -> TripletExtractionResult:
             subject="Deep Learning",
             predicate="requires",
             object="Large Training Data",
-            subject_type="Method",
-            object_type="Resource",
+            subject_types=["Method"],
+            object_types=["Resource"],
             original_text="Deep learning models require large amounts of training data to achieve optimal performance.",
             relationship_significance=4,
             subject_significance=4,
@@ -83,8 +85,8 @@ def _fake_extract(text: str) -> TripletExtractionResult:
             subject="Simple Linear Model",
             predicate="does_not_capture",
             object="Non-linear Patterns",
-            subject_type="Model",
-            object_type="Pattern",
+            subject_types=["Model"],
+            object_types=["Pattern"],
             original_text="Simple linear models fail to capture complex non-linear patterns in the data.",
             relationship_significance=3,
             subject_significance=3,

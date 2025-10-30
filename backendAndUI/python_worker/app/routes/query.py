@@ -21,13 +21,19 @@ def autocomplete(
     """
     cypher_fulltext_only = """
     CALL db.index.fulltext.queryNodes('entity_search', $fulltext) YIELD node, score
-    RETURN {id: coalesce(node.id, node.name, elementId(node)), label: coalesce(node.label, node.name, node.id), type: coalesce(node.type, head(labels(node))), score: score} AS item
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    WITH node, score, collect(DISTINCT type.name) AS type_names
+    WITH node, score, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
+    RETURN {id: coalesce(node.id, node.name, elementId(node)), label: coalesce(node.label, node.name, node.id), types: types, type: types[0], score: score} AS item
     ORDER BY score DESC SKIP $skip LIMIT $limit
     """
     cypher_contains_fallback = """
     MATCH (node:Entity)
     WHERE toLower(node.name) CONTAINS toLower($q)
-    RETURN {id: coalesce(node.id, node.name, elementId(node)), label: coalesce(node.label, node.name, node.id), type: coalesce(node.type, head(labels(node))), score: 0.0} AS item
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    WITH node, collect(DISTINCT type.name) AS type_names
+    WITH node, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
+    RETURN {id: coalesce(node.id, node.name, elementId(node)), label: coalesce(node.label, node.name, node.id), types: types, type: types[0], score: 0.0} AS item
     SKIP $skip LIMIT $limit
     """
     skip = (page_number - 1) * limit
@@ -122,7 +128,10 @@ def get_all(
         f"{workspace_filter}"
         "OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), type: coalesce(n.type, head(labels(n))), significance: coalesce(n.significance, null), sources: source_docs} AS node "
+        "OPTIONAL MATCH (n)-[:IS_A]->(type:Type) "
+        "WITH n, source_docs, collect(DISTINCT type.name) AS type_names "
+        "WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
+        "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), types: types, type: types[0], significance: coalesce(n.significance, null), sources: source_docs} AS node "
         "SKIP $skip LIMIT $limit"
     )
     
@@ -225,7 +234,10 @@ def graph_by_documents(
         "WITH DISTINCT e "
         "OPTIONAL MATCH (e)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH e, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "RETURN {id: coalesce(e.id, e.name, elementId(e)), label: coalesce(e.label, e.name, e.id), strength: coalesce(e.strength, 0), type: coalesce(e.type, head(labels(e))), significance: coalesce(e.significance, null), sources: source_docs} AS node "
+        "OPTIONAL MATCH (e)-[:IS_A]->(type:Type) "
+        "WITH e, source_docs, collect(DISTINCT type.name) AS type_names "
+        "WITH e, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
+        "RETURN {id: coalesce(e.id, e.name, elementId(e)), label: coalesce(e.label, e.name, e.id), strength: coalesce(e.strength, 0), types: types, type: types[0], significance: coalesce(e.significance, null), sources: source_docs} AS node "
         "SKIP $skip LIMIT $limit"
     )
     rels_cypher = (
@@ -281,14 +293,17 @@ def search_concept(
     WITH DISTINCT n, rels
     OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document)
     WITH n, rels, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs
-    WITH collect(DISTINCT {
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    WITH n, rels, source_docs, collect(DISTINCT type.name) AS type_names
+    WITH rels, collect(DISTINCT {
         id: coalesce(n.id, n.name, elementId(n)),
         label: n.name,
-        type: n.type,
+        types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+        type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
         strength: coalesce(n.strength, 0),
         significance: coalesce(n.significance, null),
         sources: source_docs
-    }) AS nodes, rels
+    }) AS nodes
     
     // Handle case where rels might be empty
     WITH nodes, 
@@ -393,7 +408,10 @@ def get_viewport_graph(
         f"WHERE 1=1 {spatial_filter} {center_filter} "
         f"OPTIONAL MATCH (e)-[:EXTRACTED_FROM]->(doc:Document) "
         f"WITH e, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}}) as source_docs "
-        f"RETURN {{id: coalesce(e.id, e.name, elementId(e)), label: coalesce(e.label, e.name, e.id), strength: coalesce(e.strength, 0), type: coalesce(e.type, head(labels(e))), significance: coalesce(e.significance, null), sources: source_docs, x: coalesce(e.x, 0), y: coalesce(e.y, 0)}} AS node "
+        f"OPTIONAL MATCH (e)-[:IS_A]->(type:Type) "
+        f"WITH e, source_docs, collect(DISTINCT type.name) AS type_names "
+        f"WITH e, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
+        f"RETURN {{id: coalesce(e.id, e.name, elementId(e)), label: coalesce(e.label, e.name, e.id), strength: coalesce(e.strength, 0), types: types, type: types[0], significance: coalesce(e.significance, null), sources: source_docs, x: coalesce(e.x, 0), y: coalesce(e.y, 0)}} AS node "
         f"LIMIT $limit"
     )
     
@@ -460,10 +478,13 @@ def get_node_neighborhood(
     WITH DISTINCT n, all_rels
     OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document)
     WITH n, all_rels, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}}) as source_docs
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    WITH n, all_rels, source_docs, collect(DISTINCT type.name) AS type_names
     WITH collect(DISTINCT {{
         id: coalesce(n.id, n.name, elementId(n)),
         label: coalesce(n.label, n.name, n.id),
-        type: coalesce(n.type, head(labels(n))),
+        types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+        type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
         strength: coalesce(n.strength, 0),
         significance: coalesce(n.significance, null),
         sources: source_docs,
@@ -522,13 +543,18 @@ def get_subgraph(request: dict):
     UNWIND nodes as n2
     OPTIONAL MATCH (n1)-[r]->(n2)
     WITH nodes, collect(DISTINCT r) as rels
+    UNWIND nodes AS n
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    WITH nodes, rels, n, collect(DISTINCT type.name) AS type_names
+    WITH nodes, rels, collect(DISTINCT {
+        id: coalesce(n.id, n.name, elementId(n)),
+        label: coalesce(n.label, n.name),
+        types: CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END,
+        type: CASE WHEN size(type_names) = 0 THEN 'Concept' ELSE head(type_names) END,
+        significance: n.significance
+    }) AS node_payload
     RETURN 
-        [n IN nodes | {
-            id: coalesce(n.id, n.name, elementId(n)),
-            label: coalesce(n.label, n.name),
-            type: coalesce(n.type, 'Concept'),
-            significance: n.significance
-        }] as nodes,
+        node_payload as nodes,
         [r IN rels WHERE r IS NOT NULL | {
             id: elementId(r),
             source: coalesce(startNode(r).id, startNode(r).name, elementId(startNode(r))),

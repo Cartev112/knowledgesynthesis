@@ -130,11 +130,23 @@ def search_with_graph_context(request: GraphContextRequest) -> Dict:
                 entity_query = """
                 MATCH (n:Entity)
                 WHERE coalesce(n.id, n.name, elementId(n)) IN $node_ids
-                RETURN n.name as name, n.type as type
+                OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+                WITH n, collect(DISTINCT type.name) AS type_names
+                RETURN n.name AS name,
+                       CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
                 LIMIT 50
                 """
                 entity_results = neo4j_client.execute_read(entity_query, {"node_ids": request.node_ids})
-                entities = [r["name"] for r in entity_results if r.get("name")]
+                entities = []
+                for r in entity_results:
+                    name = r.get("name")
+                    if not name:
+                        continue
+                    types = r.get("types") or []
+                    if types:
+                        entities.append(f"{name} ({', '.join(types)})")
+                    else:
+                        entities.append(name)
                 
                 # Get relationships between selected nodes
                 rel_query = """

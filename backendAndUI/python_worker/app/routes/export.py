@@ -94,8 +94,13 @@ def generate_graphml(nodes: List[Dict[str, Any]], edges: List[Dict[str, Any]]) -
         label = str(node.get('label', '')).replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
         graphml.append(f'      <data key="label">{label}</data>')
         
-        if node.get('type'):
-            node_type = str(node['type']).replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
+        node_type_value = node.get('type')
+        if not node_type_value:
+            types_list = node.get('types')
+            if isinstance(types_list, list) and types_list:
+                node_type_value = ", ".join(types_list)
+        if node_type_value:
+            node_type = str(node_type_value).replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
             graphml.append(f'      <data key="type">{node_type}</data>')
         
         if node.get('significance'):
@@ -156,12 +161,28 @@ def generate_review_csv(items: List[Dict[str, Any]]) -> str:
         documents = item.get('documents', [])
         doc_count = len(documents) if isinstance(documents, list) else 0
         
+        subject_type_value = item.get('subject_type')
+        if not subject_type_value:
+            subject_types = item.get('subject_types')
+            if isinstance(subject_types, list) and subject_types:
+                subject_type_value = "; ".join(subject_types)
+            else:
+                subject_type_value = ''
+        
+        object_type_value = item.get('object_type')
+        if not object_type_value:
+            object_types = item.get('object_types')
+            if isinstance(object_types, list) and object_types:
+                object_type_value = "; ".join(object_types)
+            else:
+                object_type_value = ''
+        
         writer.writerow({
             'subject': item.get('subject', ''),
-            'subject_type': item.get('subject_type', ''),
+            'subject_type': subject_type_value,
             'predicate': item.get('predicate', ''),
             'object': item.get('object', ''),
-            'object_type': item.get('object_type', ''),
+            'object_type': object_type_value,
             'status': item.get('status', 'unverified'),
             'confidence': item.get('confidence', ''),
             'original_text': item.get('original_text', ''),

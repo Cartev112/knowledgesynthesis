@@ -100,7 +100,11 @@ def upsert_entity_embeddings_for_document(document_id: str) -> int:
         result = session.run(
             """
             MATCH (e:Entity)-[:EXTRACTED_FROM]->(d:Document {document_id: $id})
-            RETURN coalesce(e.id, e.name, elementId(e)) AS eid, e.name AS name, coalesce(e.type, head(labels(e))) AS etype
+            OPTIONAL MATCH (e)-[:IS_A]->(type:Type)
+            WITH e, collect(DISTINCT type.name) AS type_names
+            RETURN coalesce(e.id, e.name, elementId(e)) AS eid,
+                   e.name AS name,
+                   CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
             """,
             id=document_id,
         )
@@ -109,7 +113,13 @@ def upsert_entity_embeddings_for_document(document_id: str) -> int:
     if not rows:
         return 0
 
-    texts = [f"{r['name']} ({r['etype']})" if r['etype'] else r['name'] for r in rows]
+    texts = []
+    for r in rows:
+        types = r.get("types") or []
+        if types:
+            texts.append(f"{r['name']} ({', '.join(types)})")
+        else:
+            texts.append(r["name"])
     vectors = _embed_texts(texts)
 
     # Write embeddings back in batches

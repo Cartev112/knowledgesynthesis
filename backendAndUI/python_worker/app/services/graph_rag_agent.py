@@ -24,7 +24,10 @@ def _embed_query(text: str) -> List[float]:
 def _vector_query_entities(qvec: List[float], k: int) -> List[dict]:
     cypher = (
         "CALL db.index.vector.queryNodes('entity_embedding_idx', $vec, $k) YIELD node, score\n"
-        "RETURN {id: coalesce(node.id, node.name, elementId(node)), name: coalesce(node.name, node.id), type: coalesce(node.type, head(labels(node))), score: score} AS item\n"
+        "OPTIONAL MATCH (node)-[:IS_A]->(type:Type)\n"
+        "WITH node, score, collect(DISTINCT type.name) AS type_names\n"
+        "WITH node, score, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types\n"
+        "RETURN {id: coalesce(node.id, node.name, elementId(node)), name: coalesce(node.name, node.id), types: types, type: types[0], score: score} AS item\n"
         "ORDER BY score DESC LIMIT $k"
     )
     with neo4j_client._driver.session(database=settings.neo4j_database) as session:
@@ -50,7 +53,11 @@ def _fetch_context_for_entities(entity_ids: List[str], per_entity_limit: int = 2
         "OPTIONAL MATCH (e)-[r]-(n:Entity)\n"
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources\n"
         "WITH e, r, n, collect(DISTINCT {id: doc.document_id, title: coalesce(doc.title, doc.document_id), page: r.page_number})[0..3] AS docs\n"
-        "RETURN coalesce(e.id, e.name, elementId(e)) AS eid, e.name AS ename, coalesce(e.type, head(labels(e))) AS etype,\n"
+        "OPTIONAL MATCH (e)-[:IS_A]->(type:Type)\n"
+        "WITH e, r, docs, collect(DISTINCT type.name) AS type_names\n"
+        "RETURN coalesce(e.id, e.name, elementId(e)) AS eid,\n"
+        "       e.name AS ename,\n"
+        "       CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types,\n"
         "       collect(DISTINCT {s: coalesce(startNode(r).name, ''), p: toLower(type(r)), o: coalesce(endNode(r).name, ''), text: r.original_text, docs: docs})[0..$lim] AS triples"
     )
     with neo4j_client._driver.session(database=settings.neo4j_database) as session:
@@ -59,8 +66,9 @@ def _fetch_context_for_entities(entity_ids: List[str], per_entity_limit: int = 2
     sources: List[dict] = []
     for row in data:
         ename = row["ename"]
-        etype = row["etype"]
-        lines.append(f"[ENTITY] {ename} ({etype})")
+        types = row.get("types") or []
+        type_label = ", ".join(types) if types else "Concept"
+        lines.append(f"[ENTITY] {ename} ({type_label})")
         for t in row["triples"]:
             s = t.get("s") or ""
             o = t.get("o") or ""

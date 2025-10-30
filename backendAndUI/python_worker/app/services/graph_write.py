@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 MERGE_TRIPLET_CYPHER = """
-MERGE (s:Entity {name: $s_name, type: $s_type})
+MERGE (s:Entity:Concept {name: $s_name})
 ON CREATE SET s.created_by = $user_id,
               s.created_by_first_name = $user_first_name,
               s.created_by_last_name = $user_last_name,
@@ -25,8 +25,13 @@ ON MATCH SET s.updated_at = datetime(),
                 THEN $s_significance 
                 ELSE coalesce(s.significance, $s_significance) 
              END
+WITH s
+FOREACH (stype IN $s_types |
+    MERGE (st:Type {name: stype})
+    MERGE (s)-[:IS_A]->(st)
+)
 
-MERGE (o:Entity {name: $o_name, type: $o_type})
+MERGE (o:Entity:Concept {name: $o_name})
 ON CREATE SET o.created_by = $user_id,
               o.created_by_first_name = $user_first_name,
               o.created_by_last_name = $user_last_name,
@@ -38,6 +43,11 @@ ON MATCH SET o.updated_at = datetime(),
                 THEN $o_significance 
                 ELSE coalesce(o.significance, $o_significance) 
              END
+WITH s, o
+FOREACH (otype IN $o_types |
+    MERGE (ot:Type {name: otype})
+    MERGE (o)-[:IS_A]->(ot)
+)
 MERGE (d:Document {document_id: $document_id})
 ON CREATE SET d.title = coalesce($document_title, d.title),
               d.created_by = $user_id,
@@ -96,9 +106,9 @@ def _write_single(tx, triplet: Triplet, document_id: str, document_title: Option
     cypher = MERGE_TRIPLET_CYPHER % predicate
     params = {
         "s_name": triplet.subject,
-        "s_type": triplet.subject_type or "Entity",
+        "s_types": triplet.subject_types,
         "o_name": triplet.object,
-        "o_type": triplet.object_type or "Entity",
+        "o_types": triplet.object_types,
         "document_id": document_id,
         "document_title": document_title,
         "extracted_by": triplet.extracted_by or "system",
@@ -243,8 +253,8 @@ def write_triplet_with_embedding(
     confidence: float = 1.0,
     status: str = "unverified",
     user_id: Optional[str] = None,
-    subject_type: str = "Concept",
-    object_type: str = "Concept"
+    subject_types: Optional[List[str]] = None,
+    object_types: Optional[List[str]] = None
 ) -> str:
     """
     Write a triplet node with embedding to Neo4j.
@@ -252,6 +262,13 @@ def write_triplet_with_embedding(
     
     Returns: triplet_id
     """
+    subject_types = [t.strip() for t in (subject_types or ["Concept"]) if isinstance(t, str) and t.strip()]
+    object_types = [t.strip() for t in (object_types or ["Concept"]) if isinstance(t, str) and t.strip()]
+    if not subject_types:
+        subject_types = ["Concept"]
+    if not object_types:
+        object_types = ["Concept"]
+
     # Generate embedding
     embedding = _embed_triplet(subject, predicate, object, original_text)
     
@@ -265,11 +282,21 @@ def write_triplet_with_embedding(
     
     cypher = f"""
     // Create or merge entities (existing logic)
-    MERGE (s:Entity {{name: $subject}})
-    ON CREATE SET s.type = $subject_type, s.created_at = datetime()
+    MERGE (s:Entity:Concept {{name: $subject}})
+    ON CREATE SET s.created_at = datetime()
+    WITH s
+    FOREACH (stype IN $subject_types |
+        MERGE (st:Type {{name: stype}})
+        MERGE (s)-[:IS_A]->(st)
+    )
     
-    MERGE (o:Entity {{name: $object}})
-    ON CREATE SET o.type = $object_type, o.created_at = datetime()
+    MERGE (o:Entity:Concept {{name: $object}})
+    ON CREATE SET o.created_at = datetime()
+    WITH s, o
+    FOREACH (otype IN $object_types |
+        MERGE (ot:Type {{name: otype}})
+        MERGE (o)-[:IS_A]->(ot)
+    )
     
     // Create traditional relationship (for backward compatibility)
     MERGE (s)-[r:{rel_type}]->(o)
@@ -331,8 +358,8 @@ def write_triplet_with_embedding(
             embedding=embedding,
             triplet_id=triplet_id,
             user_id=user_id or "anonymous",
-            subject_type=subject_type,
-            object_type=object_type,
+            subject_types=subject_types,
+            object_types=object_types,
             embedding_model=settings.openai_embedding_model
         )
         record = result.single()
