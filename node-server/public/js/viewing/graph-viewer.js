@@ -67,6 +67,18 @@ export class GraphViewer {
     }
   }
 
+  onLayoutChange() {
+    if (this.visualConfig) {
+      this.visualConfig.onLayoutChange();
+    }
+  }
+
+  updateSpreadLabel(value) {
+    if (this.visualConfig) {
+      this.visualConfig.updateSpreadLabel(value);
+    }
+  }
+
   resetVisualConfig() {
     if (this.visualConfig) {
       this.visualConfig.resetVisualConfig();

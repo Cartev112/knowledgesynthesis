@@ -65,14 +65,17 @@ def get_global_stats(current_user: User = Depends(get_current_user)):
                 WHERE NOT EXISTS { (d)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }
                 WITH count(d) AS total_docs
                 
-                // Total entities (excluding those from private workspaces)
+                // Total entities (excluding those from private workspaces and ontological type nodes)
                 OPTIONAL MATCH (e:Entity)
-                WHERE NOT EXISTS { (e)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }
+                WHERE EXISTS { (e)-[:EXTRACTED_FROM]->(:Document) }
+                  AND NOT EXISTS { (e)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }
                 WITH total_docs, count(e) AS total_entities
                 
-                // Total relationships between entities (exclude system rels and private workspace rels)
+                // Total relationships between entities (exclude system rels, IS_A, and private workspace rels)
                 OPTIONAL MATCH (e1:Entity)-[r]->(e2:Entity)
-                WHERE type(r) <> 'BELONGS_TO' AND type(r) <> 'EXTRACTED_FROM'
+                WHERE type(r) <> 'BELONGS_TO' 
+                  AND type(r) <> 'EXTRACTED_FROM'
+                  AND type(r) <> 'IS_A'
                   AND (r.sources IS NULL OR size(coalesce(r.sources, [])) = 0 
                        OR NOT EXISTS { 
                          MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'})
