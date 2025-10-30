@@ -153,7 +153,7 @@ app.post('/login', async (req, res) => {
   
   if (user) {
     req.session.user = user
-    return res.redirect('/index.html')
+    return res.redirect('/app')
   }
   
   res.status(401).type('html').send(`<!doctype html>

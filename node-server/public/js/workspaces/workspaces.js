@@ -66,7 +66,7 @@ class WorkspacesManager {
   async init() {
     console.log('🔧 Initializing WorkspacesManager');
     // Check authentication
-    // await this.checkAuth();
+    await this.checkAuth();
     
     // Set up event listeners
     this.setupEventListeners();
@@ -89,13 +89,18 @@ class WorkspacesManager {
       const response = await API.get('/api/me');
       this.currentUser = response.user;
       
-      // Update UI with user info
-      const userName = `${this.currentUser.first_name} ${this.currentUser.last_name}`.trim() || this.currentUser.email;
-      document.getElementById('user-name').textContent = userName;
+      // Update UI with user info (only on standalone page)
+      const userNameEl = document.getElementById('user-name');
+      if (userNameEl) {
+        const userName = `${this.currentUser.first_name} ${this.currentUser.last_name}`.trim() || this.currentUser.email;
+        userNameEl.textContent = userName;
+      }
     } catch (error) {
       console.error('Not authenticated:', error);
-      // Redirect to login
-      window.location.href = '/login';
+      // Only redirect on standalone page
+      if (!document.getElementById('workspaces-tab')) {
+        window.location.href = '/login';
+      }
     }
   }
 
@@ -294,7 +299,7 @@ class WorkspacesManager {
     const isShared = privacy !== 'private' || hasMultipleMembers;
     const stats = workspace.stats || {};
     const owner = (workspace.members || []).find(m => m.role === 'owner');
-    const createdByMe = owner && owner.user_id === this.currentUser.user_id;
+    const createdByMe = owner && this.currentUser && owner.user_id === this.currentUser.user_id;
     const creatorName = owner ? this.getMemberDisplayName(owner) : null;
 
     card.innerHTML = `
