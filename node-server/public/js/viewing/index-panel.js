@@ -96,7 +96,8 @@ export class IndexPanelManager {
       });
     };
 
-    state.indexData.nodes = nodes.reduce((acc, n) => {
+    // First pass: collect all nodes that belong to workspace
+    const workspaceNodes = nodes.reduce((acc, n) => {
       const sources = n.data().sources || [];
       if (!belongsToWorkspace(sources)) return acc;
 
@@ -117,6 +118,38 @@ export class IndexPanelManager {
       }
       return acc;
     }, []);
+    
+    // Second pass: add concept type nodes (targets of IS_A relationships from workspace nodes)
+    const workspaceNodeIds = new Set(workspaceNodes.map(n => n.id));
+    const typeNodeIds = new Set();
+    
+    edges.forEach(e => {
+      const data = e.data();
+      const relation = data.relation || '';
+      // If this is an IS_A relationship from a workspace node, include the target type node
+      if (relation.toLowerCase() === 'is a' || relation.toLowerCase() === 'is_a') {
+        if (workspaceNodeIds.has(data.source)) {
+          typeNodeIds.add(data.target);
+        }
+      }
+    });
+    
+    // Add type nodes to the index
+    typeNodeIds.forEach(typeId => {
+      if (!workspaceNodeIds.has(typeId)) {
+        const typeNode = state.cy.getElementById(typeId);
+        if (typeNode && typeNode.length) {
+          workspaceNodes.push({
+            id: typeNode.id(),
+            label: typeNode.data().label,
+            type: typeNode.data().type || 'Concept',
+            sources: typeNode.data().sources || []
+          });
+        }
+      }
+    });
+    
+    state.indexData.nodes = workspaceNodes;
     
     const allowedNodeIds = new Set(state.indexData.nodes.map(n => n.id));
     

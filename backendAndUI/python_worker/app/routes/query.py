@@ -131,35 +131,17 @@ def get_all(
     else:
         workspace_filter = ""
     
-    # Modified query to include both base concepts AND their type nodes (targets of IS_A relationships)
     nodes_cypher = (
-        "CALL { "
-        # Get base concepts (with workspace filter)
-        "  MATCH (n:Concept) "
-        "  WHERE 1=1"
+        "MATCH (n:Concept) "
+        "WHERE 1=1"
         f"{workspace_filter}"
-        "  OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
-        "  WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "  OPTIONAL MATCH (n)-[:IS_A]->(type:Concept) "
-        "  WITH n, source_docs, collect(DISTINCT type.name) AS type_names "
-        "  WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
-        "  RETURN n, source_docs, types "
-        "  SKIP $skip LIMIT $limit "
-        "  UNION "
-        # Get concept type nodes (targets of IS_A from base concepts)
-        "  MATCH (base:Concept) "
-        "  WHERE 1=1"
-        f"{workspace_filter}"
-        "  MATCH (base)-[:IS_A]->(typeNode:Concept) "
-        "  OPTIONAL MATCH (typeNode)-[:EXTRACTED_FROM]->(doc:Document) "
-        "  WITH DISTINCT typeNode AS n, collect(DISTINCT {id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "  OPTIONAL MATCH (n)-[:IS_A]->(type:Concept) "
-        "  WITH n, source_docs, collect(DISTINCT type.name) AS type_names "
-        "  WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
-        "  RETURN n, source_docs, types "
-        "} "
-        "WITH DISTINCT n, source_docs, types "
-        "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), types: types, type: head(types), significance: coalesce(n.significance, null), sources: source_docs} AS node"
+        " OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
+        "WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
+        "OPTIONAL MATCH (n)-[:IS_A]->(type:Concept) "
+        "WITH n, source_docs, collect(DISTINCT type.name) AS type_names "
+        "WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types "
+        "RETURN {id: coalesce(n.id, n.name, elementId(n)), label: coalesce(n.label, n.name, n.id), strength: coalesce(n.strength, 0), types: types, type: head(types), significance: coalesce(n.significance, null), sources: source_docs} AS node "
+        "SKIP $skip LIMIT $limit"
     )
     
     # Modified query: Get relationships where BOTH endpoints are in the returned node set
@@ -279,20 +261,22 @@ def graph_by_documents(
         "SKIP $skip LIMIT $limit"
     )
     rels_cypher = (
-        "MATCH (s:Concept)-[r]->(t:Concept) "
-        "WHERE coalesce(s.id, s.name, elementId(s)) IN $node_ids "
-        "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
+        f"MATCH (d:Document) WHERE d.document_id IN $ids "
+        f"MATCH (s:Concept)-[r]->(t:Concept) "
+        f"  AND ( (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
+        f"        OR EXISTS {{ MATCH (concept:Entity)-[:EXTRACTED_FROM]->(d) "
+        f"                   WHERE (concept)-[:IS_A*1..5]->(s) OR (concept)-[:IS_A*1..5]->(t) }} ) "
         f"{status_filter} "
-        "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
-        "WITH r, s, t, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
-        "RETURN DISTINCT {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, type(r)), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship"
+        f"WITH r, s, t "
+        f"OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
+        f"WITH r, s, t, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}}) as source_docs "
+        f"RETURN DISTINCT {{id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, type(r)), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)}} AS relationship "
+        f"SKIP $skip LIMIT $limit"
     )
     try:
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             nodes = [rec["node"] for rec in session.run(nodes_cypher, ids=ids, skip=skip, limit=limit)]
-            # Extract node IDs from returned nodes to filter relationships
-            node_ids = [node["id"] for node in nodes]
-            rels = [rec["relationship"] for rec in session.run(rels_cypher, node_ids=node_ids)]
+            rels = [rec["relationship"] for rec in session.run(rels_cypher, ids=ids, skip=skip, limit=limit)]
             return {"nodes": nodes, "relationships": rels, "page_number": page_number}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to fetch graph: {exc}")
