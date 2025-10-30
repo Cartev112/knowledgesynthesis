@@ -177,7 +177,9 @@ class WorkspaceSwitcher {
     const manageAction = document.getElementById('manage-workspaces-action');
     if (manageAction) {
       manageAction.addEventListener('click', () => {
-        window.location.href = '/workspaces.html';
+        if (window.appManager) {
+          window.appManager.switchTab('workspaces');
+        }
         this.closeModal();
       });
     }

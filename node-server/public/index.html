@@ -1037,28 +1037,28 @@
   
   <!-- WORKSPACES TAB -->
   <div id="workspaces-tab" class="tab-content">
-    <div id="workspaces-content" style="padding: 24px; max-width: 1400px; margin: 0 auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h2 style="margin: 0;">Workspaces</h2>
-      </div>
-      
-      <!-- Loading State -->
-      <div class="loading-state" id="ws-loading-state">
-        <div class="spinner"></div>
-        <p>Loading workspaces...</p>
-      </div>
+    <main class="workspaces-main">
+      <div class="workspaces-section">
+        <h2>Workspaces</h2>
+        
+        <!-- Loading State -->
+        <div class="loading-state" id="loading-state">
+          <div class="spinner"></div>
+          <p>Loading workspaces...</p>
+        </div>
 
-      <!-- Error State -->
-      <div class="error-state" id="ws-error-state" style="display: none;">
-        <p class="error-message" id="ws-error-message"></p>
-        <button class="retry-button" id="ws-retry-button">Retry</button>
-      </div>
+        <!-- Error State -->
+        <div class="error-state" id="error-state" style="display: none;">
+          <p class="error-message" id="error-message"></p>
+          <button class="retry-button" id="retry-button">Retry</button>
+        </div>
 
-      <!-- Workspaces Grid -->
-      <div class="workspaces-grid" id="workspaces-grid">
-        <!-- Cards (Create, Global View, and Workspaces) will be inserted here -->
+        <!-- Workspaces Grid -->
+        <div class="workspaces-grid" id="workspaces-grid">
+          <!-- Cards (Create, Global View, and Workspaces) will be inserted here -->
+        </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <!-- AI QUERY TAB -->
@@ -1145,7 +1145,7 @@
     </div>
   </div>
 
-  <!-- Workspace Detail Modal -->
+  <!-- Workspace Detail Modal (Extended with Manage tab for document management) -->
   <div class="modal" id="workspace-detail-modal">
     <div class="modal-content workspace-detail-content">
       <div class="modal-header">
