@@ -637,7 +637,7 @@
           <div class="config-section">
             <div class="config-section-title">Layout Algorithm</div>
             <div class="config-control">
-              <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.applyLayout()">
+              <select id="layout-algorithm" class="config-select" onchange="window.viewingManager.onLayoutChange()">
                 <option value="cose">Force-Directed (COSE)</option>
                 <option value="fcose">Fast Force-Directed</option>
                 <option value="cola">Constraint-Based</option>
@@ -646,6 +646,21 @@
                 <option value="concentric">Concentric</option>
                 <option value="breadthfirst">Hierarchical (Breadth-First)</option>
               </select>
+            </div>
+          </div>
+
+          <div class="config-section" id="layout-spread-section" style="display: none;">
+            <div class="config-section-title">Node Spread</div>
+            <div class="config-control">
+              <input type="range" id="layout-spread-slider" class="config-slider" 
+                     min="50" max="500" value="200" step="10"
+                     oninput="window.viewingManager.updateSpreadLabel(this.value)"
+                     onchange="window.viewingManager.applyLayout()">
+              <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #6b7280;">
+                <span>Compact</span>
+                <span id="spread-value-label">200</span>
+                <span>Spread Out</span>
+              </div>
             </div>
           </div>
         </div>

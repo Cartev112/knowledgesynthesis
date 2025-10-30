@@ -135,7 +135,16 @@ def get_all(
             ") "
         )
     else:
-        workspace_filter = ""
+        # Global view: exclude nodes from private workspaces
+        workspace_filter = (
+            " AND NOT EXISTS { "
+            "  MATCH (n)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) "
+            "} "
+            "AND NOT EXISTS { "
+            "  MATCH (concept)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) "
+            "  WHERE (concept)-[:IS_A*1..5]->(n) "
+            "} "
+        )
     
     nodes_cypher = (
         "MATCH (n:Concept) "
@@ -192,6 +201,9 @@ def list_documents(
     workspace_filter = ""
     if workspace_id:
         workspace_filter = "-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})"
+    else:
+        # Global view: exclude documents from private workspaces
+        workspace_filter = " WHERE NOT EXISTS { (d)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }"
     
     cypher = f"""
         MATCH (d:Document){workspace_filter}

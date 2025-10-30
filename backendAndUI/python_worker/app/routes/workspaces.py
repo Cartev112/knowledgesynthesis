@@ -60,21 +60,29 @@ def get_global_stats(current_user: User = Depends(get_current_user)):
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(
                 """
-                // Total documents
+                // Total documents (excluding those in private workspaces)
                 MATCH (d:Document)
+                WHERE NOT EXISTS { (d)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }
                 WITH count(d) AS total_docs
                 
-                // Total entities
+                // Total entities (excluding those from private workspaces)
                 OPTIONAL MATCH (e:Entity)
+                WHERE NOT EXISTS { (e)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'}) }
                 WITH total_docs, count(e) AS total_entities
                 
-                // Total relationships between entities (exclude system rels)
+                // Total relationships between entities (exclude system rels and private workspace rels)
                 OPTIONAL MATCH (e1:Entity)-[r]->(e2:Entity)
                 WHERE type(r) <> 'BELONGS_TO' AND type(r) <> 'EXTRACTED_FROM'
+                  AND (r.sources IS NULL OR size(coalesce(r.sources, [])) = 0 
+                       OR NOT EXISTS { 
+                         MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {privacy: 'private'})
+                         WHERE d.document_id IN r.sources 
+                       })
                 WITH total_docs, total_entities, count(r) AS total_rels
                 
-                // Count all workspaces (not filtered by membership)
+                // Count public/organization workspaces only
                 OPTIONAL MATCH (w:Workspace)
+                WHERE w.privacy <> 'private'
                 RETURN total_docs, total_entities, total_rels, count(w) AS total_workspaces
                 """
             )

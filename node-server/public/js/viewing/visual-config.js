@@ -896,6 +896,26 @@ export class VisualConfigManager {
     layout.run();
   }
 
+  onLayoutChange() {
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
+    const spreadSection = document.getElementById('layout-spread-section');
+    
+    // Show spread slider only for force-directed layouts
+    const forceDirectedLayouts = ['cose', 'fcose', 'cola'];
+    if (spreadSection) {
+      spreadSection.style.display = forceDirectedLayouts.includes(algorithm) ? 'block' : 'none';
+    }
+    
+    this.applyLayout();
+  }
+
+  updateSpreadLabel(value) {
+    const label = document.getElementById('spread-value-label');
+    if (label) {
+      label.textContent = value;
+    }
+  }
+
   getLayoutOptions(algorithm) {
     const baseOptions = {
       name: algorithm,
@@ -905,13 +925,30 @@ export class VisualConfigManager {
       padding: 50
     };
 
+    // Get spread value from slider
+    const spreadValue = parseInt(document.getElementById('layout-spread-slider')?.value || 200);
+
     switch (algorithm) {
       case 'cose':
-        return { ...baseOptions, nodeRepulsion: 8000, idealEdgeLength: 100 };
+        return { 
+          ...baseOptions, 
+          nodeRepulsion: spreadValue * 40,  // Scale: 2000-20000
+          idealEdgeLength: spreadValue / 2   // Scale: 25-250
+        };
       case 'fcose':
-        return { ...baseOptions, quality: 'default', randomize: false };
+        return { 
+          ...baseOptions, 
+          quality: 'default', 
+          randomize: false,
+          idealEdgeLength: spreadValue / 2,
+          nodeRepulsion: spreadValue * 20
+        };
       case 'cola':
-        return { ...baseOptions, edgeLength: 100, nodeSpacing: 50 };
+        return { 
+          ...baseOptions, 
+          edgeLength: spreadValue / 2,
+          nodeSpacing: spreadValue / 4
+        };
       case 'circle':
         return { ...baseOptions, radius: 300 };
       case 'grid':

@@ -351,7 +351,7 @@ export class ModalManager {
             </div>
             <strong>ID:</strong> ${doc?.id || docId}<br>
             <strong>Uploaded by:</strong> ${uploaderInfo}<br>
-            ${doc?.created_at ? `<strong>Created:</strong> ${new Date(doc.created_at).toLocaleString()}<br>` : ''}
+            <!-- ${doc?.created_at ? `<strong>Created:</strong> ${new Date(doc.created_at).toLocaleString()}<br>` : ''} -->
           </div>
         </div>
         
