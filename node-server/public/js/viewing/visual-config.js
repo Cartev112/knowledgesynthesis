@@ -925,29 +925,46 @@ export class VisualConfigManager {
       padding: 50
     };
 
-    // Get spread value from slider
+    // Get spread value from slider (50-500, default 200)
     const spreadValue = parseInt(document.getElementById('layout-spread-slider')?.value || 200);
+    
+    // Normalize to 0-1 range where 0.5 is default
+    const normalizedSpread = (spreadValue - 50) / 450; // 0 to 1
+    
+    // Create exponential scaling for more dramatic effect
+    // Lower values = more compact (higher repulsion, shorter edges)
+    // Higher values = more spread (lower repulsion, longer edges)
+    const spreadMultiplier = Math.pow(2, (normalizedSpread - 0.5) * 3); // Range: ~0.35 to ~2.83
 
     switch (algorithm) {
       case 'cose':
         return { 
-          ...baseOptions, 
-          nodeRepulsion: spreadValue * 40,  // Scale: 2000-20000
-          idealEdgeLength: spreadValue / 2   // Scale: 25-250
+          ...baseOptions,
+          // Base values that work well, then scale them
+          nodeRepulsion: 4000 / spreadMultiplier,  // Higher repulsion = more compact
+          idealEdgeLength: 100 * spreadMultiplier,  // Longer edges = more spread
+          nodeOverlap: 20,
+          gravity: 0.25,
+          numIter: 1000
         };
       case 'fcose':
         return { 
           ...baseOptions, 
-          quality: 'default', 
+          quality: 'default',
           randomize: false,
-          idealEdgeLength: spreadValue / 2,
-          nodeRepulsion: spreadValue * 20
+          nodeSeparation: 75 * spreadMultiplier,  // More separation = more spread
+          idealEdgeLength: 50 * spreadMultiplier,
+          nodeRepulsion: 4500 / spreadMultiplier,
+          gravity: 0.25,
+          numIter: 2500
         };
       case 'cola':
         return { 
-          ...baseOptions, 
-          edgeLength: spreadValue / 2,
-          nodeSpacing: spreadValue / 4
+          ...baseOptions,
+          edgeLength: 100 * spreadMultiplier,
+          nodeSpacing: 50 * spreadMultiplier,
+          convergenceThreshold: 0.01,
+          maxSimulationTime: 4000
         };
       case 'circle':
         return { ...baseOptions, radius: 300 };
