@@ -874,11 +874,14 @@ class WorkspacesManager {
 
   async loadWorkspaceDocuments(workspaceId) {
     console.log('loadWorkspaceDocuments called for:', workspaceId);
-    const listEl = document.getElementById('documents-list');
+    
+    // Get the documents-list element within the workspace detail modal, not the main index
+    const modal = document.getElementById('workspace-detail-modal');
+    const listEl = modal ? modal.querySelector('#documents-list') : null;
     console.log('documents-list element:', listEl);
     
     if (!listEl) {
-      console.error('documents-list element not found in DOM!');
+      console.error('documents-list element not found in workspace modal!');
       console.log('Available elements:', {
         modal: document.getElementById('workspace-detail-modal'),
         contentPane: document.getElementById('content-pane'),
