@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Index Panel Management
  * Handles the side panel with documents, concepts, and relationships
  */
@@ -96,15 +96,29 @@ export class IndexPanelManager {
       });
     };
 
+    // First pass: identify which nodes are Type concepts (targets of IS_A relationships)
+    const typeConceptIds = new Set();
+    edges.forEach(e => {
+      const data = e.data();
+      const relType = data.type || data.label;
+      if (relType === 'IS_A') {
+        typeConceptIds.add(data.target);
+      }
+    });
+
     state.indexData.nodes = nodes.reduce((acc, n) => {
       const sources = n.data().sources || [];
-      if (!belongsToWorkspace(sources)) return acc;
+      const isTypeConcept = typeConceptIds.has(n.id());
+      
+      // Include Type concepts even without sources (they're ontological, not document-specific)
+      if (!isTypeConcept && !belongsToWorkspace(sources)) return acc;
 
       const entry = {
         id: n.id(),
         label: n.data().label,
-        type: n.data().type || 'Concept',
-        sources
+        types: n.data().types || ['Concept'],
+        sources,
+        isTypeConcept: isTypeConcept
       };
       acc.push(entry);
       if (includeAllDocs) {
@@ -123,10 +137,22 @@ export class IndexPanelManager {
     state.indexData.edges = edges.reduce((acc, e) => {
       const data = e.data();
       const sources = data.sources || [];
-      if (!belongsToWorkspace(sources)) return acc;
+      const relType = data.type || data.label || 'RELATED_TO';
+      
+      // Include IS_A relationships even without sources (they're ontological)
+      const isOntological = relType === 'IS_A';
+      if (!isOntological && !belongsToWorkspace(sources)) return acc;
 
-      if (!allowedNodeIds.has(data.source) || !allowedNodeIds.has(data.target)) {
-        return acc;
+      // For IS_A relationships, allow if at least one endpoint is in allowedNodeIds
+      if (isOntological) {
+        if (!allowedNodeIds.has(data.source) && !allowedNodeIds.has(data.target)) {
+          return acc;
+        }
+      } else {
+        // For regular relationships, both endpoints must be in allowedNodeIds
+        if (!allowedNodeIds.has(data.source) || !allowedNodeIds.has(data.target)) {
+          return acc;
+        }
       }
 
       const sourceNode = state.cy.getElementById(data.source);
@@ -169,7 +195,10 @@ export class IndexPanelManager {
     // Populate type filter dropdown
     const typeFilter = document.getElementById('index-type-filter');
     const types = new Set();
-    state.indexData.nodes.forEach(n => types.add(n.type || 'Entity'));
+    state.indexData.nodes.forEach(n => {
+      const nodeTypes = n.types || ['Concept'];
+      nodeTypes.forEach(t => types.add(t));
+    });
     state.indexData.edges.forEach(e => types.add(e.relation || 'relates to'));
     
     typeFilter.innerHTML = '<option value="">All Types</option>' + 
@@ -229,26 +258,12 @@ export class IndexPanelManager {
       });
     }
     
-    // Filter and render concepts with search and pagination
-    const conceptsList = document.getElementById('concepts-list');
-    conceptsList.innerHTML = '';
-    
-    let filteredNodes = state.indexData.nodes.filter(n => {
-      const matchesType = !typeFilter || n.type === typeFilter;
-      const matchesSearch = !this.searchTerm || 
-        n.label.toLowerCase().includes(this.searchTerm) ||
-        n.type.toLowerCase().includes(this.searchTerm);
-      return matchesType && matchesSearch;
-    });
-    
-    const totalConcepts = filteredNodes.length;
-    const showing = Math.min(this.conceptsPage * this.pageSize, totalConcepts);
-    const displayNodes = filteredNodes.slice(0, showing);
-    
     displayNodes.forEach(node => {
       const li = document.createElement('li');
       li.className = 'index-item';
-      li.innerHTML = `${node.label}<span class="index-item-type">${node.type}</span>`;
+      const types = node.types || ['Concept'];
+      const typeDisplay = types.join(', ');
+      li.innerHTML = `${node.label}<span class="index-item-type">${typeDisplay}</span>`;
       li.onclick = () => this.highlightAndZoomToNode(node.id);
       li.onmouseenter = () => {
         // 2D hover highlight
