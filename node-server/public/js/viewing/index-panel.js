@@ -100,12 +100,14 @@ export class IndexPanelManager {
       const sources = n.data().sources || [];
       if (!belongsToWorkspace(sources)) return acc;
 
-      const entry = {
-        id: n.id(),
-        label: n.data().label,
-        type: n.data().type || 'Entity',
-        sources
-      };
+    const entry = {
+      id: n.id(),
+      label: n.data().label,
+      type: n.data().type || 'Concept',
+      labels: n.data().labels || [],
+      types: n.data().types || [],
+      sources
+    };
       acc.push(entry);
       if (includeAllDocs) {
         sources.forEach((src) => {
