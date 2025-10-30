@@ -160,45 +160,57 @@ class WorkspacesManager {
       });
     }
 
-    // Create workspace form
-    document.getElementById('create-workspace-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.createWorkspace();
-    });
+    // Create workspace form (only on workspaces.html)
+    const createForm = document.getElementById('create-workspace-form');
+    if (createForm) {
+      createForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.createWorkspace();
+      });
+    }
 
-    // Icon selector
+    // Icon selector (only on workspaces.html)
     document.querySelectorAll('.icon-option').forEach(button => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
         button.classList.add('selected');
         this.selectedIcon = button.dataset.icon;
-        document.getElementById('workspace-icon').value = this.selectedIcon;
+        const iconInput = document.getElementById('workspace-icon');
+        if (iconInput) iconInput.value = this.selectedIcon;
       });
     });
 
-    // Color selector
+    // Color selector (only on workspaces.html)
     document.querySelectorAll('.color-option').forEach(button => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
         button.classList.add('selected');
         this.selectedColor = button.dataset.color;
-        document.getElementById('workspace-color').value = this.selectedColor;
+        const colorInput = document.getElementById('workspace-color');
+        if (colorInput) colorInput.value = this.selectedColor;
       });
     });
 
-    // Set default selections
-    document.querySelector('.icon-option[data-icon="📊"]').classList.add('selected');
-    document.querySelector('.color-option[data-color="#3B82F6"]').classList.add('selected');
+    // Set default selections (only on workspaces.html)
+    const defaultIcon = document.querySelector('.icon-option[data-icon="📊"]');
+    const defaultColor = document.querySelector('.color-option[data-color="#3B82F6"]');
+    if (defaultIcon) defaultIcon.classList.add('selected');
+    if (defaultColor) defaultColor.classList.add('selected');
   }
 
   async loadWorkspaces() {
-    const loadingState = document.getElementById('loading-state');
-    const errorState = document.getElementById('error-state');
+    const loadingState = document.getElementById('workspaces-loading-state') || document.getElementById('loading-state');
+    const errorState = document.getElementById('workspaces-error-state') || document.getElementById('error-state');
     const workspacesGrid = document.getElementById('workspaces-grid');
 
+    if (!workspacesGrid) {
+      console.warn('Workspaces grid not found');
+      return;
+    }
+
     // Show loading
-    loadingState.style.display = 'block';
-    errorState.style.display = 'none';
+    if (loadingState) loadingState.style.display = 'block';
+    if (errorState) errorState.style.display = 'none';
     workspacesGrid.innerHTML = '';
 
     try {
@@ -207,7 +219,7 @@ class WorkspacesManager {
       this.workspaces = response;
 
       // Hide loading
-      loadingState.style.display = 'none';
+      if (loadingState) loadingState.style.display = 'none';
 
       // Load global stats FIRST so initial render uses real totals
       await this.loadGlobalStats();
@@ -217,10 +229,12 @@ class WorkspacesManager {
 
     } catch (error) {
       console.error('Failed to load workspaces:', error);
-      loadingState.style.display = 'none';
-      errorState.style.display = 'block';
-      document.getElementById('error-message').textContent = 
-        error.message || 'Failed to load workspaces. Please try again.';
+      if (loadingState) loadingState.style.display = 'none';
+      if (errorState) errorState.style.display = 'block';
+      const errorMsg = document.getElementById('workspaces-error-message') || document.getElementById('error-message');
+      if (errorMsg) {
+        errorMsg.textContent = error.message || 'Failed to load workspaces. Please try again.';
+      }
     }
   }
 
@@ -1029,11 +1043,17 @@ class WorkspacesManager {
   }
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+// Export for ES6 module usage
+export default WorkspacesManager;
+
+// Auto-initialize only if not being imported as a module
+if (typeof window !== 'undefined' && !document.getElementById('workspaces-tab')) {
+  // This is the standalone workspaces.html page
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      new WorkspacesManager();
+    });
+  } else {
     new WorkspacesManager();
-  });
-} else {
-  new WorkspacesManager();
+  }
 }

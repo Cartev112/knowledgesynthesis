@@ -153,7 +153,7 @@ app.post('/login', async (req, res) => {
   
   if (user) {
     req.session.user = user
-    return res.redirect('/workspaces.html')
+    return res.redirect('/index.html')
   }
   
   res.status(401).type('html').send(`<!doctype html>
