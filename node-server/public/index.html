@@ -605,20 +605,11 @@
 
           <div class="config-section">
             <div class="config-section-title">Node Size</div>
-            <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
+            <select id="node-size-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()" title="Degree: # of connections | Centrality: bridging importance">
               <option value="by-significance">By Significance</option>
               <option value="uniform">Uniform</option>
-              <option value="by-degree">By Degree</option>
-              <option value="by-importance">By Centrality</option>
-            </select>
-          </div>
-
-          <div class="config-section">
-            <div class="config-section-title">Edge Color</div>
-            <select id="edge-style-scheme" class="config-select" onchange="window.viewingManager.applyVisualConfig()">
-              <option value="default">Default</option>
-              <option value="by-type">By Type</option>
-              <option value="by-document">By Document</option>
+              <option value="by-degree" title="Size by number of direct connections">By Degree</option>
+              <option value="by-importance" title="Size by betweenness centrality (bridging importance)">By Centrality</option>
             </select>
           </div>
 
@@ -665,12 +656,54 @@
         <!-- Legend Tab -->
         <div id="visual-tab-legend" class="visual-tab-content">
           <div class="legend-section">
-            <div class="legend-section-title">Node Colors</div>
-            <div id="color-legend" class="legend-list"></div>
+            <div class="legend-section-title">Node States</div>
+            <div class="legend-list">
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #8b5cf6;"></div>
+                <div class="color-legend-label">Default Node</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #fbbf24;"></div>
+                <div class="color-legend-label">Search Highlight</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #60a5fa;"></div>
+                <div class="color-legend-label">Neighbor Highlight</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #34d399;"></div>
+                <div class="color-legend-label">Multi-Selected</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #f59e0b; border: 2px dashed #000;"></div>
+                <div class="color-legend-label">Manual Selection</div>
+              </div>
+            </div>
           </div>
           <div class="legend-section">
-            <div class="legend-section-title">Edge Colors</div>
-            <div id="edge-legend" class="legend-list"></div>
+            <div class="legend-section-title">Edge States</div>
+            <div class="legend-list">
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #9ca3af;"></div>
+                <div class="color-legend-label">Default Edge</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #10b981;"></div>
+                <div class="color-legend-label">Verified Edge</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #ef4444; border: 2px dashed #000;"></div>
+                <div class="color-legend-label">Incorrect/Negative</div>
+              </div>
+              <div class="color-legend-item">
+                <div class="color-legend-swatch" style="background-color: #34d399;"></div>
+                <div class="color-legend-label">Multi-Selected</div>
+              </div>
+            </div>
+          </div>
+          <div class="legend-section">
+            <div class="legend-section-title">Dynamic Colors</div>
+            <div id="color-legend" class="legend-list"></div>
           </div>
         </div>
       </div>

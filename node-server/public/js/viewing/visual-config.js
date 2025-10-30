@@ -496,39 +496,11 @@ export class VisualConfigManager {
   }
 
   clearLegend(type, message = '') {
-    this.setupLegendUI();
     const containerId = type === 'node' ? 'color-legend' : 'edge-legend';
-    const paginationId = type === 'node' ? 'color-legend-pagination' : 'edge-legend-pagination';
-
     const container = document.getElementById(containerId);
-    const pagination = document.getElementById(paginationId);
-
-    const legendState = this.legendConfig[type];
-    if (legendState) {
-      legendState.entries = [];
-      legendState.page = 0;
-    }
 
     if (container) {
-      if (message) {
-        this.setLegendContainer(container, [], {
-          showWhenEmpty: true,
-          emptyMessage: message
-        });
-      } else {
-        container.innerHTML = '';
-        container.classList.remove('visible');
-      }
-    }
-
-    if (pagination) {
-      pagination.innerHTML = '';
-      pagination.classList.remove('visible');
-    }
-
-    if (type === 'edge') {
-      this.edgeLegendModalEntries = [];
-      this.updateEdgeLegendMetadata(0);
+      container.innerHTML = '';
     }
   }
 
@@ -539,18 +511,15 @@ export class VisualConfigManager {
     // Read current config from UI
     this.config.nodeColorScheme = document.getElementById('node-color-scheme')?.value || 'default';
     this.config.nodeSizeScheme = document.getElementById('node-size-scheme')?.value || 'uniform';
-    this.config.edgeStyleScheme = document.getElementById('edge-style-scheme')?.value || 'default';
     this.config.labelDisplayScheme = document.getElementById('label-display-scheme')?.value || 'hover';
 
     // Apply configurations
     this.applyNodeColors();
     this.applyNodeSizes();
-    this.applyEdgeStyles();
     this.applyLabelDisplay();
   }
 
   applyNodeColors() {
-    this.setupLegendUI();
     const scheme = this.config.nodeColorScheme;
     
     switch (scheme) {
@@ -753,7 +722,6 @@ export class VisualConfigManager {
   }
 
   applyEdgeStyles() {
-    this.setupLegendUI();
     const scheme = this.config.edgeStyleScheme;
     
     switch (scheme) {
@@ -1013,12 +981,20 @@ export class VisualConfigManager {
   }
 
   showColorLegend(legendData) {
+    const container = document.getElementById('color-legend');
+    if (!container) return;
+
     if (!legendData || Object.keys(legendData).length === 0) {
-      this.clearLegend('node');
+      container.innerHTML = '';
       return;
     }
 
-    this.updateLegendData('node', legendData);
+    const entries = Object.entries(legendData).map(([label, color]) => ({
+      label,
+      color
+    })).sort((a, b) => a.label.localeCompare(b.label));
+
+    container.innerHTML = this.buildLegendItemsHtml(entries);
   }
 
   showEdgeLegend(legendData) {

@@ -544,10 +544,10 @@
 
 .visual-panel {
   position: fixed;
-  left: 5vw;
-  bottom: 5vh;
-  width: min(240px, 18vw);
-  max-height: min(500px, 70vh);
+  left: 80px;
+  bottom: 20px;
+  width: 260px;
+  max-height: 600px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
