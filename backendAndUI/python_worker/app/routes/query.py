@@ -28,8 +28,9 @@ def autocomplete(
     ORDER BY score DESC SKIP $skip LIMIT $limit
     """
     cypher_contains_fallback = """
-    MATCH (node:Entity)
-    WHERE toLower(node.name) CONTAINS toLower($q)
+    MATCH (node)
+    WHERE (node:Entity OR node:Type OR node:Concept)
+      AND toLower(node.name) CONTAINS toLower($q)
     OPTIONAL MATCH (node)-[:IS_A]->(type:Concept)
     WITH node, collect(DISTINCT type.name) AS type_names
     WITH node, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
@@ -130,7 +131,7 @@ def get_all(
         )
     
     nodes_cypher = (
-        "MATCH (n:Entity) "
+        "MATCH (n) WHERE n:Entity OR n:Type "
         f"{workspace_filter}"
         "OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
@@ -143,9 +144,10 @@ def get_all(
     
     # Modified query: Get relationships where BOTH endpoints are in the returned node set
     rels_cypher = (
-        "MATCH (s:Entity)-[r]->(t:Entity) "
+        "MATCH (s)-[r]->(t) "
+        "WHERE (s:Entity OR s:Type) AND (t:Entity OR t:Type) "
         "WHERE coalesce(s.id, s.name, elementId(s)) IN $node_ids "
-        "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
+          "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
         "WITH r, s, t, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
         "RETURN {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, toLower(type(r))), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship"
@@ -235,9 +237,18 @@ def graph_by_documents(
     status_filter = "AND r.status = 'verified'" if verified_only else ""
     
     nodes_cypher = (
-        "MATCH (d:Document) WHERE d.document_id IN $ids "
-        "MATCH (e:Entity)-[:EXTRACTED_FROM]->(d) "
-        "WITH DISTINCT e "
+        "CALL { "
+        "  MATCH (d:Document) WHERE d.document_id IN $ids "
+        "  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        "  RETURN DISTINCT base AS candidate "
+        "  UNION "
+        "  MATCH (d:Document) WHERE d.document_id IN $ids "
+        "  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        "  MATCH (base)-[:IS_A*1..5]->(candidate) "
+        "  WHERE candidate:Entity OR candidate:Type OR candidate:Concept "
+        "  RETURN DISTINCT candidate "
+        "} "
+        "WITH DISTINCT candidate AS e "
         "OPTIONAL MATCH (e)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH e, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
         "OPTIONAL MATCH (e)-[:IS_A]->(type:Concept) "
@@ -248,8 +259,11 @@ def graph_by_documents(
     )
     rels_cypher = (
         f"MATCH (d:Document) WHERE d.document_id IN $ids "
-        f"MATCH (s:Entity)-[r]->(t:Entity) "
-        f"WHERE (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
+        f"MATCH (s)-[r]->(t) "
+        f"WHERE (s:Entity OR s:Type OR s:Concept) AND (t:Entity OR t:Type OR t:Concept) "
+        f"  AND ( (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
+        f"        OR EXISTS {{ MATCH (concept:Entity)-[:EXTRACTED_FROM]->(d) "
+        f"                   WHERE (concept)-[:IS_A*1..5]->(s) OR (concept)-[:IS_A*1..5]->(t) }} ) "
         f"{status_filter} "
         f"WITH r, s, t "
         f"OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
@@ -283,12 +297,14 @@ def search_concept(
     skip = (page_number - 1) * limit
     # Simple version without fulltext index requirement
     cypher = """
-    MATCH (center:Entity)
+    MATCH (center)
+    WHERE center:Entity OR center:Type OR center:Concept
     WHERE toLower(center.name) CONTAINS toLower($name)
     WITH center
     LIMIT 10
     
-    OPTIONAL MATCH (center)-[r]-(related:Entity)
+      OPTIONAL MATCH (center)-[r]-(related)
+      WHERE related:Entity OR related:Type OR related:Concept
     WHERE $verified_only = false OR r.status = 'verified'
     
     WITH center, collect(DISTINCT related) AS related_nodes, collect(DISTINCT r) AS rels
@@ -402,15 +418,30 @@ def get_viewport_graph(
     # Build center node filter for neighborhood loading
     center_filter = ""
     if center_node_id:
-        center_filter = f"AND (e.id = '{center_node_id}' OR (e)-[:RELATES_TO*1..2]-(center:Entity {{id: '{center_node_id}'}}))"
+        center_filter = (
+            f"AND (coalesce(e.id, e.name, elementId(e)) = '{center_node_id}' "
+            f"     OR EXISTS {{ MATCH (center) "
+            f"       WHERE (center:Entity OR center:Type OR center:Concept) "
+            f"         AND coalesce(center.id, center.name, elementId(center)) = '{center_node_id}' "
+            f"       AND (e)-[:RELATES_TO*1..2]-(center) }})"
+        )
     
     # Adjust node limit based on zoom level (fewer nodes when zoomed out)
     adjusted_limit = int(max_nodes / max(zoom_level, 0.5))
     
     nodes_cypher = (
-        f"MATCH (d:Document) WHERE d.document_id IN $ids "
-        f"MATCH (e:Entity)-[:EXTRACTED_FROM]->(d) "
-        f"WITH DISTINCT e "
+        f"CALL {{ "
+        f"  MATCH (d:Document) WHERE d.document_id IN $ids "
+        f"  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        f"  RETURN DISTINCT base AS candidate "
+        f"  UNION "
+        f"  MATCH (d:Document) WHERE d.document_id IN $ids "
+        f"  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        f"  MATCH (base)-[:IS_A*1..5]->(candidate) "
+        f"  WHERE candidate:Entity OR candidate:Type OR candidate:Concept "
+        f"  RETURN DISTINCT candidate "
+        f"}} "
+        f"WITH DISTINCT candidate AS e "
         f"WHERE 1=1 {spatial_filter} {center_filter} "
         f"OPTIONAL MATCH (e)-[:EXTRACTED_FROM]->(doc:Document) "
         f"WITH e, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}}) as source_docs "
@@ -424,8 +455,11 @@ def get_viewport_graph(
     # Get relationships for the returned nodes
     rels_cypher = (
         f"MATCH (d:Document) WHERE d.document_id IN $ids "
-        f"MATCH (s:Entity)-[r]->(t:Entity) "
-        f"WHERE (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
+        f"MATCH (s)-[r]->(t) "
+        f"WHERE (s:Entity OR s:Type OR s:Concept) AND (t:Entity OR t:Type OR t:Concept) "
+        f"  AND ( (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
+        f"        OR EXISTS {{ MATCH (concept:Entity)-[:EXTRACTED_FROM]->(d) "
+        f"                   WHERE (concept)-[:IS_A*1..5]->(s) OR (concept)-[:IS_A*1..5]->(t) }} ) "
         f"{status_filter} "
         f"WITH r, s, t "
         f"OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
@@ -469,12 +503,14 @@ def get_node_neighborhood(
     status_filter = "AND r.status = 'verified'" if verified_only else ""
     
     cypher = f"""
-    MATCH (center:Entity)
-    WHERE coalesce(center.id, center.name, elementId(center)) = $node_id
+    MATCH (center)
+    WHERE (center:Entity OR center:Type OR center:Concept)
+      AND coalesce(center.id, center.name, elementId(center)) = $node_id
     WITH center
     
-    OPTIONAL MATCH path = (center)-[r*1..{max_hops}]-(neighbor:Entity)
-    WHERE 1=1 {status_filter}
+    OPTIONAL MATCH path = (center)-[r*1..{max_hops}]-(neighbor)
+    WHERE (neighbor:Entity OR neighbor:Type OR neighbor:Concept)
+      {status_filter}
     
     WITH center, collect(DISTINCT neighbor) AS neighbors, collect(DISTINCT r) AS all_rels
     
@@ -542,8 +578,9 @@ def get_subgraph(request: dict):
     
     # Query to get nodes and their relationships
     cypher = """
-    MATCH (n:Entity)
-    WHERE coalesce(n.id, n.name, elementId(n)) IN $node_ids
+    MATCH (n)
+    WHERE (n:Entity OR n:Type OR n:Concept)
+      AND coalesce(n.id, n.name, elementId(n)) IN $node_ids
     WITH collect(n) as nodes
     UNWIND nodes as n1
     UNWIND nodes as n2
