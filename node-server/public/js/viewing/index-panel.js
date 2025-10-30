@@ -551,12 +551,12 @@ export class IndexPanelManager {
       // Expand
       this.collapsedSections.delete(sectionName);
       content.classList.remove('collapsed');
-      if (arrow) arrow.textContent = 'Γû╝';
+      if (arrow) arrow.textContent = '▼';
     } else {
       // Collapse
       this.collapsedSections.add(sectionName);
       content.classList.add('collapsed');
-      if (arrow) arrow.textContent = 'Γû╢';
+      if (arrow) arrow.textContent = '▶';
     }
   }
 }

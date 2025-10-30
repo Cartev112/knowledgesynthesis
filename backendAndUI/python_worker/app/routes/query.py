@@ -192,8 +192,6 @@ def list_documents(
     workspace_filter = ""
     if workspace_id:
         workspace_filter = "-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})"
-    else:
-        workspace_filter = " WHERE NOT EXISTS { (d)-[:BELONGS_TO]->(:Workspace) }"
     
     cypher = f"""
         MATCH (d:Document){workspace_filter}
@@ -248,11 +246,13 @@ def graph_by_documents(
     nodes_cypher = (
         "CALL { "
         "  MATCH (d:Document) WHERE d.document_id IN $ids "
-        "  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        "  MATCH (base)-[:EXTRACTED_FROM]->(d) "
+        "  WHERE base:Entity OR base:Concept "
         "  RETURN DISTINCT base AS candidate "
         "  UNION "
         "  MATCH (d:Document) WHERE d.document_id IN $ids "
-        "  MATCH (base:Entity)-[:EXTRACTED_FROM]->(d) "
+        "  MATCH (base)-[:EXTRACTED_FROM]->(d) "
+        "  WHERE base:Entity OR base:Concept "
         "  MATCH (base)-[:IS_A*1..5]->(candidate) "
         "  WHERE candidate:Concept "
         "  RETURN DISTINCT candidate "
@@ -268,10 +268,12 @@ def graph_by_documents(
     )
     rels_cypher = (
         f"MATCH (d:Document) WHERE d.document_id IN $ids "
-        f"MATCH (s:Concept)-[r]->(t:Concept) "
+        f"MATCH (s)-[r]->(t) "
+        f"WHERE (s:Entity OR s:Concept) AND (t:Entity OR t:Concept) "
         f"  AND ( (s)-[:EXTRACTED_FROM]->(d) OR (t)-[:EXTRACTED_FROM]->(d) "
-        f"        OR EXISTS {{ MATCH (concept:Entity)-[:EXTRACTED_FROM]->(d) "
-        f"                   WHERE (concept)-[:IS_A*1..5]->(s) OR (concept)-[:IS_A*1..5]->(t) }} ) "
+        f"        OR EXISTS {{ MATCH (concept)-[:EXTRACTED_FROM]->(d) "
+        f"                   WHERE (concept:Entity OR concept:Concept) "
+        f"                   AND ((concept)-[:IS_A*1..5]->(s) OR (concept)-[:IS_A*1..5]->(t)) }} ) "
         f"{status_filter} "
         f"WITH r, s, t "
         f"OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "

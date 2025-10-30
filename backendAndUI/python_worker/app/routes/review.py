@@ -60,7 +60,8 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         if workspace_id:
             workspace_filter = """
             AND (
-                size(r.sources) = 0
+                r.sources IS NULL
+                OR size(coalesce(r.sources, [])) = 0
                 OR EXISTS {
                     MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
                     WHERE d.document_id IN r.sources
@@ -115,7 +116,8 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         if workspace_id:
             workspace_filter = """
             AND (
-                size(r.sources) = 0
+                r.sources IS NULL
+                OR size(coalesce(r.sources, [])) = 0
                 OR EXISTS {
                     MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
                     WHERE d.document_id IN r.sources
