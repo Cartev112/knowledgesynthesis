@@ -88,6 +88,7 @@ export class IndexPanelManager {
 
     const belongsToWorkspace = (sources = []) => {
       if (includeAllDocs) return true;
+      if (!sources || sources.length === 0) return true; // allow type/context nodes without explicit document sources
       return sources.some((source) => {
         if (!source) return false;
         const sourceId = typeof source === 'object' ? source.id : source;

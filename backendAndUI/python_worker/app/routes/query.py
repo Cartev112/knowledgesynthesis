@@ -118,9 +118,15 @@ def get_all(
     workspace_filter = ""
     if workspace_id:
         workspace_filter = (
-            "WHERE EXISTS { "
-            "  MATCH (n)-[:EXTRACTED_FROM]->(d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id}) "
+            "WHERE ("
+            "EXISTS { "
+            "  MATCH (n)-[:EXTRACTED_FROM]->(d1:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id}) "
             "} "
+            "OR EXISTS { "
+            "  MATCH (concept:Entity)-[:EXTRACTED_FROM]->(d2:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id}) "
+            "  MATCH (concept)-[:IS_A*1..5]->(n) "
+            "} "
+            ") "
         )
     
     nodes_cypher = (
