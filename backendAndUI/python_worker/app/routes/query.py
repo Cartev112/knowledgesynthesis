@@ -119,7 +119,7 @@ def get_all(
     workspace_filter = ""
     if workspace_id:
         workspace_filter = (
-            "WHERE ("
+            " AND ("
             "EXISTS { "
             "  MATCH (n)-[:EXTRACTED_FROM]->(d1:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id}) "
             "} "
@@ -129,9 +129,15 @@ def get_all(
             "} "
             ") "
         )
+    else:
+        workspace_filter = (
+            "WHERE NOT EXISTS { "
+            "  MATCH (n)-[:EXTRACTED_FROM]->(:Document)-[:BELONGS_TO]->(:Workspace) "
+            "} "
+        )
     
     nodes_cypher = (
-        "MATCH (n) WHERE n:Entity OR n:Type "
+        "MATCH (n) WHERE (n:Entity OR n:Type OR n:Concept)"
         f"{workspace_filter}"
         "OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document) "
         "WITH n, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
@@ -145,7 +151,7 @@ def get_all(
     # Modified query: Get relationships where BOTH endpoints are in the returned node set
     rels_cypher = (
         "MATCH (s)-[r]->(t) "
-        "WHERE (s:Entity OR s:Type) AND (t:Entity OR t:Type) "
+        "WHERE (s:Entity OR s:Type OR s:Concept) AND (t:Entity OR t:Type OR t:Concept) "
         "WHERE coalesce(s.id, s.name, elementId(s)) IN $node_ids "
           "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
@@ -185,6 +191,8 @@ def list_documents(
     workspace_filter = ""
     if workspace_id:
         workspace_filter = "-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})"
+    else:
+        workspace_filter = " WHERE NOT EXISTS { (d)-[:BELONGS_TO]->(:Workspace) }"
     
     cypher = f"""
         MATCH (d:Document){workspace_filter}
