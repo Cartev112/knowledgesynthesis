@@ -143,30 +143,30 @@ class WorkspacesManager {
       });
     }
 
-    // Modal controls
-    const modalClose = document.getElementById('modal-close');
+    // Modal controls (create workspace)
+    const modalClose = document.getElementById('app-create-close') || document.getElementById('modal-close');
     if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
 
-    const cancelBtn = document.getElementById('cancel-button');
+    const cancelBtn = document.getElementById('app-create-cancel') || document.getElementById('cancel-button');
     if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
 
     // Settings modal controls
-    const wsClose = document.getElementById('ws-settings-close');
-    const wsCancel = document.getElementById('ws-settings-cancel');
+    const wsClose = document.getElementById('app-ws-settings-close') || document.getElementById('ws-settings-close');
+    const wsCancel = document.getElementById('app-ws-settings-cancel') || document.getElementById('ws-settings-cancel');
     if (wsClose) wsClose.addEventListener('click', () => this.closeSettingsModal());
     if (wsCancel) wsCancel.addEventListener('click', () => this.closeSettingsModal());
 
     // Settings save
-    const wsForm = document.getElementById('workspace-settings-form');
+    const wsForm = document.getElementById('app-workspace-settings-form') || document.getElementById('workspace-settings-form');
     if (wsForm) {
       wsForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.saveWorkspaceSettings();
       });
     }
-
-    // Create workspace form (only on workspaces.html)
-    const createForm = document.getElementById('create-workspace-form');
+    
+    // Create workspace form
+    const createForm = document.getElementById('app-create-workspace-form') || document.getElementById('create-workspace-form');
     if (createForm) {
       createForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -695,10 +695,16 @@ class WorkspacesManager {
       // Populate activity (placeholder for now)
       this.populateActivity(workspace);
 
-      // Load documents, entities, and relationships (for Content tab)
+      // Load documents (for Content tab)
       await this.loadWorkspaceDocuments(workspaceId);
-      await this.loadWorkspaceEntities(workspaceId);
-      await this.loadWorkspaceRelationships(workspaceId);
+      
+      // Only load entities and relationships if their containers exist (standalone page)
+      if (document.getElementById('entities-list')) {
+        await this.loadWorkspaceEntities(workspaceId);
+      }
+      if (document.getElementById('relationships-list')) {
+        await this.loadWorkspaceRelationships(workspaceId);
+      }
     } catch (error) {
       console.error('Failed to load workspace details:', error);
       alert('Failed to load workspace details');
