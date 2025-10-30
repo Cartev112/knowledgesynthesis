@@ -40,6 +40,12 @@ export class GraphViewer {
     if (window.cytoscape && window.cytoscapeCoseBilkent) {
       window.cytoscape.use(window.cytoscapeCoseBilkent);
     }
+    if (window.cytoscape && window.cytoscapeFcose) {
+      window.cytoscape.use(window.cytoscapeFcose);
+    }
+    if (window.cytoscape && window.cytoscapeCola) {
+      window.cytoscape.use(window.cytoscapeCola);
+    }
     
     // Initialize Cytoscape
     state.cy = window.cytoscape({

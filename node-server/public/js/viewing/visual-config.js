@@ -825,16 +825,20 @@ export class VisualConfigManager {
     
     switch (scheme) {
       case 'always':
-        this.cy.nodes().style('label', ele => ele.data('label'));
+        this.cy.nodes().style('label', ele => ele.data('label') || ele.data('id'));
         break;
       case 'selected':
+        // Hide all labels first
         this.cy.nodes().style('label', '');
-        this.cy.nodes('.multi-selected').style('label', ele => ele.data('label'));
+        // Show labels for selected nodes
+        this.cy.nodes(':selected').style('label', ele => ele.data('label') || ele.data('id'));
+        this.cy.nodes('.multi-selected').style('label', ele => ele.data('label') || ele.data('id'));
         break;
       case 'never':
         this.cy.nodes().style('label', '');
         break;
       default: // hover
+        // Labels shown via tooltip on hover, not via node label property
         this.cy.nodes().style('label', '');
     }
   }
@@ -1124,7 +1128,6 @@ export class VisualConfigManager {
     // Reset UI controls
     document.getElementById('node-color-scheme').value = 'default';
     document.getElementById('node-size-scheme').value = 'by-significance';
-    document.getElementById('edge-style-scheme').value = 'default';
     document.getElementById('label-display-scheme').value = 'hover';
     document.getElementById('layout-algorithm').value = 'cose';
     document.getElementById('layout-spread-slider').value = '200';
@@ -1133,7 +1136,6 @@ export class VisualConfigManager {
     this.config = {
       nodeColorScheme: 'default',
       nodeSizeScheme: 'by-significance',
-      edgeStyleScheme: 'default',
       labelDisplayScheme: 'hover',
       layoutAlgorithm: 'cose'
     };

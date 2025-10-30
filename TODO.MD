@@ -1,26 +1,17 @@
 BUGS
 
-- Global view workspace cards/modal is showing 0 entities + 0 relationships [FIXED - NEEDS DEPLOY]
-  * Added /api/workspaces/global/stats endpoint to get real counts
-  * Updated frontend to call new endpoint
-  * Fixed workspace stats query to count relationships properly
-  * Files: workspaces.py, workspaces.js, workspace_service.py
-
-- public workspaces are not appearing to others [FIXED - NEEDS DEPLOY]
-  * Updated list_user_workspaces query to include public workspaces
-  * File: workspace_service.py
 
 - ingestion container looks much smaller on someone elses computer
 
-- remove entity type ingestion
+- Changes to workspace:
+  Workspace page should be a tab on the main page
+  Documents are not ingested INSIDE a workspace; they are ingested into the DB and then added to a workspace
+  Allow users to add/remove existing documents/entities/relationships in the DB to a particular workspace
 
-- graph context prompt should NOT assume goals; just incorporate the context
+- Documents tab should show (public + user private) documents in the DB; if a document is being ingested for the second time, system recognizes it via ID/metadata, no duplication
 
-- graph is resetting node/document/relationship selections after moving to another tab (should not reset)
 
-- when documents are selected, automatically select all of their nodes + relationships for graph context
 
-- ingestion LLM is not generating enough triplets. should be very close to specificied maximum. (batch WHILE minimizing redundancy)
 
-- figure out why email service is not working (sendgrid)
+
 

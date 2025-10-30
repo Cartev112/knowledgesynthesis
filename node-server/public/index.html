@@ -22,6 +22,9 @@
   <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
   <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
   <script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
+  <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+  <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+  <script src="https://unpkg.com/webcola@3.4.0/WebCola/cola.min.js"></script>
 </head>
 <body>
   <!-- === HEADER === -->
@@ -38,6 +41,7 @@
   <div id="tabs">
     <div class="tab active" onclick="window.appManager.switchTab('ingestion')">📤 Ingestion</div>
     <div class="tab" onclick="window.appManager.switchTab('viewing')">🔍 Viewing</div>
+    <div class="tab" onclick="window.appManager.switchTab('workspaces')">📊 Workspaces</div>
     <div class="tab" onclick="window.appManager.switchTab('discovery')">🔬 Discovery</div>
     <div class="tab" onclick="window.appManager.switchTab('ai-query')">🤖 AI Query</div>
     <div class="tab" onclick="window.open('/review-ui', '_blank')">✅ Review Queue</div>
@@ -1031,6 +1035,32 @@
     </div>
   </div>
   
+  <!-- WORKSPACES TAB -->
+  <div id="workspaces-tab" class="tab-content">
+    <div id="workspaces-content" style="padding: 24px; max-width: 1400px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="margin: 0;">Workspaces</h2>
+      </div>
+      
+      <!-- Loading State -->
+      <div class="loading-state" id="ws-loading-state">
+        <div class="spinner"></div>
+        <p>Loading workspaces...</p>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-state" id="ws-error-state" style="display: none;">
+        <p class="error-message" id="ws-error-message"></p>
+        <button class="retry-button" id="ws-retry-button">Retry</button>
+      </div>
+
+      <!-- Workspaces Grid -->
+      <div class="workspaces-grid" id="workspaces-grid">
+        <!-- Cards (Create, Global View, and Workspaces) will be inserted here -->
+      </div>
+    </div>
+  </div>
+
   <!-- AI QUERY TAB -->
   <div id="ai-query-tab" class="tab-content">
     <div id="ai-query-content">
@@ -1112,6 +1142,158 @@
           <button type="submit" class="button button-primary" id="app-ws-settings-save">Save Changes</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Workspace Detail Modal -->
+  <div class="modal" id="workspace-detail-modal">
+    <div class="modal-content workspace-detail-content">
+      <div class="modal-header">
+        <h2>Workspace Details</h2>
+        <button class="modal-close" id="ws-detail-close">&times;</button>
+      </div>
+      
+      <!-- Main Tabs -->
+      <div class="detail-main-tabs">
+        <button class="detail-main-tab active" data-tab="overview">Overview</button>
+        <button class="detail-main-tab" data-tab="content">Content</button>
+        <button class="detail-main-tab" data-tab="manage">Manage</button>
+      </div>
+
+      <div class="workspace-detail-body">
+        <!-- Overview Tab -->
+        <div class="detail-main-pane active" id="overview-pane">
+          <div class="overview-header">
+            <div class="overview-icon" id="detail-icon">📊</div>
+            <div class="overview-info">
+              <h3 id="detail-name">Workspace Name</h3>
+              <p id="detail-description">Description goes here</p>
+              <div class="overview-meta">
+                <span id="detail-privacy">Private</span>
+                <span>•</span>
+                <span id="detail-created">Created recently</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="overview-stats-grid">
+            <div class="overview-stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-members">0</div>
+                <div class="stat-label">Members</div>
+              </div>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">📄</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-docs">0</div>
+                <div class="stat-label">Documents</div>
+              </div>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">🔗</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-entities">0</div>
+                <div class="stat-label">Entities</div>
+              </div>
+            </div>
+            <div class="overview-stat-card">
+              <div class="stat-icon">↔️</div>
+              <div class="stat-info">
+                <div class="stat-value" id="detail-rels">0</div>
+                <div class="stat-label">Relationships</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overview-section">
+            <h4>Members</h4>
+            <div id="detail-members-list" class="members-list">
+              <div class="detail-loading">Loading members...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Tab -->
+        <div class="detail-main-pane" id="content-pane">
+          <!-- Sub-tabs for Documents, Entities, Relationships -->
+          <div class="detail-sub-tabs">
+            <button class="detail-sub-tab active" data-tab="documents">Documents</button>
+            <button class="detail-sub-tab" data-tab="entities">Entities</button>
+            <button class="detail-sub-tab" data-tab="relationships">Relationships</button>
+          </div>
+
+          <!-- Sub-tab Content -->
+          <div class="detail-sub-content">
+            <div class="detail-sub-pane active" id="documents-pane">
+              <div class="detail-list" id="documents-list">
+                <div class="detail-loading">Loading documents...</div>
+              </div>
+            </div>
+            <div class="detail-sub-pane" id="entities-pane">
+              <div class="detail-list" id="entities-list">
+                <div class="detail-loading">Loading entities...</div>
+              </div>
+            </div>
+            <div class="detail-sub-pane" id="relationships-pane">
+              <div class="detail-list" id="relationships-list">
+                <div class="detail-loading">Loading relationships...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manage Tab (Add/Remove Documents) -->
+        <div class="detail-main-pane" id="manage-pane">
+          <div class="manage-section">
+            <h4>Add Documents to Workspace</h4>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
+              Select documents from the global database to add to this workspace.
+            </p>
+            <button type="button" class="btn-primary" id="show-add-docs-btn" style="margin-bottom: 16px;">
+              📄 Browse Available Documents
+            </button>
+            <div id="available-docs-list" style="display: none; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+              <div class="detail-loading">Loading available documents...</div>
+            </div>
+          </div>
+
+          <div class="manage-section" style="margin-top: 24px;">
+            <h4>View Configuration</h4>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
+              Configure filters and visualization settings for this workspace.
+            </p>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="show-is-a-rels"> Show IS_A Relationships
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="min-node-sig">Minimum Node Significance (1-5)</label>
+              <input type="number" id="min-node-sig" min="1" max="5" placeholder="No minimum">
+            </div>
+            <div class="form-group">
+              <label for="layout-algo">Default Layout Algorithm</label>
+              <select id="layout-algo" class="config-select">
+                <option value="cose">Force-Directed (COSE)</option>
+                <option value="dagre">Hierarchical (Dagre)</option>
+                <option value="concentric">Concentric</option>
+                <option value="fcose">Fast Force (fCOSE)</option>
+                <option value="cola">Constraint (CoLA)</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" id="save-view-config-btn">
+              💾 Save View Configuration
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="button button-secondary" id="ws-detail-close-btn">Close</button>
+        <button type="button" class="button button-primary" id="ws-detail-open">Open Workspace</button>
+      </div>
     </div>
   </div>
   

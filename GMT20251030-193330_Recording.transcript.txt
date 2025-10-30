@@ -1,0 +1,682 @@
+Belinda Akpa: All right.
+
+K. Selcuk Candan: Perfect, Carter!
+
+K. Selcuk Candan: Go for it.
+
+Carter Whitworth: Okay, share my screen, send requests.
+
+Carter Whitworth: Alrighty.
+
+Carter Whitworth: Did you see my screen?
+
+K. Selcuk Candan: Yes.
+
+Carter Whitworth: So our first notable change, regarding the ingestion is that I've changed the, context configuration a little bit.
+
+Carter Whitworth: So now we have this, new modal,
+
+Carter Whitworth: That has a little more control for the graph context, so we can select concepts, relationships, the current filtered view, or specific documents, and when we select a document, it's going to append all those entities and relationships from those particular documents.
+
+Carter Whitworth: And now we have, more controls for the extraction intent.
+
+Carter Whitworth: So if we want to find relationships that complement, conflict with, extend, or are distinct from the existing knowledge.
+
+Carter Whitworth: I wanted your opinion on… are these four options, satisfactory.
+
+Carter Whitworth: For, what you were referring to in our last meeting.
+
+Carter Whitworth: Dr. Conan.
+
+K. Selcuk Candan: I think so. For now, let's basically keep these, and again, so this is… I mean, we will need to present this to other researchers, right? So they might have, basically, other things to ask, I guess, but these are…
+
+K. Selcuk Candan: These are reasonable to me. Belinda.
+
+Carter Whitworth: Okay.
+
+Belinda Akpa: Yeah, they are reasonable. I think once we get to talking about the results of ingestion, I might have some questions, because I just,
+
+Belinda Akpa: threw in a couple of PDFs in the last half hour or so, and…
+
+Belinda Akpa: it seems to be doing something that I would not expect it to do.
+
+Carter Whitworth: Yes, I think I know what you're going to say, and I'm about to get into that.
+
+Belinda Akpa: Alright.
+
+Carter Whitworth: Moving on, also, I've implemented a feature for workspaces.
+
+Carter Whitworth: So now we can,
+
+Carter Whitworth: Work in, isolated, spaces that are not isolated parts of the database, but they will only share entities and objects inside that workspace.
+
+Belinda Akpa: And we have.
+
+Carter Whitworth: Two permissions right now, it's just private and public.
+
+Carter Whitworth: But I will implement a system where you can invite other people to your workspaces. We also just have a regular global view.
+
+Carter Whitworth: So that's that.
+
+K. Selcuk Candan: So, before we go there, so if I basically have a workspace, and if I maybe make some corrections in that workspace.
+
+K. Selcuk Candan: where do they… where do those corrections… those corrections basically stay within the workspace? Does it stay… does it go across workspaces that are private to me? Do they become public? So what happens to the corrections and validations that I do?
+
+K. Selcuk Candan: In that workspace.
+
+Carter Whitworth: I mean, they're technically global. Essentially, what I've done is we just have a workspace ID that is associated with
+
+Carter Whitworth: all of these objects that you are ingesting in that particular workspace. So, it's… I mean, depending… if it's private, then if it's a private workspace, then you won't see any of that in the global view, but you're essentially changing it for
+
+Carter Whitworth: all parts of the database, if that makes sense.
+
+K. Selcuk Candan: No, no, I understand. I mean, I understand that the mechanic changes for those, that I understand. I'm just sort of trying to see…
+
+K. Selcuk Candan: I'm just trying to understand,
+
+K. Selcuk Candan: I'm just trying to understand, how…
+
+K. Selcuk Candan: how, so let me basically put it like this, right? So let's assume that I have two workspaces.
+
+K. Selcuk Candan: Okay, I was just basically… let me just do this.
+
+K. Selcuk Candan: So, let's say I have two workspaces.
+
+K. Selcuk Candan: Okay, right, so let's assume these are private to me. Let's just assume they are private.
+
+K. Selcuk Candan: Okay, right.
+
+K. Selcuk Candan: And then I have a one PDF file.
+
+K. Selcuk Candan: Okay.
+
+K. Selcuk Candan: Do I put this into both of them separately?
+
+K. Selcuk Candan: or if I.
+
+K. Selcuk Candan: about them?
+
+K. Selcuk Candan: does it… relevant parts… I mean, so I'm sort of trying to understand, are these workspaces logically defined?
+
+K. Selcuk Candan: Based on.
+
+Carter Whitworth: Okay, so right now, that PDF would be isolated in the first workspace. It wouldn't transfer over to the second.
+
+K. Selcuk Candan: Okay, so basically, the workspaces are document-centric, and then basically I need to add the documents multiple times, okay, to… to each of them. Because another way the workspace could be defined is logical, right? So basically, I create a view.
+
+K. Selcuk Candan: Right? Say, basically, I say, okay, I want to basically just focus on, okay, right, so documents of this, type, or I just basically… it's the same graph.
+
+K. Selcuk Candan: Okay, right? But say I want to create a workspace of documents that are on genes.
+
+K. Selcuk Candan: or I'm basically creating a workspace based on some criterion. And then the workspace is basically created logically.
+
+K. Selcuk Candan: But physically, they may share. If they basically have satisfied the same criteria, let's say they basically, they have the same document.
+
+K. Selcuk Candan: then the network space would be shared. That's what I'm sort of trying to understand. Is this a… is this a…
+
+K. Selcuk Candan: Is this a logical… declarative… Rook's…
+
+K. Selcuk Candan: Or is it a physical… irrespective of how it is stored, that's not what I'm asking, right?
+
+Carter Whitworth: I can change it to what it is you are desiring right now. It can be changed to what you want. But right now, it's… it's not transferring over. Okay. It's just…
+
+K. Selcuk Candan: Yeah, so these things, I think basically, Carter, I think what we are lacking is the documentation of basic design decisions.
+
+K. Selcuk Candan: Okay, right, so it's a bit hard for us to basically discover these things
+
+K. Selcuk Candan: by interacting with them, right? So there are many things possible to interact. So it would be good, basically, if you can create, right? So as you are doing this, right?
+
+K. Selcuk Candan: a sort of a specification document, which basically sort of documents, right, so these design decisions that you make, okay? They are valid design decisions, it's just that it is not transparent to us, okay, right? Yes.
+
+Carter Whitworth: I can do that.
+
+K. Selcuk Candan: But then we can provide better feedback, right, if the design decisions, right, so are…
+
+K. Selcuk Candan: documented, right? Okay, for now, basically, there are workspaces, and the workspaces are essentially document-centric, and if I'm going to add…
+
+K. Selcuk Candan: Okay, the same…
+
+K. Selcuk Candan: add basically the same document twice in two different workspaces, I have to edit twice. That's what you are saying. Am I correct, right?
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Okay, alright. All right, yeah, so let's continue.
+
+Carter Whitworth: Okay, moving on, the next big change is modifying the type system. So, previously we had ontologies defined as properties and not relationships, and now they are defined as relationships. So, for example, we have
+
+Carter Whitworth: One right here, potential for stimulation applications is a outcome.
+
+Carter Whitworth: I have made the changes for the extraction prompt.
+
+Carter Whitworth: But it did lead to an issue where GBT was using concept or entity as a type, which is just confusing. So I guess my plan is I could blacklist those two terms.
+
+K. Selcuk Candan: Yeah, we should basically make… that's what I was basically saying. So, so concept is not a type, right? So concept is basically the language that we are using.
+
+K. Selcuk Candan: Okay, right? To refer to… these notes.
+
+K. Selcuk Candan: Okay? So, yeah, so we need to be careful about that. Okay, so we shouldn't basically have… and we should specifically say, for example, that basically… I will use the term concept, right, so…
+
+K. Selcuk Candan: precluded from the types that are generated. Now, if you want to have, right, so concept, because concept and entity may also… may have a meaning
+
+K. Selcuk Candan: Okay, right, so in the… within the…
+
+K. Selcuk Candan: say basically you are saying you basically include a, I don't know, a paper on languages, or a paper on basic philosophy, and concept may be the type. Do you… this is what I mean in that… in that case, right? So… so we should be… we need to somehow… we cannot really preclude it from being used.
+
+K. Selcuk Candan: Okay? But.
+
+Carter Whitworth: But the problem is that all of these are essentially concepts, so when you have a concept node that is a concept, it's…
+
+K. Selcuk Candan: Yeah, exactly. It just basically becomes… it just becomes basically a thing. Yeah, so I think one thing that might help, right, so is…
+
+K. Selcuk Candan: If you also share with us the prompt that you are developing, okay, so we can basically take a look at… all of us can take a look at the prompt, and maybe we can give you some suggestions about that. Is that okay?
+
+Carter Whitworth: I can share it right now.
+
+K. Selcuk Candan: No, not right.
+
+K. Selcuk Candan: I'm worried about, right?
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: more about right now, send it by email.
+
+Carter Whitworth: Okay.
+
+K. Selcuk Candan: look into that, okay, right? But thank you for pointing that, yes. I mean, because it's… everything is a concept for that, you have basically have this single node that basically.
+
+Carter Whitworth: Yeah.
+
+K. Selcuk Candan: So, yeah, I agree with that, okay? That seems to be counter-useful.
+
+K. Selcuk Candan: Okay, right?
+
+Carter Whitworth: So, moving on.
+
+Belinda Akpa: I wonder whether it's useful at all to have that type of thing represented in the visualization. I mean…
+
+Carter Whitworth: So, what I was…
+
+K. Selcuk Candan: The reason why I am basically kind of concerned of removing it.
+
+K. Selcuk Candan: Because the term concept would be a useful, distinct Thing in, say, programming languages?
+
+K. Selcuk Candan: philosophy, Right, so… Because there, it's like you are referring to Gene, you would refer.
+
+Belinda Akpa: Come on.
+
+K. Selcuk Candan: Except I say… As a… as a thing that is…
+
+Belinda Akpa: Right. But does it need to be visualized, or is it the kind of thing…
+
+K. Selcuk Candan: It needs to be visualized. That it will need to be visualized.
+
+Belinda Akpa: Right, but I mean, could it be, for example, the color of the node, or some other property, as opposed to having a node labeled concept, and now all of the other nodes have to point to it, because it seems like.
+
+K. Selcuk Candan: So, no, I agree.
+
+K. Selcuk Candan: In that.
+
+Belinda Akpa: Those relationships, I guess, is what I'm saying, don't… I don't know that they need to be visualized, but I guess you could just have an option for whether you visualize them, although it seems like Carter wants to say something and we're talking over it.
+
+Carter Whitworth: Please, so…
+
+Carter Whitworth: So I did consider this, and essentially, inevitably, when you are visualizing ontological relationships with this kind of layout, which is a force-directed layout, you're going to run into these issues where there's a lot of overlapping. And so we do have… I did implement some other options, and what makes the most sense for when you have
+
+Carter Whitworth: Ontological relationships is something like a hierarchy.
+
+Carter Whitworth: So we have something like this, which is obviously a lot more organized and clean-looking. We also have
+
+Carter Whitworth: I don't know, a circular one, if that's something we want. Basically, there's different layout configurations that we could do according to what relationships.
+
+K. Selcuk Candan: So I thought this is great, right? So just to give it basically as a… let's not basically try to guess at what the user will want. Let's have the option. This is beautiful.
+
+K. Selcuk Candan: Okay, right, so I think… I think I agree, right? So… so going back to the specific term concept, right? So the problem is basically… is… is sort of the… the term concept.
+
+K. Selcuk Candan: Okay, right, so it has a meaning.
+
+K. Selcuk Candan: Okay, in our…
+
+K. Selcuk Candan: in our… in our, sort of, in our, model, okay, we are… because we are saying for every edge.
+
+K. Selcuk Candan: These we call a concept, and this we call a concept.
+
+K. Selcuk Candan: Okay, right?
+
+K. Selcuk Candan: And… and there's also, basically, the problem is that… is that… The term concept, quote-unquote concept.
+
+K. Selcuk Candan: Okay, right, so it might also have a meaning in the application domain, which is a different meaning, okay, right? So, and then there is basically that there's an overload of
+
+K. Selcuk Candan: terminology, right? Okay, we are using terminology for our model.
+
+K. Selcuk Candan: And then there's, there's, also you. So, this…
+
+K. Selcuk Candan: Okay, this basically… the concepts here, right? So we don't want them, right? So basically, because everything is a concept, Carter, as you said, right? So that we don't need, okay, right? Unless the term concept is used in the paper.
+
+K. Selcuk Candan: Okay, if the term…
+
+Belinda Akpa: Yeah, that's fine, but for example… It can't be included.
+
+Belinda Akpa: for example, I loaded up an immunology paper.
+
+K. Selcuk Candan: And…
+
+Belinda Akpa: it has what are being classified as outcomes, and so there's a node labeled outcomes, and now everything that it considers an outcome is pointing at this node. That might be useful,
+
+Belinda Akpa: But some of these other classifications are so generic that they just make the visualization
+
+Belinda Akpa: Impossible to make sense of.
+
+Carter Whitworth: Yes.
+
+Belinda Akpa: now that I'm saying this.
+
+K. Selcuk Candan: I think that's why filtering is going to be important.
+
+Belinda Akpa: Yeah, it's a filtering challenge, yeah.
+
+K. Selcuk Candan: you filter those out, and then you create a workspace, and in that workspace, all of those are filtered out, right, so that it doesn't matter. Yeah, that's fine. Okay, so I think that's why, basically, I was saying, the filters, right, so from my perspective, right, so workspaces from my perspective, right, so are a visualization, okay, that is
+
+K. Selcuk Candan: targeted, right, so your needs, right? So, say I create a workspace, okay, and in that workspace, right, so I have certain visualization, I basically sort of design the visualization, right, so for a particular use case, okay, right? And that's basically from my logical workspace.
+
+K. Selcuk Candan: the data is the same, I have a logical workspace.
+
+K. Selcuk Candan: Also, I can also basically create another workspace. Maybe in some other thing, maybe those are things that I care about. I need a different visualization, I create a different workspace for that. So, Kartha, that's what basically, from my perspective, that's a workspace, right? So it is not the…
+
+K. Selcuk Candan: It is not that I don't… I mean, that it is a different place that I put papers.
+
+K. Selcuk Candan: But it is the same papers, but I have a different…
+
+K. Selcuk Candan: focus, different filtering criteria, different visualization criteria. Does that make sense?
+
+Carter Whitworth: Yes.
+
+Belinda Akpa: And actually, this is quite powerful from the perspective of the multidisciplinary interaction, because whereas I might find it incredibly irritating to have the word model associated with a bunch of different, what I would perceive as generic things that a model can do.
+
+Belinda Akpa: I can see somebody who's not
+
+Belinda Akpa: a systems modeler of biology needing to come to this and being able to say, okay, what is the purpose of the model here? Or somebody coming, and I see there's a node called metric. I can see it being very useful for somebody who's really new to the field to see, oh, this antibody concentration is an important metric.
+
+Belinda Akpa: So, I really do think it gives us a rich opportunity
+
+Belinda Akpa: To allow people who are approaching this from different perspectives to get what they need out of the knowledge breath.
+
+Belinda Akpa: So, very nice.
+
+K. Selcuk Candan: Yes, definitely.
+
+Carter Whitworth: Okay, so yes, I was planning,
+
+Carter Whitworth: My next big task would be improving the filtering system.
+
+Carter Whitworth: A lot more control with that.
+
+Carter Whitworth: So, along with the workspaces, I'll be improving the filtering, so you have more options.
+
+K. Selcuk Candan: Right, yeah, and then basically, yeah, so let's tie basic workspaces to, if you don't mind, okay, to these different
+
+K. Selcuk Candan: Visualization and filtering.
+
+K. Selcuk Candan: Okay, so I might basically, for example, create a workspace that is just a number of papers that I have
+
+K. Selcuk Candan: I have uploaded, I can select them, or I can run a query, okay, right?
+
+K. Selcuk Candan: So… so, but it's not… so… but the paper goes in only once. Do you see what I mean, right? So paper goes in only once?
+
+K. Selcuk Candan: Okay, right? A workspace, essentially, is just, that I am accessing that or not, okay, depending on the criteria that I…
+
+K. Selcuk Candan: declared. Does that make sense? Okay.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: And I've been out…
+
+Carter Whitworth: Besides.
+
+K. Selcuk Candan: You have been basically silent. Do you agree with this, since you are attending the meeting as well?
+
+Abhinav Gorantla: So, I think, one thing that might be useful is maybe…
+
+Abhinav Gorantla: Adding what those, concepts mean, like, for example, what does the word concept or what does the word metric mean?
+
+K. Selcuk Candan: I mean, but we don't have that, right?
+
+Carter Whitworth: meetings.
+
+K. Selcuk Candan: Yeah, those are things that basically extracted, right?
+
+K. Selcuk Candan: All those…
+
+Abhinav Gorantla: Yep.
+
+K. Selcuk Candan: Or commented about by the…
+
+Abhinav Gorantla: We don't really have that.
+
+K. Selcuk Candan: Because they are not really what the user provides.
+
+Abhinav Gorantla: Same date.
+
+Abhinav Gorantla: Yeah.
+
+Abhinav Gorantla: Yes, that's, but, I was thinking more along the lines of, when the…
+
+Abhinav Gorantla: when the graph is extracted by, GPT, if it could give us what
+
+Abhinav Gorantla: The node means, what the extracted concept means.
+
+Abhinav Gorantla: Maybe that could give us…
+
+K. Selcuk Candan: I don't know, I mean, yeah, you're right, but I'm not that comfortable with that.
+
+Abhinav Gorantla: Yeah, okay, I understand.
+
+K. Selcuk Candan: But it might mislead, right? Because it might not… it might not be the…
+
+Abhinav Gorantla: For those snacks?
+
+K. Selcuk Candan: It recognizes the concept, right? So it's different than it explains the concept, right? However, when we talk about annotation.
+
+Abhinav Gorantla: So, I think there is some.
+
+K. Selcuk Candan: Can you mute yourself?
+
+K. Selcuk Candan: Yeah, it's coming from you. I think, basically, somebody around you is talking.
+
+K. Selcuk Candan: But I think it may be good to… Have an annotation.
+
+K. Selcuk Candan: Right, so I can annotate.
+
+K. Selcuk Candan: I think we will need to have, free-form annotation, right? So, say, I click on this.
+
+K. Selcuk Candan: note, right? And then I basically annotate it, right? So… I can… I think we should allow that.
+
+K. Selcuk Candan: Right? So, that's basically where, the sort of the semantic enrichment and so on is also coming from, right? So, I may want to annotate it, right? So this is basically what I mean.
+
+K. Selcuk Candan: This, this is what I think it means. It's an important thing for me, I can basically put an annotation there.
+
+K. Selcuk Candan: I think that may make sense. But Belinda, what do you think? Do you think that GPT annotation or user annotation of the, of the freeform annotation, right? So does it make sense?
+
+Belinda Akpa: I think allowing users to annotate as necessary is probably the best way to go, because I'm thinking, for example, if it chooses a concept like gene.
+
+Belinda Akpa: what is GPT going to explain about what a gene is? I think that has to be passed on to human experts to clarify as necessary, or to seek additional information. I will say I'm having great fun with your layouts, Carter, because it's… the concentric layout does a really interesting thing where all those
+
+Belinda Akpa: Concepts are down the middle.
+
+Belinda Akpa: And then it feeds out, and I've done the color coding, and it… it looks really nice, I have to say.
+
+Belinda Akpa: And that sort of reinforces the value of having those different classifications visualized, if you can then lay this out in such a way that they are central and don't show up at the same level as some of the specific details. It's really nice.
+
+K. Selcuk Candan: I'm…
+
+Belinda Akpa: User annotation.
+
+K. Selcuk Candan: Now, another thing that basically might help
+
+K. Selcuk Candan: is, simply the ability to maybe turn off the ESA relationships.
+
+K. Selcuk Candan: or basically make it lighter gray or something like this, right? Because it's a specific type of relationship, right? So that might basically, somehow, even you have some other visualization, at least these relationships may be optional in the visual, character, so that they don't…
+
+K. Selcuk Candan: They don't basically overwhelm the other relationships that may be more valuable.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Okay, because we will have a lot of these, right? So, because everything is something, so… so… and they may basically overwhelm the visualization. So, we should be able to basically maybe simply turn off the ease relationship from visualization, and then see the other ones.
+
+K. Selcuk Candan: Okay, and then if the user wants, can click again to something, checkbox, and then you also see the relationships.
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Okay, excellent, excellent, very good, okay, that's great.
+
+K. Selcuk Candan: And, so, anything else, that you want to share, Cartersh?
+
+Carter Whitworth: Besides some small adjustments, on the index panel, previously the relationships were not explicitly, stating the actual relationship, but now they are, as you wanted.
+
+K. Selcuk Candan: Beautiful, beautiful. Yeah, this is, this is much nicer. I mean, this, this is good. Thank you so much.
+
+K. Selcuk Candan: I don't want to say much nicer, but this is clearer. Thank you.
+
+Belinda Akpa: Yes, yes.
+
+K. Selcuk Candan: Yeah.
+
+Belinda Akpa: So some of the relationships being extracted seem super literal.
+
+Belinda Akpa: Like, it's picking out the paper in a sentence saying, this is this. And so it's putting, this is a this.
+
+Belinda Akpa: Which to me feels, like, less useful than what we were seeing in some of the earlier extraction that you did, Selchik. And I don't know if that's maybe a product of this paper, or if something has changed in the prompt where it's struggling to pull together things that are conceptually more meaningful than…
+
+K. Selcuk Candan: I think the prompt changed, right? So I think, basically, I think the difficulty is that basically we are saying extract
+
+K. Selcuk Candan: A handful of concepts, sorry, relationships.
+
+K. Selcuk Candan: before, we were not extracting these relationships, right? So now, basically, we are also extracting, and that basically takes away, right, so from…
+
+K. Selcuk Candan: From the… from the others.
+
+K. Selcuk Candan: Okay, right, because there's a limited number of relationships we extract, right? And then these are probably easier things to extract for it, right? So, and that's why I want to see the prompt, right? So, to basically… maybe we can be able to provide some feedback on the prompt to make sure that basically, we… I mean, the system is not, or the output is not…
+
+K. Selcuk Candan: overwhelmed, right, so by this type extraction, right? So, I mean, it's good to have the types, right, so, but that's not… that shouldn't be the dominant.
+
+K. Selcuk Candan: thing, right? So we want to basically make sure that we are getting, this, the more, sort of, useful relationships, really, if at all possible. And then we will need to basically… that's why I think it would be good to basically take a look at the character to the, to the, to the prompt, okay?
+
+Carter Whitworth: I mean, I haven't changed the main prompt. The central goal is to extract the most significant relationships. That's the highest goal.
+
+Belinda Akpa: It's not just types that it's doing it for, it's doing it for other relationships, but it's almost just taking word-for-word phrases from the text and not doing any higher-order sense-making, which I felt we were getting out of the previous prompts.
+
+K. Selcuk Candan: Okay, so… so please share it, and then let's take… let's read it. Is it okay? Okay. Okay, so just… and then I can also play with a different model. Okay, maybe not have access to 5, I can basically see with another model and see, basically.
+
+K. Selcuk Candan: what it does, okay? Right? So just… just so that there is some… so that we can also play with it, basically, in a more direct way, okay? I think last time I had one question to you, right? So, say basically I had papers.
+
+K. Selcuk Candan: Okay, extract some graph.
+
+K. Selcuk Candan: Okay, right, so now I want to basically add the same paper again.
+
+K. Selcuk Candan: Okay, right, so, and then within the context of this.
+
+K. Selcuk Candan: How do I do that?
+
+K. Selcuk Candan: Do I have the ability to basically add the same paper again?
+
+K. Selcuk Candan: Same PDF again.
+
+Carter Whitworth: Yes. So initially, when I showed you the, the new,
+
+Carter Whitworth: Context settings. We can select specific documents.
+
+Carter Whitworth: And that is going to append all of the objects and entities and relationships of that particular document.
+
+K. Selcuk Candan: So that I understand, but do I add the PDF again, and does it basically… is it… is it… is it…
+
+K. Selcuk Candan: So… does this… because remember, we also keep provenance, right? So we say something comes from this PDF,
+
+K. Selcuk Candan: With this, so will it… will it,
+
+K. Selcuk Candan: I guess, basically, so PDFs.
+
+Carter Whitworth: So it's not… the system isn't recognizing it as a… as an old PDF. It's… it's technically a new PDF, and I guess…
+
+K. Selcuk Candan: Yeah, yeah, so that's what I'm… so that's the part that I'm sort of trying to resolve, right, in my mind, right? Because now there are two PDFs, but they are the same paper.
+
+K. Selcuk Candan: So how does… how do we resolve that? Or do we resolve it, or maybe we don't need to resolve, that's also fine, okay, right? So maybe it's okay if it is basically if we test two different PDFs. But I'm trying to resolve that in my mind.
+
+Carter Whitworth: Yes, I think… they can essentially be merged into one singular object PDF document.
+
+Carter Whitworth: That's what, that's what I think.
+
+Carter Whitworth: Probably.
+
+K. Selcuk Candan: Yeah, but how do we know it? Is it based on the PDF size? It's based on the paper's…
+
+K. Selcuk Candan: Do we hash the PDFs to… to… Yeah.
+
+Carter Whitworth: Probably metadata.
+
+K. Selcuk Candan: Okay, alright, yeah.
+
+Carter Whitworth: metadata.
+
+K. Selcuk Candan: Okay, so we might want to think a little bit about that, or at least ask the user, is this… when you add a new paper, maybe basically ask the user, hey, is this the…
+
+K. Selcuk Candan: Is this this paper that we have already seen, or something like that? Do you see what I mean, right?
+
+Carter Whitworth: Yes.
+
+K. Selcuk Candan: Okay, but I'm reading a new paper.
+
+K. Selcuk Candan: That might basically be before it is actually processed, right? So something might come and say, hey, is this the paper that you basically are
+
+K. Selcuk Candan: adding, we have already seen this, and if that is the case, right, so… select that, what is extracted from that anyhow, by default. Do you see what I mean? So that way, basically… Yes.
+
+K. Selcuk Candan: So that way, even if I basically, without doing this specific document selection, if I add the paper again.
+
+K. Selcuk Candan: Right, so it basically knows that it has been processed in the past, if the user select yes.
+
+Belinda Akpa: I suppose we don't want to restrict it to things with document identifiers, like, And just have DOIs.
+
+K. Selcuk Candan: I mean, that would be basically… that would resolve it in an easier way if you want to limit, but I don't know. I don't know. I think that's basically something that…
+
+K. Selcuk Candan: I mean, I can see using this, right, so for other, sort of running papers and stuff like that, but if you want it to be DUI-centric, then that, of course, resolves it, right? So then you just enter the DUI, you check the DUI, and then that's it. Belinda, what do you think? I mean, I don't have any strong opinion about that.
+
+Belinda Akpa: I mean, that gets us into thinking about what kinds of sources of knowledge we want people to be able to engage with.
+
+Belinda Akpa: Not everything…
+
+K. Selcuk Candan: Yeah, exactly. Yeah.
+
+K. Selcuk Candan: So, if, yeah, I don't, I don't know. So, I mean…
+
+Belinda Akpa: Because it would hurt to say, if you've uploaded something with a document identifier, here is the location where we'd like you to add it.
+
+Belinda Akpa: That could at least reduce the burden for identifying, overlaps. I suppose people might ignore it, but…
+
+K. Selcuk Candan: Yeah.
+
+K. Selcuk Candan: Yeah, I think we need to have our own.
+
+Belinda Akpa: Yeah.
+
+K. Selcuk Candan: hookup anyhow, but I think it may be a good idea to have that option. I agree, right, so if there's a DUI, so basically just provide the DUI, or basically, if it is coming from PubMed, and so on, the way, basically, Carter implemented anyhow.
+
+K. Selcuk Candan: I suppose the DOI, so that basically, if, if it is provided, then we, we flag that, more.
+
+K. Selcuk Candan: In a more convenient way.
+
+K. Selcuk Candan: I'm okay with… I think that's a good idea. But, Carter, please think about that, okay? Alright, so when, basically, for the injection part, I think basically doing this, the…
+
+K. Selcuk Candan: the duplicate.
+
+K. Selcuk Candan: Right? So, recognition, right? So, and then… and then checking, basically, with the… with the person who's uploading. Hey, you are uploading something, okay, we think we have seen this in the past.
+
+K. Selcuk Candan: Is this it.
+
+K. Selcuk Candan: Okay, so I think that would basically be used.
+
+Carter Whitworth: Sounds good.
+
+K. Selcuk Candan: Okay.
+
+K. Selcuk Candan: Alright, that's great.
+
+Abhinav Gorantla: Okay.
+
+K. Selcuk Candan: Perfect.
+
+K. Selcuk Candan: Anything over the hardwood?
+
+K. Selcuk Candan: Abhinav, are you talking?
+
+Abhinav Gorantla: Yes, I wanted to… I had, like, one minor suggestion. I saw that there is no, forgot password option, and I think I forgot my password, so I just wanted to mention that.
+
+K. Selcuk Candan: That is a good point. I have two accounts. The reason for that is that, basically, I think
+
+K. Selcuk Candan: I get my password, but somehow my earlier password didn't work.
+
+K. Selcuk Candan: I don't know, maybe something that I've.
+
+Belinda Akpa: The same issue, I had to create a new account.
+
+Carter Whitworth: Yeah, the…
+
+Carter Whitworth: The issue is that I didn't… I wasn't storing it in the database properly, so I had to fix things.
+
+K. Selcuk Candan: That's what happened. Yeah, yeah, yeah, yeah. So, it would be good, basically, faster, basically. So, I think all of us, face that.
+
+Carter Whitworth: Yes, that was my fault.
+
+K. Selcuk Candan: Mana.
+
+Carter Whitworth: I will implement forgot password. Also, the email settings, so you get the email.
+
+K. Selcuk Candan: Yeah, that's okay. We know that you are, multiple, basically, it is going in multiple directions, and we keep asking you to do
+
+K. Selcuk Candan: Go on, but…
+
+Belinda Akpa: As long as we keep asking, you know that we are engaged in Excel.
+
+K. Selcuk Candan: Yeah, exactly, exactly. That's the point, right? So we don't say, hey, I mean, do whatever, right? Because it's exciting. You are doing great work, and we are excited about it. Thanks a lot, Carter. Thank you.
+
+Abhinav Gorantla: And, I also wanted to mention, I got the… I got a reply from the IT on how to get the API keys. They gave me an FAQ… I found this on their website. They basically say, for academic research, we need to contact this person.
+
+K. Selcuk Candan: There's a new… just one second. If you guys don't see, Abhinav is sharing the screen.
+
+K. Selcuk Candan: So… Wait, there's another screen at the top.
+
+Carter Whitworth: Here, I'll stop sharing.
+
+K. Selcuk Candan: Dub, dub, okay.
+
+K. Selcuk Candan: Okay, yeah.
+
+K. Selcuk Candan: Yeah, go, go ahead, I mean, now I think everybody's seeing it.
+
+Abhinav Gorantla: Yes, so, there is, someone we can contact to get the API key.
+
+Abhinav Gorantla: I don't.
+
+K. Selcuk Candan: When you, when you are contacting Jill, please CC me, because I know him. That's the contact that I mentioned, so that I have, I have a contact, I know him.
+
+Abhinav Gorantla: forgive me.
+
+K. Selcuk Candan: So, if there's a question, I can ask about it.
+
+Abhinav Gorantla: Yeah, sure. I didn't reach out to them yet, but I will do it today.
+
+K. Selcuk Candan: Okay, very…
+
+Abhinav Gorantla: Thank you.
+
+K. Selcuk Candan: And it's important that the car has it. So, PDC cartramp is immediate.
+
+Abhinav Gorantla: Holy cow.
+
+K. Selcuk Candan: Just, state in the email to them.
+
+Abhinav Gorantla: That's much.
+
+K. Selcuk Candan: to Jill, that basically you are working with me on an NSF fund project, and Carter is basically a collaborator, okay, who's a visiting scholar, right? So, working with us in that project, and he needs access to that API key, okay, right?
+
+Abhinav Gorantla: Sure.
+
+K. Selcuk Candan: Okay.
+
+Abhinav Gorantla: Yes, I will send the email today, and then CC, both of you.
+
+K. Selcuk Candan: Excellent. Great. Thanks, Atabinha. Beautiful.
+
+Belinda Akpa: Thanks, everyone.
+
+K. Selcuk Candan: All right, thank you, thank you guys, thanks a lot.
+
+Carter Whitworth: Aye.
+
+K. Selcuk Candan: So, please send us your updates by email.
+
+Carter Whitworth: I'll send the, the prompt.
+
+K. Selcuk Candan: That's great, alright, thank you, bye-bye.
+
+Abhinav Gorantla: Bye-bye.
+
+Carter Whitworth: Bye.
+

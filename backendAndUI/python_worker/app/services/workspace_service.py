@@ -12,10 +12,13 @@ from ..models.workspace import (
     WorkspaceMember,
     WorkspacePermissions,
     WorkspaceStats,
+    WorkspaceViewConfig,
     CreateWorkspaceRequest,
     UpdateWorkspaceRequest,
     InviteMemberRequest,
     UpdateMemberRequest,
+    AddDocumentsToWorkspaceRequest,
+    RemoveDocumentsFromWorkspaceRequest,
 )
 from .neo4j_client import neo4j_client
 
@@ -140,6 +143,14 @@ class WorkspaceService:
                 elif isinstance(updated_at, str):
                     updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
             
+            # Parse view_config if present
+            view_config = None
+            if w.get("view_config"):
+                try:
+                    view_config = WorkspaceViewConfig(**w["view_config"])
+                except Exception as e:
+                    logger.warning(f"Failed to parse view_config for workspace {workspace_id}: {e}")
+            
             return Workspace(
                 workspace_id=w["workspace_id"],
                 name=w["name"],
@@ -153,6 +164,7 @@ class WorkspaceService:
                 archived=w.get("archived", False),
                 members=members,
                 stats=stats,
+                view_config=view_config,
             )
 
     @staticmethod
@@ -297,6 +309,8 @@ class WorkspaceService:
             updates["color"] = request.color
         if request.privacy is not None:
             updates["privacy"] = request.privacy
+        if request.view_config is not None:
+            updates["view_config"] = request.view_config.dict()
 
         if not updates:
             return WorkspaceService.get_workspace(workspace_id, user_id)
@@ -711,6 +725,123 @@ class WorkspaceService:
                 })
 
             return relationships
+
+    @staticmethod
+    def add_documents_to_workspace(workspace_id: str, user_id: str, request: AddDocumentsToWorkspaceRequest) -> bool:
+        """Add existing documents to a workspace (creates BELONGS_TO relationships)."""
+        # Check if user has permission
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'add_documents'):
+            logger.warning(f"User {user_id} does not have permission to add documents to workspace {workspace_id}")
+            return False
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            # Add BELONGS_TO relationships for documents and their entities
+            result = session.run(
+                """
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                MATCH (d:Document)
+                WHERE d.document_id IN $document_ids
+                MERGE (d)-[:BELONGS_TO]->(w)
+                WITH d, w
+                OPTIONAL MATCH (e:Entity)-[:EXTRACTED_FROM]->(d)
+                FOREACH (_ IN CASE WHEN e IS NOT NULL THEN [1] ELSE [] END |
+                    MERGE (e)-[:BELONGS_TO]->(w)
+                )
+                SET w.updated_at = datetime()
+                RETURN count(DISTINCT d) as docs_added, count(DISTINCT e) as entities_linked
+                """,
+                workspace_id=workspace_id,
+                document_ids=request.document_ids
+            )
+
+            record = result.single()
+            if record:
+                logger.info(f"Added {record['docs_added']} documents and {record['entities_linked']} entities to workspace {workspace_id}")
+                return True
+
+        return False
+
+    @staticmethod
+    def remove_documents_from_workspace(workspace_id: str, user_id: str, request: RemoveDocumentsFromWorkspaceRequest) -> bool:
+        """Remove documents from a workspace (deletes BELONGS_TO relationships)."""
+        # Check if user has permission
+        if not WorkspaceService._user_has_permission(workspace_id, user_id, 'edit_relationships'):
+            logger.warning(f"User {user_id} does not have permission to remove documents from workspace {workspace_id}")
+            return False
+
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            # Remove BELONGS_TO relationships for documents and their entities
+            result = session.run(
+                """
+                MATCH (w:Workspace {workspace_id: $workspace_id})
+                MATCH (d:Document)-[r:BELONGS_TO]->(w)
+                WHERE d.document_id IN $document_ids
+                DELETE r
+                WITH d, w
+                OPTIONAL MATCH (e:Entity)-[:EXTRACTED_FROM]->(d)
+                OPTIONAL MATCH (e)-[er:BELONGS_TO]->(w)
+                DELETE er
+                SET w.updated_at = datetime()
+                RETURN count(DISTINCT d) as docs_removed, count(DISTINCT e) as entities_unlinked
+                """,
+                workspace_id=workspace_id,
+                document_ids=request.document_ids
+            )
+
+            record = result.single()
+            if record:
+                logger.info(f"Removed {record['docs_removed']} documents and {record['entities_unlinked']} entities from workspace {workspace_id}")
+                return True
+
+        return False
+
+    @staticmethod
+    def list_available_documents(user_id: str, workspace_id: Optional[str] = None) -> List[dict]:
+        """List all documents available to add to a workspace (public + user's private documents)."""
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            # If workspace_id provided, exclude documents already in that workspace
+            workspace_filter = ""
+            if workspace_id:
+                workspace_filter = """
+                AND NOT EXISTS {
+                    MATCH (d)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                }
+                """
+
+            query = f"""
+            MATCH (d:Document)
+            WHERE (
+                NOT EXISTS {{ (d)-[:BELONGS_TO]->(:Workspace {{privacy: 'private'}}) }}
+                OR EXISTS {{ (d)-[:CREATED_BY]->(:User {{user_id: $user_id}}) }}
+            )
+            {workspace_filter}
+            OPTIONAL MATCH (d)-[:CREATED_BY]->(u:User)
+            OPTIONAL MATCH (d)-[:BELONGS_TO]->(w:Workspace)
+            RETURN d, u.user_email as creator_email, collect(DISTINCT w.name) as workspaces
+            ORDER BY d.created_at DESC
+            LIMIT 200
+            """
+
+            result = session.run(
+                query,
+                user_id=user_id,
+                workspace_id=workspace_id
+            )
+
+            documents = []
+            for record in result:
+                doc = record["d"]
+                documents.append({
+                    "document_id": doc.get("document_id"),
+                    "title": doc.get("title") or doc.get("name"),
+                    "name": doc.get("name"),
+                    "summary": doc.get("summary"),
+                    "created_at": doc.get("created_at").to_native() if doc.get("created_at") else None,
+                    "creator_email": record.get("creator_email"),
+                    "workspaces": record.get("workspaces", []),
+                })
+
+            return documents
 
 
 # Global service instance

@@ -8,6 +8,8 @@ from ..models.workspace import (
     UpdateWorkspaceRequest,
     InviteMemberRequest,
     UpdateMemberRequest,
+    AddDocumentsToWorkspaceRequest,
+    RemoveDocumentsFromWorkspaceRequest,
 )
 from ..models.user import User
 from ..core.auth import get_current_user
@@ -275,6 +277,66 @@ def get_workspace_relationships(
         return {"relationships": relationships}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get relationships: {str(e)}")
+
+
+@router.post("/workspaces/{workspace_id}/documents/add", status_code=200)
+def add_documents_to_workspace(
+    workspace_id: str,
+    request: AddDocumentsToWorkspaceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Add existing documents to a workspace."""
+    try:
+        success = workspace_service.add_documents_to_workspace(
+            workspace_id=workspace_id,
+            user_id=current_user.user_id,
+            request=request
+        )
+        if not success:
+            raise HTTPException(status_code=403, detail="Permission denied or documents not found")
+        return {"message": f"Added {len(request.document_ids)} document(s) to workspace"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add documents: {str(e)}")
+
+
+@router.post("/workspaces/{workspace_id}/documents/remove", status_code=200)
+def remove_documents_from_workspace(
+    workspace_id: str,
+    request: RemoveDocumentsFromWorkspaceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove documents from a workspace."""
+    try:
+        success = workspace_service.remove_documents_from_workspace(
+            workspace_id=workspace_id,
+            user_id=current_user.user_id,
+            request=request
+        )
+        if not success:
+            raise HTTPException(status_code=403, detail="Permission denied or documents not found")
+        return {"message": f"Removed {len(request.document_ids)} document(s) from workspace"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove documents: {str(e)}")
+
+
+@router.get("/documents/available")
+def list_available_documents(
+    workspace_id: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    """List all documents available to add to a workspace."""
+    try:
+        documents = workspace_service.list_available_documents(
+            user_id=current_user.user_id,
+            workspace_id=workspace_id
+        )
+        return {"documents": documents}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list documents: {str(e)}")
 
 
 @router.post("/sync-user", status_code=200)

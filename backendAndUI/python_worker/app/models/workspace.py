@@ -50,6 +50,7 @@ class Workspace(BaseModel):
     archived: bool = False
     members: List[WorkspaceMember] = []
     stats: Optional[WorkspaceStats] = None
+    view_config: Optional[WorkspaceViewConfig] = Field(default=None, description="View/filter configuration for this workspace")
 
 
 class CreateWorkspaceRequest(BaseModel):
@@ -68,6 +69,17 @@ class UpdateWorkspaceRequest(BaseModel):
     icon: Optional[str] = None
     color: Optional[str] = None
     privacy: Optional[str] = None
+    view_config: Optional[WorkspaceViewConfig] = None
+
+
+class AddDocumentsToWorkspaceRequest(BaseModel):
+    """Request to add existing documents to a workspace."""
+    document_ids: List[str] = Field(..., min_items=1, description="Document IDs to add to workspace")
+
+
+class RemoveDocumentsFromWorkspaceRequest(BaseModel):
+    """Request to remove documents from a workspace."""
+    document_ids: List[str] = Field(..., min_items=1, description="Document IDs to remove from workspace")
 
 
 class InviteMemberRequest(BaseModel):
@@ -81,6 +93,32 @@ class UpdateMemberRequest(BaseModel):
     """Request to update a member's role or permissions."""
     role: Optional[str] = None
     permissions: Optional[WorkspacePermissions] = None
+
+
+class WorkspaceViewConfig(BaseModel):
+    """Configuration for workspace view/filter settings."""
+    # Document filters
+    included_document_ids: Optional[List[str]] = Field(default=None, description="Specific documents to include")
+    excluded_document_ids: Optional[List[str]] = Field(default=None, description="Specific documents to exclude")
+    
+    # Entity filters
+    included_entity_types: Optional[List[str]] = Field(default=None, description="Entity types to show")
+    excluded_entity_types: Optional[List[str]] = Field(default=None, description="Entity types to hide")
+    
+    # Relationship filters
+    included_relationship_types: Optional[List[str]] = Field(default=None, description="Relationship types to show")
+    excluded_relationship_types: Optional[List[str]] = Field(default=None, description="Relationship types to hide (e.g., IS_A)")
+    show_is_a_relationships: bool = Field(default=True, description="Show ontological IS_A relationships")
+    
+    # Significance filters
+    min_node_significance: Optional[int] = Field(default=None, ge=1, le=5, description="Minimum node significance (1-5)")
+    min_relationship_significance: Optional[int] = Field(default=None, ge=1, le=5, description="Minimum relationship significance (1-5)")
+    
+    # Visualization settings
+    layout_algorithm: str = Field(default="cose", description="Graph layout algorithm")
+    node_color_scheme: str = Field(default="by-type", description="Node coloring scheme")
+    node_size_scheme: str = Field(default="by-significance", description="Node sizing scheme")
+    label_display_mode: str = Field(default="hover", description="Label display mode")
 
 
 class GraphFilter(BaseModel):
