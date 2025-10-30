@@ -873,16 +873,26 @@ class WorkspacesManager {
   }
 
   async loadWorkspaceDocuments(workspaceId) {
+    console.log('loadWorkspaceDocuments called for:', workspaceId);
     const listEl = document.getElementById('documents-list');
+    console.log('documents-list element:', listEl);
+    
     if (!listEl) {
-      console.warn('documents-list element not found');
+      console.error('documents-list element not found in DOM!');
+      console.log('Available elements:', {
+        modal: document.getElementById('workspace-detail-modal'),
+        contentPane: document.getElementById('content-pane'),
+        documentsPane: document.getElementById('documents-pane')
+      });
       return;
     }
 
+    console.log('Setting loading state...');
     listEl.innerHTML = '<div class="detail-loading">Loading documents...</div>';
+    console.log('Loading state set, innerHTML:', listEl.innerHTML);
 
     try {
-      console.log('Loading documents for workspace:', workspaceId);
+      console.log('Fetching documents for workspace:', workspaceId);
       const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
       console.log('Documents response:', response);
       const documents = Array.isArray(response) ? response : (response.documents || []);
