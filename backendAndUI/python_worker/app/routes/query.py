@@ -152,8 +152,8 @@ def get_all(
     rels_cypher = (
         "MATCH (s)-[r]->(t) "
         "WHERE (s:Entity OR s:Type OR s:Concept) AND (t:Entity OR t:Type OR t:Concept) "
-        "WHERE coalesce(s.id, s.name, elementId(s)) IN $node_ids "
-          "  AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
+          "AND coalesce(s.id, s.name, elementId(s)) IN $node_ids "
+          "AND coalesce(t.id, t.name, elementId(t)) IN $node_ids "
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources "
         "WITH r, s, t, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id), created_by_first_name: doc.created_by_first_name, created_by_last_name: doc.created_by_last_name}) as source_docs "
         "RETURN {id: elementId(r), source: coalesce(s.id, s.name, elementId(s)), target: coalesce(t.id, t.name, elementId(t)), relation: coalesce(r.relation, toLower(type(r))), polarity: coalesce(r.polarity,'positive'), confidence: coalesce(r.confidence,0), significance: coalesce(r.significance, null), status: r.status, sources: source_docs, page_number: coalesce(r.page_number, null), original_text: coalesce(r.original_text, null), reviewed_by_first_name: coalesce(r.reviewed_by_first_name, null), reviewed_by_last_name: coalesce(r.reviewed_by_last_name, null), reviewed_at: coalesce(r.reviewed_at, null)} AS relationship"
