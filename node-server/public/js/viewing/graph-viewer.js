@@ -487,7 +487,13 @@ export class GraphViewer {
   toggleLegend() {
     const modal = document.getElementById('legend-modal-overlay');
     if (modal) {
+      const isOpening = !modal.classList.contains('visible');
       modal.classList.toggle('visible');
+      
+      // Initialize slider visibility when opening
+      if (isOpening && this.visualConfig) {
+        this.visualConfig.initializeSliderVisibility();
+      }
     }
   }
   

@@ -909,6 +909,17 @@ export class VisualConfigManager {
     this.applyLayout();
   }
 
+  initializeSliderVisibility() {
+    const algorithm = document.getElementById('layout-algorithm')?.value || 'cose';
+    const spreadSection = document.getElementById('layout-spread-section');
+    
+    // Show spread slider only for force-directed layouts
+    const forceDirectedLayouts = ['cose', 'fcose', 'cola'];
+    if (spreadSection) {
+      spreadSection.style.display = forceDirectedLayouts.includes(algorithm) ? 'block' : 'none';
+    }
+  }
+
   updateSpreadLabel(value) {
     const label = document.getElementById('spread-value-label');
     if (label) {
@@ -928,43 +939,41 @@ export class VisualConfigManager {
     // Get spread value from slider (50-500, default 200)
     const spreadValue = parseInt(document.getElementById('layout-spread-slider')?.value || 200);
     
-    // Normalize to 0-1 range where 0.5 is default
-    const normalizedSpread = (spreadValue - 50) / 450; // 0 to 1
-    
-    // Create exponential scaling for more dramatic effect
-    // Lower values = more compact (higher repulsion, shorter edges)
-    // Higher values = more spread (lower repulsion, longer edges)
-    const spreadMultiplier = Math.pow(2, (normalizedSpread - 0.5) * 3); // Range: ~0.35 to ~2.83
+    // Simple linear scaling - slider value directly controls edge length
+    // 50 = compact (short edges), 200 = default, 500 = spread (long edges)
+    const edgeLengthMultiplier = spreadValue / 200; // Range: 0.25 to 2.5
 
     switch (algorithm) {
       case 'cose':
         return { 
           ...baseOptions,
-          // Base values that work well, then scale them
-          nodeRepulsion: 4000 / spreadMultiplier,  // Higher repulsion = more compact
-          idealEdgeLength: 100 * spreadMultiplier,  // Longer edges = more spread
+          nodeRepulsion: 8000,  // Keep constant
+          idealEdgeLength: 100 * edgeLengthMultiplier,  // Scale: 25 to 250
           nodeOverlap: 20,
-          gravity: 0.25,
-          numIter: 1000
+          gravity: 1,
+          numIter: 1000,
+          edgeElasticity: 100,
+          nestingFactor: 1.2
         };
       case 'fcose':
         return { 
           ...baseOptions, 
           quality: 'default',
           randomize: false,
-          nodeSeparation: 75 * spreadMultiplier,  // More separation = more spread
-          idealEdgeLength: 50 * spreadMultiplier,
-          nodeRepulsion: 4500 / spreadMultiplier,
+          nodeSeparation: 75,  // Keep constant
+          idealEdgeLength: 50 * edgeLengthMultiplier,  // Scale: 12.5 to 125
+          nodeRepulsion: 4500,  // Keep constant
           gravity: 0.25,
           numIter: 2500
         };
       case 'cola':
         return { 
           ...baseOptions,
-          edgeLength: 100 * spreadMultiplier,
-          nodeSpacing: 50 * spreadMultiplier,
+          edgeLength: 100 * edgeLengthMultiplier,  // Scale: 25 to 250
+          nodeSpacing: 50,  // Keep constant
           convergenceThreshold: 0.01,
-          maxSimulationTime: 4000
+          maxSimulationTime: 4000,
+          avoidOverlap: true
         };
       case 'circle':
         return { ...baseOptions, radius: 300 };
