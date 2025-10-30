@@ -156,7 +156,12 @@ export class IndexPanelManager {
     state.indexData.edges = edges.reduce((acc, e) => {
       const data = e.data();
       const sources = data.sources || [];
-      if (!belongsToWorkspace(sources)) return acc;
+      const relation = data.relation || '';
+      const isOntological = relation.toLowerCase() === 'is a' || relation.toLowerCase() === 'is_a';
+      
+      // For ontological relationships (IS_A), skip source filtering - include if both endpoints are allowed
+      // For other relationships, apply workspace source filtering
+      if (!isOntological && !belongsToWorkspace(sources)) return acc;
 
       if (!allowedNodeIds.has(data.source) || !allowedNodeIds.has(data.target)) {
         return acc;

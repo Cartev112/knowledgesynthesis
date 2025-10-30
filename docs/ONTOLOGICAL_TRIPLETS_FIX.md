@@ -6,78 +6,87 @@ Ontological triplets (e.g., `concept -IS_A-> concept_type`) were being correctly
 
 ## Root Cause
 
-The issue was in the backend query endpoint `/query/all` in `query.py`:
+**The issue was in the FRONTEND, not the backend.** Since the graph viewer was displaying the triplets correctly, the backend was already returning all the necessary data. The problem was in how the index panel filtered and displayed that data.
 
-### Original Query Behavior
+### What Was Happening
 
-1. **Node Query**: Only matched `(n:Concept)` nodes directly
-   - It looked for `(n)-[:IS_A]->(type:Concept)` to get type information
-   - **BUT** it only returned the base concept nodes, not the type nodes themselves
-   - Type nodes (targets of IS_A relationships) were never included in the result set
+In `index-panel.js`, the `populateIndex()` method:
 
-2. **Relationship Query**: Only returned relationships where BOTH source and target were in `$node_ids`
-   - Since type nodes weren't in the returned node set, IS_A relationships were filtered out
+1. **First Pass** (lines 99-119): Collected workspace nodes by filtering based on document sources
+   - Concept type nodes that didn't have matching workspace sources were excluded
+   - Even though line 91 allows nodes without sources, type nodes might have sources from other workspaces
 
-3. **Frontend Filtering**: The index panel (`index-panel.js`) filters nodes based on workspace documents
-   - It checks if nodes have `sources` that match workspace documents
-   - Concept type nodes typically have no sources (they're ontological types, not extracted entities)
-   - Even though the code allows nodes without sources (`if (!sources || sources.length === 0) return true;`), these nodes were never returned from the backend in the first place
+2. **Building allowedNodeIds** (line 121): Created a set of allowed node IDs from the filtered nodes
+   - Since type nodes were filtered out in step 1, they weren't in this set
+
+3. **Filtering Relationships** (lines 156-168): Filtered edges based on both workspace sources AND `allowedNodeIds`
+   ```javascript
+   if (!belongsToWorkspace(sources)) return acc;  // Line 159 - PROBLEM!
+   
+   if (!allowedNodeIds.has(data.source) || !allowedNodeIds.has(data.target)) {
+     return acc;
+   }
+   ```
+   - IS_A relationships were excluded at line 159 because they have empty/non-workspace sources
+   - Even after adding type nodes to `allowedNodeIds`, the relationships were still filtered out by the source check
 
 ## Solution
 
-Modified the backend query in `query.py` to use a UNION pattern that includes both:
+Modified the frontend `index-panel.js` to use a **two-pass approach**:
 
-1. **Base concepts** (the original query)
-2. **Concept type nodes** (targets of IS_A relationships from base concepts)
+1. **First pass**: Collect all workspace nodes (original behavior)
+2. **Second pass**: Add concept type nodes that are targets of IS_A relationships from workspace nodes
+
+This ensures that ontological type nodes are always included in the index when their related concepts are in the workspace, regardless of whether the type nodes themselves have workspace sources.
 
 ### Changes Made
 
-#### File: `backendAndUI/python_worker/app/routes/query.py`
+#### File: `node-server/public/js/viewing/index-panel.js`
 
-**Function: `get_all()` (lines 104-193)**
+**Function: `populateIndex()` (lines 99-152)**
 
-Changed the `nodes_cypher` query from a simple MATCH to a CALL with UNION:
+Added a second pass after collecting workspace nodes:
 
-```cypher
-CALL {
-  // Get base concepts (with workspace filter)
-  MATCH (n:Concept)
-  WHERE 1=1 [workspace_filter]
-  OPTIONAL MATCH (n)-[:EXTRACTED_FROM]->(doc:Document)
-  WITH n, collect(...) as source_docs
-  OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
-  WITH n, source_docs, collect(DISTINCT type.name) AS type_names
-  WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
-  RETURN n, source_docs, types
-  SKIP $skip LIMIT $limit
-  
-  UNION
-  
-  // Get concept type nodes (targets of IS_A from base concepts)
-  MATCH (base:Concept)
-  WHERE 1=1 [workspace_filter]
-  MATCH (base)-[:IS_A]->(typeNode:Concept)
-  OPTIONAL MATCH (typeNode)-[:EXTRACTED_FROM]->(doc:Document)
-  WITH DISTINCT typeNode AS n, collect(DISTINCT {...}) as source_docs
-  OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
-  WITH n, source_docs, collect(DISTINCT type.name) AS type_names
-  WITH n, source_docs, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
-  RETURN n, source_docs, types
-}
-WITH DISTINCT n, source_docs, types
-RETURN {...} AS node
-```
+```javascript
+// First pass: collect all nodes that belong to workspace
+const workspaceNodes = nodes.reduce((acc, n) => {
+  const sources = n.data().sources || [];
+  if (!belongsToWorkspace(sources)) return acc;
+  // ... add node to acc
+  return acc;
+}, []);
 
-**Function: `graph_by_documents()` (lines 245-298)**
+// Second pass: add concept type nodes (targets of IS_A relationships from workspace nodes)
+const workspaceNodeIds = new Set(workspaceNodes.map(n => n.id));
+const typeNodeIds = new Set();
 
-Updated the `rels_cypher` query to use the same pattern as `get_all()`:
-- Changed from document-based filtering to node_ids-based filtering
-- This ensures IS_A relationships are included when both endpoints are in the returned node set
+edges.forEach(e => {
+  const data = e.data();
+  const relation = data.relation || '';
+  // If this is an IS_A relationship from a workspace node, include the target type node
+  if (relation.toLowerCase() === 'is a' || relation.toLowerCase() === 'is_a') {
+    if (workspaceNodeIds.has(data.source)) {
+      typeNodeIds.add(data.target);
+    }
+  }
+});
 
-```python
-# Extract node IDs from returned nodes to filter relationships
-node_ids = [node["id"] for node in nodes]
-rels = [rec["relationship"] for rec in session.run(rels_cypher, node_ids=node_ids)]
+// Add type nodes to the index
+typeNodeIds.forEach(typeId => {
+  if (!workspaceNodeIds.has(typeId)) {
+    const typeNode = state.cy.getElementById(typeId);
+    if (typeNode && typeNode.length) {
+      workspaceNodes.push({
+        id: typeNode.id(),
+        label: typeNode.data().label,
+        type: typeNode.data().type || 'Concept',
+        sources: typeNode.data().sources || []
+      });
+    }
+  }
+});
+
+state.indexData.nodes = workspaceNodes;
 ```
 
 ## Impact
@@ -91,9 +100,9 @@ rels = [rec["relationship"] for rec in session.run(rels_cypher, node_ids=node_id
 
 ### What Remains Unchanged
 
-- Frontend code (`index-panel.js`) requires no changes
+- Backend code requires no changes (it was already working correctly)
 - The logic for filtering by workspace documents still works
-- Type nodes without sources are correctly handled (they're allowed through the workspace filter)
+- Graph viewer continues to work as before
 
 ## Testing Recommendations
 
@@ -112,7 +121,8 @@ rels = [rec["relationship"] for rec in session.run(rels_cypher, node_ids=node_id
 
 ## Technical Notes
 
-- The UNION approach may return slightly more nodes than the original query (due to including type nodes)
-- The DISTINCT clause ensures no duplicate nodes are returned
-- The workspace filter is applied to both branches of the UNION to maintain correct filtering behavior
-- The pagination SKIP/LIMIT is applied to the base concepts only, not to the type nodes (to avoid pagination issues)
+- The two-pass approach ensures type nodes are included without modifying the workspace filtering logic
+- Type nodes are only added if they're targets of IS_A relationships from workspace nodes
+- The check `if (!workspaceNodeIds.has(typeId))` prevents duplicate entries
+- This approach works with both "is a" and "is_a" relation naming conventions
+- No backend changes were needed - the issue was purely in the frontend filtering logic
