@@ -826,14 +826,12 @@ class WorkspaceService:
 
     @staticmethod
     def list_available_documents(user_id: str) -> List[dict]:
-        """List all documents available to add to workspaces (public + user's private)."""
+        """List all documents available to add to workspaces (only user's own documents)."""
         with neo4j_client._driver.session(database=settings.neo4j_database) as session:
             result = session.run(
                 """
                 MATCH (d:Document)
-                WHERE d.created_by = $user_id 
-                   OR NOT EXISTS { (d)-[:IN_WORKSPACE]->(:Workspace {privacy: 'private'}) }
-                   OR EXISTS { (d)-[:IN_WORKSPACE]->(w:Workspace {privacy: 'private'})<-[:MEMBER_OF]-(:User {user_id: $user_id}) }
+                WHERE d.created_by = $user_id
                 RETURN DISTINCT d.document_id as document_id, 
                        d.title as title,
                        d.created_at as created_at,

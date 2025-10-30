@@ -871,13 +871,19 @@ class WorkspacesManager {
 
   async loadWorkspaceDocuments(workspaceId) {
     const listEl = document.getElementById('documents-list');
-    if (!listEl) return;
+    if (!listEl) {
+      console.warn('documents-list element not found');
+      return;
+    }
 
     listEl.innerHTML = '<div class="detail-loading">Loading documents...</div>';
 
     try {
+      console.log('Loading documents for workspace:', workspaceId);
       const response = await API.get(`/api/workspaces/${encodeURIComponent(workspaceId)}/documents`);
+      console.log('Documents response:', response);
       const documents = Array.isArray(response) ? response : (response.documents || []);
+      console.log('Parsed documents:', documents);
 
       if (!documents || documents.length === 0) {
         listEl.innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">📄</div><p>No documents yet</p><p style="font-size: 0.875rem; color: #6b7280;">Click "Add Documents" to get started</p></div>';
