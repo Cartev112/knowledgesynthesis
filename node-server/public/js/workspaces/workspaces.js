@@ -65,8 +65,21 @@ class WorkspacesManager {
 
   async init() {
     console.log('🔧 Initializing WorkspacesManager');
-    // Check authentication
-    await this.checkAuth();
+    
+    // Check authentication (skip if in integrated app - already authenticated)
+    const isIntegratedApp = document.getElementById('workspaces-tab');
+    if (!isIntegratedApp) {
+      await this.checkAuth();
+    } else {
+      // In integrated app, try to get current user but don't fail if not available
+      try {
+        const response = await API.get('/api/me');
+        this.currentUser = response.user;
+      } catch (error) {
+        console.warn('Could not get current user:', error);
+        // Continue anyway - user might be authenticated via different mechanism
+      }
+    }
     
     // Set up event listeners
     this.setupEventListeners();
