@@ -708,6 +708,9 @@ class WorkspacesManager {
       // Populate activity (placeholder for now)
       this.populateActivity(workspace);
 
+      // Wait a tick to ensure modal is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       // Load documents (for Content tab)
       await this.loadWorkspaceDocuments(workspaceId);
       
@@ -914,7 +917,8 @@ class WorkspacesManager {
       });
     } catch (error) {
       console.error('Failed to load documents:', error);
-      listEl.innerHTML = '<div class="detail-empty"><p>Failed to load documents</p></div>';
+      console.error('Error details:', error.message, error.stack);
+      listEl.innerHTML = `<div class="detail-empty"><p>Failed to load documents</p><p style="font-size: 0.875rem; color: #ef4444;">${error.message}</p></div>`;
     }
   }
 
