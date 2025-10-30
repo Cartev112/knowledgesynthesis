@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from ..services.preprocess import extract_text_from_path, HARD_CODED_INPUT
 from ..services.openai_extract import extract_triplets
 from ..services.graph_write import write_triplets
+from ..services.workspace_service import workspace_service
 # from ..services.email_service import send_upload_notification
 from pypdf import PdfReader
 import hashlib
@@ -152,6 +153,14 @@ async def ingest_from_text(payload: IngestTextRequest, background_tasks: Backgro
             document_title = extract_title_from_text(payload.text)
             logger.info(f"Auto-extracted title from text: {document_title}")
         
+        workspace_metadata = None
+        if payload.workspace_id:
+            if not payload.user_id:
+                raise HTTPException(status_code=400, detail="workspace_id requires user_id")
+            workspace_metadata = workspace_service.get_workspace_metadata(payload.workspace_id, payload.user_id)
+            if not workspace_metadata:
+                raise HTTPException(status_code=404, detail="Workspace not found or access denied")
+
         result = extract_triplets(
             payload.text,
             max_triplets=payload.max_relationships
@@ -163,7 +172,8 @@ async def ingest_from_text(payload: IngestTextRequest, background_tasks: Backgro
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
             user_last_name=payload.user_last_name,
-            workspace_id=payload.workspace_id
+            workspace_id=payload.workspace_id,
+            workspace_metadata=workspace_metadata
         )
         
         # Send email notification in background
@@ -210,6 +220,14 @@ async def ingest_from_pdf(
         
         if file.content_type != "application/pdf":
             raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
+
+        workspace_metadata = None
+        if workspace_id:
+            if not user_id:
+                raise HTTPException(status_code=400, detail="workspace_id requires user_id")
+            workspace_metadata = workspace_service.get_workspace_metadata(workspace_id, user_id)
+            if not workspace_metadata:
+                raise HTTPException(status_code=404, detail="Workspace not found or access denied")
 
         pdf_bytes = await file.read()
         # Document identity by SHA-256; title extracted from text or filename
@@ -259,7 +277,8 @@ async def ingest_from_pdf(
             user_id=user_id,
             user_first_name=user_first_name,
             user_last_name=user_last_name,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
+            workspace_metadata=workspace_metadata
         )
         logger.info(f"Database write complete. Wrote {writes.get('triplets_written', 0)} relationships")
         

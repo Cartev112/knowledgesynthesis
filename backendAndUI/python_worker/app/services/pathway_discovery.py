@@ -65,7 +65,7 @@ def find_shortest_path(
     
     UNWIND idxs AS idx
     WITH path, source, target, path_length, path_rels, idx, nodes(path)[idx] AS node
-    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Concept)
     WITH source, target, path_length, path_rels, idx, node, collect(DISTINCT type.name) AS type_names
     WITH source, target, path_length, path_rels,
          collect({{
@@ -169,7 +169,7 @@ def find_all_paths(
     
     UNWIND idxs AS idx
     WITH path, source, target, path_length, path_rels, idx, nodes(path)[idx] AS node
-    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Concept)
     WITH source, target, path_length, path_rels, idx, node, collect(DISTINCT type.name) AS type_names
     WITH source, target, path_length, path_rels,
          collect({{
@@ -272,7 +272,7 @@ def find_connecting_concepts(
     
     OPTIONAL MATCH (connector)-[:EXTRACTED_FROM]->(doc:Document)
     WITH connector, total_hops, collect({id: doc.document_id, title: coalesce(doc.title, doc.document_id)}) AS sources
-    OPTIONAL MATCH (connector)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (connector)-[:IS_A]->(type:Concept)
     WITH connector, total_hops, sources, collect(DISTINCT type.name) AS type_names
     
     RETURN {{
@@ -351,7 +351,7 @@ def explore_multi_hop(
     OPTIONAL MATCH (entity)-[:EXTRACTED_FROM]->(doc:Document)
     
     WITH center, hop_distance, entity, collect({{id: doc.document_id, title: coalesce(doc.title, doc.document_id)}}) AS sources
-    OPTIONAL MATCH (entity)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (entity)-[:IS_A]->(type:Concept)
     WITH center, hop_distance, entity, sources, collect(DISTINCT type.name) AS type_names
     
     RETURN 
@@ -465,14 +465,14 @@ def pattern_query(
         if node1_type:
             params["node1_type"] = node1_type
             where_clauses.append(
-                "(EXISTS { (n1)-[:IS_A]->(:Type {name: $node1_type}) } OR ($node1_type = 'Concept' AND NOT EXISTS { (n1)-[:IS_A]->(:Type) }))"
+                "(EXISTS { (n1)-[:IS_A]->(:Concept {name: $node1_type}) } OR ($node1_type = 'Concept' AND NOT EXISTS { (n1)-[:IS_A]->(:Concept) }))"
             )
     
         n2_pattern = "n2:Entity"
         if node2_type:
             params["node2_type"] = node2_type
             where_clauses.append(
-                "(EXISTS { (n2)-[:IS_A]->(:Type {name: $node2_type}) } OR ($node2_type = 'Concept' AND NOT EXISTS { (n2)-[:IS_A]->(:Type) }))"
+                "(EXISTS { (n2)-[:IS_A]->(:Concept {name: $node2_type}) } OR ($node2_type = 'Concept' AND NOT EXISTS { (n2)-[:IS_A]->(:Concept) }))"
             )
         
         # Build relationship pattern
@@ -493,12 +493,12 @@ def pattern_query(
           WITH n1, n2, r
           CALL {{
             WITH n1
-            OPTIONAL MATCH (n1)-[:IS_A]->(t1:Type)
+            OPTIONAL MATCH (n1)-[:IS_A]->(t1:Concept)
             RETURN CASE WHEN count(t1) = 0 THEN ['Concept'] ELSE collect(DISTINCT t1.name) END AS node1_types
           }}
           CALL {{
             WITH n2
-            OPTIONAL MATCH (n2)-[:IS_A]->(t2:Type)
+            OPTIONAL MATCH (n2)-[:IS_A]->(t2:Concept)
             RETURN CASE WHEN count(t2) = 0 THEN ['Concept'] ELSE collect(DISTINCT t2.name) END AS node2_types
           }}
           
@@ -528,4 +528,5 @@ def pattern_query(
             "error": str(exc),
             "message": "Failed to execute pattern query"
         }
+
 

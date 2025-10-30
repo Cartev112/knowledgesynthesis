@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from ..core.settings import settings
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 COLLABORATIVE_PRIVACIES = {"public", "shared", "organization"}
 SHARED_OPEN_WRITE_PERMISSIONS = {"view", "add_documents", "edit_relationships"}
+OWNER_PERMISSIONS = ["view", "add_documents", "edit_relationships", "invite_others", "manage_workspace"]
 
 
 class WorkspaceService:
@@ -83,7 +84,7 @@ class WorkspaceService:
                 user_first_name=user_first_name,
                 user_last_name=user_last_name,
                 workspace_id=workspace_id,
-                permissions=['view', 'add_documents', 'edit_relationships', 'invite_others', 'manage_workspace'],
+                permissions=OWNER_PERMISSIONS,
                 joined_at=now.isoformat(),
             )
 
@@ -217,6 +218,65 @@ class WorkspaceService:
                 workspaces.append(workspace)
 
             return workspaces
+
+    @staticmethod
+    def get_workspace_metadata(workspace_id: str, user_id: str) -> Optional[Dict[str, object]]:
+        """
+        Fetch a lightweight snapshot of workspace metadata suitable for serialization.
+
+        Used by ingestion flows to validate and, if necessary, recreate workspace nodes.
+        """
+        workspace = WorkspaceService.get_workspace(workspace_id, user_id)
+        if not workspace:
+            return None
+
+        owner_member = next((member for member in workspace.members if member.role == "owner"), None)
+
+        owner_permissions: List[str] = OWNER_PERMISSIONS
+        if owner_member:
+            perms_data = owner_member.permissions
+            if isinstance(perms_data, WorkspacePermissions):
+                owner_permissions = [name for name, allowed in perms_data.model_dump().items() if allowed]
+            elif isinstance(perms_data, list):
+                owner_permissions = perms_data
+            elif isinstance(perms_data, dict):
+                owner_permissions = [name for name, allowed in perms_data.items() if allowed]
+
+        created_at_value: Optional[str]
+        created_at_field = workspace.created_at
+        if isinstance(created_at_field, datetime):
+            created_at_value = created_at_field.isoformat()
+        else:
+            created_at_value = str(created_at_field) if created_at_field else None
+
+        metadata: Dict[str, object] = {
+            "workspace_id": workspace.workspace_id,
+            "name": workspace.name,
+            "description": workspace.description,
+            "icon": workspace.icon,
+            "color": workspace.color,
+            "privacy": workspace.privacy,
+            "created_by": workspace.created_by,
+            "created_at": created_at_value,
+            "owner_permissions": owner_permissions,
+        }
+
+        if owner_member:
+            metadata["owner"] = {
+                "user_id": owner_member.user_id,
+                "email": owner_member.user_email,
+                "first_name": owner_member.user_first_name,
+                "last_name": owner_member.user_last_name,
+            }
+        else:
+            metadata["owner"] = {
+                "user_id": workspace.created_by,
+                "email": workspace.created_by,
+                "first_name": None,
+                "last_name": None,
+            }
+
+        return metadata
 
     @staticmethod
     def update_workspace(workspace_id: str, user_id: str, request: UpdateWorkspaceRequest) -> Optional[Workspace]:

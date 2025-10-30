@@ -397,7 +397,6 @@ export class IngestionManager {
   
   applyContextConfig() {
     // Save configuration
-    this.contextConfig.enabled = true;
     this.contextConfig.sources.selectedNodes = document.getElementById('context-use-selected-nodes')?.checked || false;
     this.contextConfig.sources.selectedEdges = document.getElementById('context-use-selected-edges')?.checked || false;
     this.contextConfig.sources.filteredView = document.getElementById('context-use-filtered-view')?.checked || false;
@@ -417,6 +416,9 @@ export class IngestionManager {
     this.contextConfig.intents.conflicts = document.getElementById('intent-conflicts')?.checked || false;
     this.contextConfig.intents.extends = document.getElementById('intent-extends')?.checked || false;
     this.contextConfig.intents.distinct = document.getElementById('intent-distinct')?.checked || false;
+
+    const hasGraphSources = this.hasGraphSourcesConfigured();
+    this.contextConfig.enabled = hasGraphSources;
     
     // Update main UI summary
     this.updateMainContextSummary();
@@ -424,45 +426,58 @@ export class IngestionManager {
     // Close modal
     this.closeContextConfig();
     
-    showMessage('success', 'Context configuration applied');
+    if (hasGraphSources || this.contextConfig.userText) {
+      const message = hasGraphSources
+        ? 'Graph context configuration applied.'
+        : 'Saved user focus text; add graph sources to include knowledge graph context.';
+      showMessage('success', message);
+    } else {
+      showMessage('warning', 'No graph context sources selected. Context remains disabled.');
+    }
   }
-  
+
   updateMainContextSummary() {
     const summaryEl = document.getElementById('context-summary-text');
     if (!summaryEl) return;
     
-    if (!this.contextConfig.enabled) {
-      summaryEl.innerHTML = 'No context configured';
+    const hasGraphContext = this.hasGraphSourcesConfigured();
+    const hasUserText = !!(this.contextConfig.userText && this.contextConfig.userText.trim().length > 0);
+
+    if (!hasGraphContext && !hasUserText) {
+      summaryEl.textContent = 'No context configured';
       summaryEl.style.color = '#9ca3af';
       return;
     }
     
     const parts = [];
-    if (this.contextConfig.sources.selectedNodes && state.selectedNodes.size > 0) {
+    if (hasGraphContext && this.contextConfig.sources.selectedNodes && state.selectedNodes.size > 0) {
       parts.push(`${state.selectedNodes.size} concepts`);
     }
-    if (this.contextConfig.sources.selectedEdges && state.selectedEdges?.size > 0) {
+    if (hasGraphContext && this.contextConfig.sources.selectedEdges && state.selectedEdges?.size > 0) {
       parts.push(`${state.selectedEdges.size} relationships`);
     }
-    if (this.contextConfig.sources.filteredView) {
+    if (hasGraphContext && this.contextConfig.sources.filteredView) {
       parts.push('filtered view');
     }
-    if (this.contextConfig.sources.documents && this.contextConfig.sources.documentIds.length > 0) {
+    if (hasGraphContext && this.contextConfig.sources.documents && this.contextConfig.sources.documentIds.length > 0) {
       parts.push(`${this.contextConfig.sources.documentIds.length} docs`);
     }
     
-    const intents = this.getActiveIntents();
-    
-    if (parts.length === 0) {
-      summaryEl.innerHTML = '<span style="color: #ef4444;">⚠ Context enabled but no sources selected</span>';
-    } else {
-      summaryEl.innerHTML = `
-        <div style="color: #059669; font-weight: 600; margin-bottom: 4px;">✓ Context Active</div>
-        <div style="font-size: 12px; color: #6b7280;">${parts.join(', ')} • ${intents}</div>
-      `;
+    const lines = [];
+    if (parts.length > 0) {
+      lines.push(parts.join(', ') + ' - ' + this.getActiveIntents());
     }
+    if (hasUserText) {
+      lines.push('User focus text saved');
+    }
+
+    summaryEl.innerHTML = `
+      <div style="color: #059669; font-weight: 600; margin-bottom: 4px;">Context preferences saved</div>
+      <div style="font-size: 12px; color: #4b5563;">${lines.join('<br>')}</div>
+    `;
+    summaryEl.style.color = '#374151';
   }
-  
+
   getActiveIntents() {
     const intents = [];
     if (this.contextConfig.intents.complements) intents.push('complement');
@@ -470,6 +485,18 @@ export class IngestionManager {
     if (this.contextConfig.intents.extends) intents.push('extend');
     if (this.contextConfig.intents.distinct) intents.push('distinct');
     return intents.length > 0 ? intents.join(', ') : 'neutral';
+  }
+
+  hasGraphSourcesConfigured(config = null) {
+    const cfg = config || this.contextConfig;
+    if (!cfg || !cfg.sources) return false;
+
+    const nodesReady = cfg.sources.selectedNodes && state.selectedNodes.size > 0;
+    const edgesReady = cfg.sources.selectedEdges && state.selectedEdges?.size > 0;
+    const filteredReady = !!cfg.sources.filteredView && !!state.cy && state.cy.elements(':visible').length > 0;
+    const docsReady = cfg.sources.documents && Array.isArray(cfg.sources.documentIds) && cfg.sources.documentIds.length > 0;
+
+    return nodesReady || edgesReady || filteredReady || docsReady;
   }
   
   clearContext() {
@@ -481,12 +508,18 @@ export class IngestionManager {
       documents: false,
       documentIds: []
     };
+    this.contextConfig.userText = '';
     this.updateMainContextSummary();
     this.closeContextConfig();
     showMessage('success', 'Context cleared');
   }
   
   showDetailedContextPreview() {
+    const modalConfig = this._readModalConfig();
+    if (!this.hasGraphSourcesConfigured(modalConfig)) {
+      showMessage('warning', 'Select at least one graph source before opening the detailed preview.');
+      return;
+    }
     // Show the existing detailed preview modal
     this.showContextPreview();
   }
@@ -788,7 +821,7 @@ export class IngestionManager {
     const maxConcepts = parseInt(document.getElementById('max-concepts').value);
     const maxRelationships = parseInt(document.getElementById('max-relationships').value);
     const model = document.getElementById('model-select').value;
-    const useGraphContext = this.contextConfig.enabled;
+    const useGraphContext = this.hasGraphSourcesConfigured();
     
     if (pdfFiles.length === 0 && !text) {
       this.showStatus('error', 'Please upload PDF file(s) or paste text');
@@ -804,6 +837,8 @@ export class IngestionManager {
         } else {
           extractionContext = result.text;
         }
+      } else if (!result) {
+        this.showStatus('warning', 'Could not build graph context from the selected sources; continuing with user focus text only.');
       } else {
         this.showStatus('error', 'Failed to load graph context. Please configure context sources.');
         return;

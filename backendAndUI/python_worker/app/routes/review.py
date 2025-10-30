@@ -76,12 +76,12 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
         CALL {{
             WITH s
-            OPTIONAL MATCH (s)-[:IS_A]->(stype:Type)
+            OPTIONAL MATCH (s)-[:IS_A]->(stype:Concept)
             RETURN CASE WHEN count(stype) = 0 THEN ['Concept'] ELSE collect(DISTINCT stype.name) END AS subject_types
         }}
         CALL {{
             WITH o
-            OPTIONAL MATCH (o)-[:IS_A]->(otype:Type)
+            OPTIONAL MATCH (o)-[:IS_A]->(otype:Concept)
             RETURN CASE WHEN count(otype) = 0 THEN ['Concept'] ELSE collect(DISTINCT otype.name) END AS object_types
         }}
         RETURN 
@@ -125,12 +125,12 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         WITH s, r, o, rel_type, collect(DISTINCT {{id: d.document_id, title: coalesce(d.title, d.document_id)}}) as docs
         CALL {{
             WITH s
-            OPTIONAL MATCH (s)-[:IS_A]->(stype:Type)
+            OPTIONAL MATCH (s)-[:IS_A]->(stype:Concept)
             RETURN CASE WHEN count(stype) = 0 THEN ['Concept'] ELSE collect(DISTINCT stype.name) END AS subject_types
         }}
         CALL {{
             WITH o
-            OPTIONAL MATCH (o)-[:IS_A]->(otype:Type)
+            OPTIONAL MATCH (o)-[:IS_A]->(otype:Concept)
             RETURN CASE WHEN count(otype) = 0 THEN ['Concept'] ELSE collect(DISTINCT otype.name) END AS object_types
         }}
         RETURN 
@@ -392,4 +392,5 @@ def get_review_stats(workspace_id: Optional[str] = None):
             }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to get review stats: {exc}")
+
 

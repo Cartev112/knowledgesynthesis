@@ -136,7 +136,8 @@ class IngestionWorker:
             user_id=job_data.get('user_id'),
             user_first_name=job_data.get('user_first_name'),
             user_last_name=job_data.get('user_last_name'),
-            workspace_id=job_data.get('workspace_id')  # Associate with workspace
+            workspace_id=job_data.get('workspace_id'),  # Associate with workspace
+            workspace_metadata=job_data.get('workspace_metadata')
         )
         
         # Generate and store embeddings
@@ -185,7 +186,8 @@ class IngestionWorker:
             user_id=job_data.get('user_id'),
             user_first_name=job_data.get('user_first_name'),
             user_last_name=job_data.get('user_last_name'),
-            workspace_id=job_data.get('workspace_id')  # Associate with workspace
+            workspace_id=job_data.get('workspace_id'),  # Associate with workspace
+            workspace_metadata=job_data.get('workspace_metadata')
         )
         
         return {
@@ -314,7 +316,8 @@ class IngestionWorker:
             user_id=job_data.get('user_id'),
             user_first_name=job_data.get('user_first_name'),
             user_last_name=job_data.get('user_last_name'),
-            workspace_id=job_data.get('workspace_id')  # Associate with workspace
+            workspace_id=job_data.get('workspace_id'),  # Associate with workspace
+            workspace_metadata=job_data.get('workspace_metadata')
         )
         
         return {

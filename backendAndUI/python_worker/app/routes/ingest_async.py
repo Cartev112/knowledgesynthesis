@@ -10,6 +10,7 @@ from pydantic import BaseModel, HttpUrl
 from ..models.job import IngestJob, JobStatus
 from ..services.job_tracker import JobTracker
 from ..services.queue_publisher import get_publisher
+from ..services.workspace_service import workspace_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -37,6 +38,14 @@ async def ingest_text_async(payload: IngestTextRequest):
     Returns immediately with a job_id for status tracking.
     """
     try:
+        workspace_metadata = None
+        if payload.workspace_id:
+            if not payload.user_id:
+                raise HTTPException(status_code=400, detail="workspace_id requires user_id")
+            workspace_metadata = workspace_service.get_workspace_metadata(payload.workspace_id, payload.user_id)
+            if not workspace_metadata:
+                raise HTTPException(status_code=404, detail="Workspace not found or access denied")
+
         # Generate job ID
         job_id = str(uuid.uuid4())
         
@@ -47,6 +56,7 @@ async def ingest_text_async(payload: IngestTextRequest):
             document_id=payload.document_id,
             document_title=payload.document_title,
             workspace_id=payload.workspace_id,
+            workspace_metadata=workspace_metadata,
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
             user_last_name=payload.user_last_name,
@@ -68,6 +78,7 @@ async def ingest_text_async(payload: IngestTextRequest):
             'document_id': payload.document_id,
             'document_title': payload.document_title,
             'workspace_id': payload.workspace_id,
+            'workspace_metadata': workspace_metadata,
             'user_id': payload.user_id,
             'user_first_name': payload.user_first_name,
             'user_last_name': payload.user_last_name,
@@ -120,6 +131,14 @@ async def ingest_pdf_async(
                 detail="Invalid file type. Please upload a PDF."
             )
         
+        workspace_metadata = None
+        if workspace_id:
+            if not user_id:
+                raise HTTPException(status_code=400, detail="workspace_id requires user_id")
+            workspace_metadata = workspace_service.get_workspace_metadata(workspace_id, user_id)
+            if not workspace_metadata:
+                raise HTTPException(status_code=404, detail="Workspace not found or access denied")
+        
         # Read PDF bytes
         pdf_bytes = await file.read()
         
@@ -142,6 +161,7 @@ async def ingest_pdf_async(
             user_first_name=user_first_name,
             user_last_name=user_last_name,
             workspace_id=workspace_id,
+             workspace_metadata=workspace_metadata,
             user_email=user_email,
             max_concepts=max_concepts,
             max_relationships=max_relationships,
@@ -160,6 +180,7 @@ async def ingest_pdf_async(
             'user_first_name': user_first_name,
             'user_last_name': user_last_name,
             'workspace_id': workspace_id,
+            'workspace_metadata': workspace_metadata,
             'max_concepts': max_concepts,
             'max_relationships': max_relationships,
             'extraction_context': extraction_context
@@ -209,6 +230,14 @@ async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
     Returns immediately with a job_id for status tracking.
     """
     try:
+        workspace_metadata = None
+        if payload.workspace_id:
+            if not payload.user_id:
+                raise HTTPException(status_code=400, detail="workspace_id requires user_id")
+            workspace_metadata = workspace_service.get_workspace_metadata(payload.workspace_id, payload.user_id)
+            if not workspace_metadata:
+                raise HTTPException(status_code=404, detail="Workspace not found or access denied")
+
         # Generate job ID
         job_id = str(uuid.uuid4())
         
@@ -218,6 +247,7 @@ async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
             status=JobStatus.PENDING,
             document_title=payload.document_title or "PDF from URL",
             workspace_id=payload.workspace_id,
+            workspace_metadata=workspace_metadata,
             user_id=payload.user_id,
             user_first_name=payload.user_first_name,
             user_last_name=payload.user_last_name,
@@ -237,6 +267,7 @@ async def ingest_pdf_url_async(payload: IngestPdfUrlRequest):
             'pdf_url': payload.pdf_url,
             'document_title': payload.document_title or "PDF from URL",
             'workspace_id': payload.workspace_id,
+            'workspace_metadata': workspace_metadata,
             'user_id': payload.user_id,
             'user_first_name': payload.user_first_name,
             'user_last_name': payload.user_last_name,

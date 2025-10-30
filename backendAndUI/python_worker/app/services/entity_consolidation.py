@@ -23,7 +23,7 @@ def consolidate_identical_entities() -> Dict[str, Any]:
     consolidation_cypher = """
     // Find entities with identical names and identical type sets
     MATCH (n:Entity)
-    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
     WITH n, collect(DISTINCT type.name) AS type_names
     WITH n,
          n.name AS entity_name,
@@ -97,7 +97,7 @@ def find_duplicate_entities() -> List[Dict[str, Any]]:
     """
     find_duplicates_cypher = """
     MATCH (n:Entity)
-    OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
     WITH n, collect(DISTINCT type.name) AS type_names
     WITH n,
          CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
@@ -174,7 +174,7 @@ def merge_specific_entities(entity_ids: List[str]) -> Dict[str, Any]:
             significance: 'combine'
         }
     }) YIELD node
-    OPTIONAL MATCH (node)-[:IS_A]->(type:Type)
+    OPTIONAL MATCH (node)-[:IS_A]->(type:Concept)
     WITH node, collect(DISTINCT type.name) AS type_names
     RETURN node, elementId(node) AS merged_id, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS merged_types
     """
@@ -229,7 +229,7 @@ def get_consolidation_stats() -> Dict[str, Any]:
     
     CALL {
         MATCH (m:Entity)
-        OPTIONAL MATCH (m)-[:IS_A]->(type:Type)
+        OPTIONAL MATCH (m)-[:IS_A]->(type:Concept)
         WITH m.name AS entity_name,
              apoc.coll.sort(CASE WHEN count(type) = 0 THEN ['Concept'] ELSE collect(DISTINCT type.name) END) AS entity_types,
              collect(m) AS nodes
@@ -276,4 +276,5 @@ def get_consolidation_stats() -> Dict[str, Any]:
             "error": str(exc),
             "message": "Failed to retrieve consolidation statistics"
         }
+
 

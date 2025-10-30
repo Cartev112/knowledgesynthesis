@@ -130,7 +130,7 @@ def search_with_graph_context(request: GraphContextRequest) -> Dict:
                 entity_query = """
                 MATCH (n:Entity)
                 WHERE coalesce(n.id, n.name, elementId(n)) IN $node_ids
-                OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+                OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
                 WITH n, collect(DISTINCT type.name) AS type_names
                 RETURN n.name AS name,
                        CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types
@@ -309,3 +309,4 @@ def get_discovery_stats() -> Dict:
             }
         }
     }
+

@@ -24,7 +24,7 @@ def _embed_query(text: str) -> List[float]:
 def _vector_query_entities(qvec: List[float], k: int) -> List[dict]:
     cypher = (
         "CALL db.index.vector.queryNodes('entity_embedding_idx', $vec, $k) YIELD node, score\n"
-        "OPTIONAL MATCH (node)-[:IS_A]->(type:Type)\n"
+        "OPTIONAL MATCH (node)-[:IS_A]->(type:Concept)\n"
         "WITH node, score, collect(DISTINCT type.name) AS type_names\n"
         "WITH node, score, CASE WHEN size(type_names) = 0 THEN ['Concept'] ELSE type_names END AS types\n"
         "RETURN {id: coalesce(node.id, node.name, elementId(node)), name: coalesce(node.name, node.id), types: types, type: types[0], score: score} AS item\n"
@@ -53,7 +53,7 @@ def _fetch_context_for_entities(entity_ids: List[str], per_entity_limit: int = 2
         "OPTIONAL MATCH (e)-[r]-(n:Entity)\n"
         "OPTIONAL MATCH (doc:Document) WHERE doc.document_id IN r.sources\n"
         "WITH e, r, n, collect(DISTINCT {id: doc.document_id, title: coalesce(doc.title, doc.document_id), page: r.page_number})[0..3] AS docs\n"
-        "OPTIONAL MATCH (e)-[:IS_A]->(type:Type)\n"
+        "OPTIONAL MATCH (e)-[:IS_A]->(type:Concept)\n"
         "WITH e, r, docs, collect(DISTINCT type.name) AS type_names\n"
         "RETURN coalesce(e.id, e.name, elementId(e)) AS eid,\n"
         "       e.name AS ename,\n"
@@ -190,3 +190,4 @@ def ask_graphrag(question: str, k: int = 8, scope: Scope = "hybrid") -> dict:
         "context_chars": len(context_text),
         "answer": answer,
     }
+

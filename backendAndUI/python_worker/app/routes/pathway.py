@@ -254,7 +254,7 @@ def get_graph_schema():
         # Query node types
         node_types_cypher = """
         MATCH (n:Entity)
-        OPTIONAL MATCH (n)-[:IS_A]->(type:Type)
+        OPTIONAL MATCH (n)-[:IS_A]->(type:Concept)
         WITH CASE WHEN type IS NULL THEN 'Concept' ELSE type.name END AS node_type
         RETURN DISTINCT node_type
         ORDER BY node_type
@@ -293,4 +293,5 @@ def get_graph_schema():
         logger.error(f"Schema endpoint failed: {exc}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to get schema: {exc}")
+
 

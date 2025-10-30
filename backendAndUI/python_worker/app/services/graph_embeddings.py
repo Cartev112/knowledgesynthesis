@@ -100,7 +100,7 @@ def upsert_entity_embeddings_for_document(document_id: str) -> int:
         result = session.run(
             """
             MATCH (e:Entity)-[:EXTRACTED_FROM]->(d:Document {document_id: $id})
-            OPTIONAL MATCH (e)-[:IS_A]->(type:Type)
+            OPTIONAL MATCH (e)-[:IS_A]->(type:Concept)
             WITH e, collect(DISTINCT type.name) AS type_names
             RETURN coalesce(e.id, e.name, elementId(e)) AS eid,
                    e.name AS name,
@@ -145,3 +145,4 @@ def ensure_triplet_vector_index() -> None:
     with neo4j_client._driver.session(database=settings.neo4j_database) as session:
         _ensure_vector_index(session, TRIPLET_VECTOR_INDEX, "Triplet", "embedding", settings.openai_embedding_dim)
     logger.info(f"Ensured triplet vector index: {TRIPLET_VECTOR_INDEX}")
+

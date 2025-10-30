@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, List
+from typing import Dict, Iterable, Optional, List
 import logging
 import hashlib
 
@@ -10,6 +10,8 @@ from ..models.triplet import Triplet
 from ..core.settings import settings
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_OWNER_PERMISSIONS = ["view", "add_documents", "edit_relationships", "invite_others", "manage_workspace"]
 
 
 MERGE_TRIPLET_CYPHER = """
@@ -27,7 +29,7 @@ ON MATCH SET s.updated_at = datetime(),
              END
 WITH s
 FOREACH (stype IN $s_types |
-    MERGE (st:Type {name: stype})
+    MERGE (st:Entity:Concept {name: stype})
     MERGE (s)-[:IS_A]->(st)
 )
 
@@ -45,7 +47,7 @@ ON MATCH SET o.updated_at = datetime(),
              END
 WITH s, o
 FOREACH (otype IN $o_types |
-    MERGE (ot:Type {name: otype})
+    MERGE (ot:Entity:Concept {name: otype})
     MERGE (o)-[:IS_A]->(ot)
 )
 MERGE (d:Document {document_id: $document_id})
@@ -139,7 +141,7 @@ def _write_single(tx, triplet: Triplet, document_id: str, document_title: Option
     }
 
 
-def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title: Optional[str] = None, user_id: Optional[str] = None, user_first_name: Optional[str] = None, user_last_name: Optional[str] = None, workspace_id: Optional[str] = None, consolidate_entities: bool = True) -> list[dict]:
+def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title: Optional[str] = None, user_id: Optional[str] = None, user_first_name: Optional[str] = None, user_last_name: Optional[str] = None, workspace_id: Optional[str] = None, workspace_metadata: Optional[Dict[str, object]] = None, consolidate_entities: bool = True) -> list[dict]:
     """
     Write triplets to the graph and optionally consolidate identical entities.
     
@@ -151,6 +153,7 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
         user_first_name: Optional user first name
         user_last_name: Optional user last name
         workspace_id: Optional workspace ID to associate document with
+        workspace_metadata: Optional workspace metadata to ensure node integrity
         consolidate_entities: Whether to run APOC consolidation after writing
         
     Returns:
@@ -163,6 +166,85 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
         
         # Associate document with workspace if provided
         if workspace_id:
+            workspace_info = workspace_metadata or {}
+            owner_info = workspace_info.get("owner") or {}
+
+            owner_permissions = workspace_info.get("owner_permissions") or DEFAULT_OWNER_PERMISSIONS
+            workspace_created_by = workspace_info.get("created_by") or user_id or "anonymous"
+            workspace_created_at = workspace_info.get("created_at")
+
+            workspace_params = {
+                "workspace_id": workspace_id,
+                "workspace_name": workspace_info.get("name"),
+                "workspace_description": workspace_info.get("description"),
+                "workspace_icon": workspace_info.get("icon"),
+                "default_workspace_icon": workspace_info.get("icon") or "\U0001F4C2",
+                "workspace_color": workspace_info.get("color"),
+                "default_workspace_color": workspace_info.get("color") or "#3B82F6",
+                "workspace_privacy": workspace_info.get("privacy"),
+                "workspace_created_by": workspace_created_by,
+                "workspace_created_at": workspace_created_at,
+                "owner_id": owner_info.get("user_id") or workspace_created_by,
+                "owner_email": owner_info.get("email"),
+                "owner_first_name": owner_info.get("first_name"),
+                "owner_last_name": owner_info.get("last_name"),
+                "owner_permissions": owner_permissions,
+                "user_id": user_id or "anonymous",
+            }
+
+            tx.run(
+                """
+                MERGE (w:Workspace {workspace_id: $workspace_id})
+                ON CREATE SET
+                    w.name = coalesce($workspace_name, $workspace_id),
+                    w.description = $workspace_description,
+                    w.icon = coalesce($workspace_icon, $default_workspace_icon),
+                    w.color = coalesce($workspace_color, $default_workspace_color),
+                    w.privacy = coalesce($workspace_privacy, 'private'),
+                    w.created_by = $workspace_created_by,
+                    w.created_at = CASE
+                        WHEN $workspace_created_at IS NOT NULL THEN datetime($workspace_created_at)
+                        ELSE datetime()
+                    END,
+                    w.updated_at = datetime(),
+                    w.archived = false
+                ON MATCH SET
+                    w.name = CASE WHEN $workspace_name IS NOT NULL THEN $workspace_name ELSE w.name END,
+                    w.description = CASE WHEN $workspace_description IS NOT NULL THEN $workspace_description ELSE w.description END,
+                    w.icon = CASE WHEN $workspace_icon IS NOT NULL THEN $workspace_icon ELSE w.icon END,
+                    w.color = CASE WHEN $workspace_color IS NOT NULL THEN $workspace_color ELSE w.color END,
+                    w.privacy = CASE WHEN $workspace_privacy IS NOT NULL THEN $workspace_privacy ELSE w.privacy END,
+                    w.updated_at = datetime()
+                """,
+                workspace_params
+            )
+
+            owner_id = workspace_params["owner_id"]
+            if owner_id:
+                tx.run(
+                    """
+                    MERGE (owner:User {user_id: $owner_id})
+                    SET owner.user_email = CASE WHEN $owner_email IS NOT NULL THEN $owner_email ELSE owner.user_email END,
+                        owner.user_first_name = CASE WHEN $owner_first_name IS NOT NULL AND $owner_first_name <> '' THEN $owner_first_name ELSE owner.user_first_name END,
+                        owner.user_last_name = CASE WHEN $owner_last_name IS NOT NULL AND $owner_last_name <> '' THEN $owner_last_name ELSE owner.user_last_name END
+                    WITH owner
+                    MATCH (w:Workspace {workspace_id: $workspace_id})
+                    MERGE (owner)-[membership:MEMBER_OF]->(w)
+                    ON CREATE SET
+                        membership.role = 'owner',
+                        membership.permissions = $owner_permissions,
+                        membership.joined_at = datetime()
+                    """,
+                    {
+                        "workspace_id": workspace_id,
+                        "owner_id": owner_id,
+                        "owner_email": workspace_params["owner_email"],
+                        "owner_first_name": workspace_params["owner_first_name"],
+                        "owner_last_name": workspace_params["owner_last_name"],
+                        "owner_permissions": owner_permissions,
+                    }
+                )
+
             tx.run(
                 """
                 MATCH (d:Document {document_id: $document_id})
@@ -172,7 +254,7 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
                 document_id=document_id,
                 workspace_id=workspace_id
             )
-            
+
             # Also link all entities extracted from this document to the workspace
             tx.run(
                 """
@@ -184,7 +266,7 @@ def write_triplets(triplets: Iterable[Triplet], document_id: str, document_title
                 document_id=document_id,
                 workspace_id=workspace_id
             )
-            
+
             logger.info(f"Associated document {document_id} and its entities with workspace {workspace_id}")
         
         return outputs
@@ -286,7 +368,7 @@ def write_triplet_with_embedding(
     ON CREATE SET s.created_at = datetime()
     WITH s
     FOREACH (stype IN $subject_types |
-        MERGE (st:Type {{name: stype}})
+        MERGE (st:Entity:Concept {{name: stype}})
         MERGE (s)-[:IS_A]->(st)
     )
     
@@ -294,7 +376,7 @@ def write_triplet_with_embedding(
     ON CREATE SET o.created_at = datetime()
     WITH s, o
     FOREACH (otype IN $object_types |
-        MERGE (ot:Type {{name: otype}})
+        MERGE (ot:Entity:Concept {{name: otype}})
         MERGE (o)-[:IS_A]->(ot)
     )
     
