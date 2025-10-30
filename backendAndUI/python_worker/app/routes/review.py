@@ -59,15 +59,19 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         workspace_filter = ""
         if workspace_id:
             workspace_filter = """
-            AND EXISTS {
-                MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
-                WHERE d.document_id IN r.sources
-            }
+            AND (
+                size(r.sources) = 0
+                OR EXISTS {
+                    MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                    WHERE d.document_id IN r.sources
+                }
+            )
             """
         
         cypher = f"""
-        MATCH (s:Entity)-[r]->(o:Entity)
-        WHERE coalesce(r.status, 'unverified') = $status
+        MATCH (s)-[r]->(o)
+        WHERE (s:Entity OR s:Concept) AND (o:Entity OR o:Concept)
+        AND coalesce(r.status, 'unverified') = $status
         AND (coalesce(s.id, s.name, elementId(s)) IN $node_ids 
              OR coalesce(o.id, o.name, elementId(o)) IN $node_ids)
         {workspace_filter}
@@ -110,15 +114,19 @@ def get_review_queue(limit: int = 50, status_filter: str = "unverified", node_id
         workspace_filter = ""
         if workspace_id:
             workspace_filter = """
-            AND EXISTS {
-                MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
-                WHERE d.document_id IN r.sources
-            }
+            AND (
+                size(r.sources) = 0
+                OR EXISTS {
+                    MATCH (d:Document)-[:BELONGS_TO]->(:Workspace {workspace_id: $workspace_id})
+                    WHERE d.document_id IN r.sources
+                }
+            )
             """
         
         cypher = f"""
-        MATCH (s:Entity)-[r]->(o:Entity)
-        WHERE coalesce(r.status, 'unverified') = $status
+        MATCH (s)-[r]->(o)
+        WHERE (s:Entity OR s:Concept) AND (o:Entity OR o:Concept)
+        AND coalesce(r.status, 'unverified') = $status
         {workspace_filter}
         WITH s, r, o, type(r) as rel_type
         OPTIONAL MATCH (d:Document) WHERE d.document_id IN r.sources

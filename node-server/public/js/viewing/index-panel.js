@@ -204,22 +204,26 @@ export class IndexPanelManager {
     document.getElementById('relationships-count').textContent = state.indexData.edges.length;
     document.getElementById('documents-count').textContent = state.indexData.documents.length;
     
-    // Populate type filter dropdown
+    // Populate type filter dropdown (if it exists)
     const typeFilter = document.getElementById('index-type-filter');
-    const types = new Set();
-    state.indexData.nodes.forEach(n => types.add(n.type || 'Entity'));
-    state.indexData.edges.forEach(e => types.add(e.relation || 'relates to'));
-    
-    typeFilter.innerHTML = '<option value="">All Types</option>' + 
-      Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
+    if (typeFilter) {
+      const types = new Set();
+      state.indexData.nodes.forEach(n => types.add(n.type || 'Entity'));
+      state.indexData.edges.forEach(e => types.add(e.relation || 'relates to'));
+      
+      typeFilter.innerHTML = '<option value="">All Types</option>' + 
+        Array.from(types).sort().map(t => `<option value="${t}">${t}</option>`).join('');
+    }
     
     // Render items
     this.renderIndexItems();
   }
   
   renderIndexItems() {
-    const viewFilter = document.getElementById('index-view-filter').value;
-    const typeFilter = document.getElementById('index-type-filter').value;
+    const viewFilterEl = document.getElementById('index-view-filter');
+    const typeFilterEl = document.getElementById('index-type-filter');
+    const viewFilter = viewFilterEl ? viewFilterEl.value : 'all';
+    const typeFilter = typeFilterEl ? typeFilterEl.value : '';
     
     // Show/hide sections based on view filter
     document.getElementById('documents-section').style.display = 
@@ -286,7 +290,7 @@ export class IndexPanelManager {
     displayNodes.forEach(node => {
       const li = document.createElement('li');
       li.className = 'index-item';
-      li.innerHTML = `${node.label}<span class="index-item-type">${node.type}</span>`;
+      li.innerHTML = `${node.label}`;
       li.onclick = () => this.highlightAndZoomToNode(node.id);
       li.onmouseenter = () => {
         // 2D hover highlight

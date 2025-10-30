@@ -376,7 +376,7 @@ export class Graph3D {
     const typeEl = document.getElementById('node-tooltip-type');
     const sigEl = document.getElementById('node-tooltip-significance');
     if (labelEl) labelEl.textContent = n.label || n.id;
-    if (typeEl) typeEl.textContent = `Type: ${n.type || 'N/A'}`;
+    if (typeEl) typeEl.textContent = '';
     if (sigEl) sigEl.textContent = n.significance ? `Significance: ${n.significance}/5` : '';
     const offset = 10;
     const container = document.getElementById('cy-container') || this.container;

@@ -349,7 +349,7 @@ export class GraphViewer {
     this.currentHoveredNode = data;
     
     document.getElementById('node-tooltip-label').textContent = data.label || data.id;
-    document.getElementById('node-tooltip-type').textContent = `Type: ${data.type || 'N/A'}`;
+    document.getElementById('node-tooltip-type').textContent = '';
     document.getElementById('node-tooltip-significance').textContent = data.significance ? `Significance: ${data.significance}/5` : '';
     
     // Smart positioning to keep tooltip on screen

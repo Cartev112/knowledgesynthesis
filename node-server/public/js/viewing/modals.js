@@ -296,13 +296,6 @@ export class ModalManager {
         </div>
       </div>
       
-      <div class="modal-section">
-        <div class="modal-section-title">Type</div>
-        <div class="modal-section-content">
-          ${data.type || 'Entity'}
-        </div>
-      </div>
-      
       ${significanceHtml}
       
       <div class="modal-section">
@@ -347,7 +340,15 @@ export class ModalManager {
         <div class="modal-section">
           <div class="modal-section-title">Document Information</div>
           <div class="modal-section-content">
-            <strong>Title:</strong> ${doc?.title || 'Untitled'}<br>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <strong>Title:</strong>
+              <input type="text" id="doc-title-input" value="${(doc?.title || 'Untitled').replace(/"/g, '&quot;')}" 
+                     style="flex: 1; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;" />
+              <button onclick="window.viewingManager.modalManager.saveDocumentTitle('${docId}')" 
+                      class="btn-primary" style="padding: 6px 12px; font-size: 13px;">
+                💾 Save
+              </button>
+            </div>
             <strong>ID:</strong> ${doc?.id || docId}<br>
             <strong>Uploaded by:</strong> ${uploaderInfo}<br>
             ${doc?.created_at ? `<strong>Created:</strong> ${new Date(doc.created_at).toLocaleString()}<br>` : ''}
@@ -445,5 +446,54 @@ export class ModalManager {
   resetDocModalPagination() {
     this.docModalNodesPage = 1;
     this.docModalRelsPage = 1;
+  }
+  
+  async saveDocumentTitle(docId) {
+    const input = document.getElementById('doc-title-input');
+    if (!input) return;
+    
+    const newTitle = input.value.trim();
+    if (!newTitle) {
+      alert('Title cannot be empty');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/query/documents/${encodeURIComponent(docId)}/title`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update title');
+      }
+      
+      // Update the local document data
+      const doc = state.indexData.documents.find(d => d.id === docId);
+      if (doc) {
+        doc.title = newTitle;
+      }
+      
+      // Show success message
+      const saveBtn = input.nextElementSibling;
+      if (saveBtn) {
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '✓ Saved';
+        saveBtn.style.background = '#10b981';
+        setTimeout(() => {
+          saveBtn.innerHTML = originalText;
+          saveBtn.style.background = '';
+        }, 2000);
+      }
+      
+      // Refresh the index panel to show updated title
+      if (window.viewingManager?.indexManager) {
+        window.viewingManager.indexManager.renderIndexItems();
+      }
+    } catch (error) {
+      console.error('Error saving document title:', error);
+      alert('Failed to save document title: ' + error.message);
+    }
   }
 }

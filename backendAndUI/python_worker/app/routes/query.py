@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query as Q
 from typing import Optional
+from pydantic import BaseModel
 
 from ..services.neo4j_client import neo4j_client
 from ..core.settings import settings
 
 
 router = APIRouter()
+
+
+class UpdateDocumentTitleRequest(BaseModel):
+    """Request to update a document title."""
+    title: str
 
 
 @router.get("/autocomplete")
@@ -622,4 +628,34 @@ def get_subgraph(request: dict):
         raise HTTPException(status_code=500, detail=f"Failed to get subgraph: {exc}")
 
 
-
+@router.put("/documents/{document_id}/title")
+def update_document_title(document_id: str, payload: UpdateDocumentTitleRequest):
+    """
+    Update the title of a document.
+    
+    Args:
+        document_id: The ID of the document to update
+        payload: The new title
+    """
+    if not payload.title or not payload.title.strip():
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+    
+    cypher = """
+    MATCH (d:Document {document_id: $document_id})
+    SET d.title = $title
+    RETURN d.title AS title
+    """
+    
+    try:
+        with neo4j_client._driver.session(database=settings.neo4j_database) as session:
+            result = session.run(cypher, document_id=document_id, title=payload.title.strip())
+            record = result.single()
+            
+            if not record:
+                raise HTTPException(status_code=404, detail="Document not found")
+            
+            return {"success": True, "title": record["title"]}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update document title: {exc}")
