@@ -258,9 +258,7 @@ export class GraphViewer {
         data: {
           id: n.id,
           label: n.label || n.id,
-          type: n.type || (Array.isArray(n.labels) && n.labels.includes('Type') ? 'Type' : 'Concept'),
-          labels: n.labels || [],
-          types: n.types || [],
+          type: n.type,
           sources: n.sources,
           significance: n.significance
         }
