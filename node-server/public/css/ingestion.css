@@ -3,15 +3,15 @@
    ========================================== */
 #ingestion-panel {
   flex: 1;
-  max-width: 87.5rem;
-  width: min(90vw, 87.5rem);
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
-  padding: clamp(1.5rem, 3vh, 3rem) 1.5rem clamp(2.5rem, 4vh, 4rem);
+  padding: 48px 24px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   box-sizing: border-box;
-  min-height: calc(100vh - 9rem);
+  min-height: 100%;
 }
 
 #ingestion-panel > .card {
@@ -23,7 +23,7 @@
 .ingestion-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(2rem, 2.8vw, 3rem);
+  gap: 32px;
 }
 
 .custom-file-upload {

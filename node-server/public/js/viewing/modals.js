@@ -255,20 +255,25 @@ export class ModalManager {
     const content = document.getElementById('node-modal-content');
     
     const sources = data.sources || [];
-    let sourcesHtml = '';
-    if (sources.length === 0 || !sources || (sources.length === 1 && !sources[0].id)) {
-      sourcesHtml = '<div style="color: #ef4444;">No sources recorded</div>';
-    } else {
-      sourcesHtml = `
-        <strong>${sources.length} document(s)</strong>
-        <div style="margin-top: 8px;">
-          ${sources.map(s => {
-            const title = (typeof s === 'object' && s.title) ? s.title : s;
-            const firstName = (typeof s === 'object' && s.created_by_first_name) ? s.created_by_first_name : '';
-            const lastName = (typeof s === 'object' && s.created_by_last_name) ? s.created_by_last_name : '';
-            const userName = firstName && lastName ? ` — by ${firstName} ${lastName}` : '';
-            return `<div style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">📄 ${title}${userName}</div>`;
-          }).join('')}
+    let sourcesSection = '';
+    const hasSources = sources.length > 0 && sources.some(s => s && (typeof s === 'string' || s.id));
+    
+    if (hasSources) {
+      sourcesSection = `
+        <div class="modal-section">
+          <div class="modal-section-title">Sources</div>
+          <div class="modal-section-content">
+            <strong>${sources.length} document(s)</strong>
+            <div style="margin-top: 8px;">
+              ${sources.map(s => {
+                const title = (typeof s === 'object' && s.title) ? s.title : s;
+                const firstName = (typeof s === 'object' && s.created_by_first_name) ? s.created_by_first_name : '';
+                const lastName = (typeof s === 'object' && s.created_by_last_name) ? s.created_by_last_name : '';
+                const userName = firstName && lastName ? ` — by ${firstName} ${lastName}` : '';
+                return `<div style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">📄 ${title}${userName}</div>`;
+              }).join('')}
+            </div>
+          </div>
         </div>
       `;
     }
@@ -305,12 +310,7 @@ export class ModalManager {
         </div>
       </div>
       
-      <div class="modal-section">
-        <div class="modal-section-title">Sources</div>
-        <div class="modal-section-content">
-          ${sourcesHtml}
-        </div>
-      </div>
+      ${sourcesSection}
     `;
     
     content.innerHTML = html;

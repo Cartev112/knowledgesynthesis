@@ -96,7 +96,7 @@ export const cytoscapeStyles = [
   {
     selector: 'edge[polarity = "negative"]',
     style: {
-      'line-style': 'dotted'
+      'line-style': 'dashed'
     }
   },
   {
