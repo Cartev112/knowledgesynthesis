@@ -278,13 +278,13 @@ body.modal-open {
 }
 
 .action-button {
-  padding: 0.5rem 1rem;
+  padding: 0.375rem 0.75rem;
   border: 1px solid #e5e7eb;
   background: white;
   border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
   cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
   transition: all 0.2s;
 }
 

@@ -51,7 +51,7 @@ class WorkspacesManager {
       <div class="workspace-footer">
         <div class="last-activity">Across <span id="global-card-workspaces-count">${workspaceCount}</span> workspaces</div>
         <div class="workspace-actions">
-          <button class="action-button primary" id="open-global">Open</button>
+          <button class="action-button primary" id="open-global">👁️ View</button>
         </div>
       </div>
     `;
@@ -916,7 +916,7 @@ class WorkspacesManager {
     // Setup add documents modal listeners
     this.setupAddDocumentsModalListeners()
 
-    // Main tab switching (Overview / Content)
+    // Main tab switching (Overview / Content / Settings)
     const mainTabs = document.querySelectorAll('.detail-main-tab');
     mainTabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -931,6 +931,9 @@ class WorkspacesManager {
           pane.classList.remove('active');
         });
         document.getElementById(`${targetTab}-pane`).classList.add('active');
+        
+        // Update footer button based on active tab
+        this.updateModalFooterButton(targetTab);
       });
     });
 
@@ -1033,6 +1036,23 @@ class WorkspacesManager {
     } catch (e) {
       console.error('Failed to remove collaborator', e);
       alert('Failed to remove collaborator: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  updateModalFooterButton(activeTab) {
+    const footerBtn = document.getElementById('ws-detail-open');
+    if (!footerBtn) return;
+
+    if (activeTab === 'settings') {
+      footerBtn.textContent = 'Save Changes';
+      footerBtn.onclick = () => this.saveDetailSettings();
+    } else {
+      footerBtn.textContent = '👁️ View';
+      footerBtn.onclick = () => {
+        if (this.currentDetailWorkspaceId) {
+          this.openWorkspace(this.currentDetailWorkspaceId);
+        }
+      };
     }
   }
 
