@@ -340,30 +340,29 @@ class WorkspacesManager {
       <div class="workspace-footer">
         <div class="last-activity">${!createdByMe && creatorName ? `by ${this.escapeHtml(creatorName)} • ` : ''}${this.formatLastActivity(workspace.updated_at || workspace.created_at)}</div>
         <div class="workspace-actions">
-          <button class="action-button settings-button" data-workspace-id="${workspace.workspace_id}">
-            ⚙️
+          <button class="action-button manage-button" data-workspace-id="${workspace.workspace_id}">
+            Manage
           </button>
-          <button class="action-button primary open-button" data-workspace-id="${workspace.workspace_id}">
-            Open
+          <button class="action-button primary view-button" data-workspace-id="${workspace.workspace_id}">
+            👁️ View
           </button>
         </div>
       </div>
     `;
 
     // Event listeners
-    const openButton = card.querySelector('.open-button');
-    openButton.addEventListener('click', (e) => {
+    const viewButton = card.querySelector('.view-button');
+    viewButton.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openWorkspace(workspace.workspace_id);
     });
 
-    const settingsButton = card.querySelector('.settings-button');
-    settingsButton.addEventListener('click', (e) => {
+    const manageButton = card.querySelector('.manage-button');
+    manageButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.openWorkspaceSettings(workspace.workspace_id);
+      this.showWorkspaceDetails(workspace.workspace_id);
     });
 
-    // Click on card to show details
     card.addEventListener('click', () => {
       this.showWorkspaceDetails(workspace.workspace_id);
     });
@@ -647,6 +646,13 @@ class WorkspacesManager {
     if (!dateString) return 'Never';
 
     const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date:', dateString);
+      return 'Unknown';
+    }
+    
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
@@ -708,6 +714,9 @@ class WorkspacesManager {
       // Populate activity (placeholder for now)
       this.populateActivity(workspace);
 
+      // Populate Settings tab
+      this.populateSettingsTab(workspace);
+
       // Wait a tick to ensure modal is fully rendered
       await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -726,6 +735,87 @@ class WorkspacesManager {
       alert('Failed to load workspace details');
       this.closeDetailModal();
     }
+  }
+
+  populateSettingsTab(workspace) {
+    // Populate form fields
+    const nameInput = document.getElementById('detail-ws-name');
+    const descInput = document.getElementById('detail-ws-description');
+    
+    if (nameInput) nameInput.value = workspace.name || '';
+    if (descInput) descInput.value = workspace.description || '';
+
+    // Render icon/color selectors
+    this.renderDetailSettingsIconColor(workspace.icon, workspace.color);
+
+    // Set privacy
+    const privacy = workspace.privacy || 'private';
+    const radios = document.querySelectorAll('input[name="detail-ws-privacy"]');
+    radios.forEach(r => { r.checked = (r.value === privacy); });
+
+    // Populate collaborators list
+    this.populateCollaboratorsList(workspace.members || []);
+  }
+
+  renderDetailSettingsIconColor(selectedIcon, selectedColor) {
+    const icons = ['📊','🧬','🔬','🧪','💉','🌱','🔭','⚗️','🧫','📚'];
+    const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+    const iconSel = document.getElementById('detail-ws-icon-selector');
+    const colorSel = document.getElementById('detail-ws-color-selector');
+    
+    if (!iconSel || !colorSel) return;
+    
+    iconSel.innerHTML = icons.map(ic => `<button type="button" class="icon-option ${ic===selectedIcon?'selected':''}" data-icon="${ic}">${ic}</button>`).join('');
+    colorSel.innerHTML = colors.map(c => `<button type="button" class="color-option ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+
+    iconSel.querySelectorAll('.icon-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        iconSel.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+    colorSel.querySelectorAll('.color-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorSel.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+  }
+
+  populateCollaboratorsList(members) {
+    const listEl = document.getElementById('detail-collaborators-list');
+    if (!listEl) return;
+
+    if (members.length === 0) {
+      listEl.innerHTML = '<p style="color: #6b7280; font-size: 0.875rem;">No collaborators yet</p>';
+      return;
+    }
+
+    listEl.innerHTML = members.map(member => {
+      const displayName = this.getMemberDisplayName(member);
+      const roleColor = member.role === 'owner' ? '#667eea' : '#6b7280';
+      const isOwner = member.role === 'owner';
+      
+      return `
+        <div class="collaborator-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 500;">${this.escapeHtml(displayName)}</div>
+            <div style="font-size: 0.875rem; color: ${roleColor};">${member.role}</div>
+          </div>
+          ${!isOwner ? `<button class="button button-danger" style="padding: 4px 8px; font-size: 0.875rem;" data-user-id="${member.user_id}">Remove</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Add remove handlers
+    listEl.querySelectorAll('.button-danger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const userId = btn.dataset.userId;
+        if (confirm('Remove this collaborator from the workspace?')) {
+          this.removeCollaborator(userId);
+        }
+      });
+    });
   }
 
   populateMembersList(members) {
@@ -861,6 +951,89 @@ class WorkspacesManager {
         document.getElementById(`${targetTab}-pane`).classList.add('active');
       });
     });
+
+    // Settings tab buttons
+    const saveSettingsBtn = document.getElementById('detail-save-settings-btn');
+    const deleteWorkspaceBtn = document.getElementById('detail-delete-workspace-btn');
+    const inviteCollaboratorBtn = document.getElementById('detail-invite-collaborator-btn');
+
+    if (saveSettingsBtn) {
+      saveSettingsBtn.addEventListener('click', () => this.saveDetailSettings());
+    }
+
+    if (deleteWorkspaceBtn) {
+      deleteWorkspaceBtn.addEventListener('click', () => this.deleteWorkspace());
+    }
+
+    if (inviteCollaboratorBtn) {
+      inviteCollaboratorBtn.addEventListener('click', () => this.openInviteCollaboratorModal());
+    }
+  }
+
+  async saveDetailSettings() {
+    if (!this.currentDetailWorkspaceId) return;
+
+    const nameInput = document.getElementById('detail-ws-name');
+    const descInput = document.getElementById('detail-ws-description');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const description = descInput ? descInput.value.trim() : '';
+    const iconBtn = document.querySelector('#detail-ws-icon-selector .icon-option.selected');
+    const colorBtn = document.querySelector('#detail-ws-color-selector .color-option.selected');
+    const privacy = document.querySelector('input[name="detail-ws-privacy"]:checked')?.value;
+
+    const payload = {
+      name: name || undefined,
+      description: description || undefined,
+      icon: iconBtn ? iconBtn.dataset.icon : undefined,
+      color: colorBtn ? colorBtn.dataset.color : undefined,
+      privacy: privacy || undefined
+    };
+
+    try {
+      await API.put(`/api/workspaces/${encodeURIComponent(this.currentDetailWorkspaceId)}`, payload);
+      alert('Settings saved successfully!');
+      this.closeDetailModal();
+      await this.loadWorkspaces();
+    } catch (e) {
+      console.error('Failed to save settings', e);
+      alert('Failed to save workspace settings: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  async deleteWorkspace() {
+    if (!this.currentDetailWorkspaceId) return;
+
+    if (!confirm('Are you sure you want to delete this workspace? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await API.delete(`/api/workspaces/${encodeURIComponent(this.currentDetailWorkspaceId)}`);
+      alert('Workspace deleted successfully');
+      this.closeDetailModal();
+      await this.loadWorkspaces();
+    } catch (e) {
+      console.error('Failed to delete workspace', e);
+      alert('Failed to delete workspace: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  openInviteCollaboratorModal() {
+    // TODO: Implement collaborator invitation modal
+    alert('Collaborator invitation feature coming soon!');
+  }
+
+  async removeCollaborator(userId) {
+    if (!this.currentDetailWorkspaceId) return;
+
+    try {
+      await API.delete(`/api/workspaces/${encodeURIComponent(this.currentDetailWorkspaceId)}/members/${encodeURIComponent(userId)}`);
+      // Reload workspace details
+      await this.showWorkspaceDetails(this.currentDetailWorkspaceId);
+    } catch (e) {
+      console.error('Failed to remove collaborator', e);
+      alert('Failed to remove collaborator: ' + (e.message || 'Unknown error'));
+    }
   }
 
   closeDetailModal() {

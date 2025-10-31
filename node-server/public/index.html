@@ -1155,6 +1155,7 @@
       <div class="detail-main-tabs">
         <button class="detail-main-tab active" data-tab="overview">Overview</button>
         <button class="detail-main-tab" data-tab="content">Content</button>
+        <button class="detail-main-tab" data-tab="settings">Settings</button>
       </div>
 
       <div class="workspace-detail-body">
@@ -1236,11 +1237,65 @@
             </div>
           </div>
         </div>
+
+        <!-- Settings Tab -->
+        <div class="detail-main-pane" id="settings-pane">
+          <div class="settings-section">
+            <h3>Workspace Settings</h3>
+            
+            <div class="form-group">
+              <label for="detail-ws-name">Name *</label>
+              <input type="text" id="detail-ws-name" maxlength="100" required />
+            </div>
+            
+            <div class="form-group">
+              <label for="detail-ws-description">Description</label>
+              <textarea id="detail-ws-description" rows="3" maxlength="500"></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>Icon</label>
+              <div class="icon-selector" id="detail-ws-icon-selector"></div>
+            </div>
+            
+            <div class="form-group">
+              <label>Color</label>
+              <div class="color-selector" id="detail-ws-color-selector"></div>
+            </div>
+            
+            <div class="form-group">
+              <label>Privacy</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="detail-ws-privacy" value="private" checked />
+                  <span>Private - Only invited members</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="detail-ws-privacy" value="organization" />
+                  <span>Organization - Anyone in your org</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Collaborators</label>
+              <div id="detail-collaborators-list" class="collaborators-list"></div>
+              <button type="button" class="button button-secondary" id="detail-invite-collaborator-btn" style="margin-top: 8px;">
+                ➕ Invite Collaborator
+              </button>
+            </div>
+
+            <div class="settings-actions" style="margin-top: 24px; display: flex; gap: 12px;">
+              <button type="button" class="button button-primary" id="detail-save-settings-btn">Save Changes</button>
+              <button type="button" class="button button-danger" id="detail-delete-workspace-btn">Delete Workspace</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="button button-secondary" id="ws-detail-close-btn">Close</button>
-        <button type="button" class="button button-primary" id="ws-detail-open">Open Workspace</button>
+        <button type="button" class="button button-primary" id="ws-detail-open">👁️ View</button>
       </div>
     </div>
   </div>
