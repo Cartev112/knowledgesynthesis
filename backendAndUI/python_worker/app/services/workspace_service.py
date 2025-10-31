@@ -846,7 +846,7 @@ class WorkspaceService:
                 documents.append({
                     "document_id": record["document_id"],
                     "title": record["title"],
-                    "created_at": record["created_at"],
+                    "created_at": str(record["created_at"]) if record["created_at"] else None,
                     "created_by": record["created_by"]
                 })
 

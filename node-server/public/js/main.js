@@ -206,6 +206,7 @@ class AppManager {
       // Load workspaces manager dynamically
       const { default: WorkspacesManager } = await import('./workspaces/workspaces.js');
       this.workspacesManager = new WorkspacesManager();
+      window.workspacesManager = this.workspacesManager; // Make globally accessible
       this.workspacesInitialized = true;
     } catch (error) {
       console.error('Failed to initialize workspaces tab:', error);

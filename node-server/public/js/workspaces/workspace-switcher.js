@@ -171,7 +171,13 @@ class WorkspaceSwitcher {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const workspaceId = btn.dataset.workspaceId;
-        this.openWorkspaceSettingsForId(workspaceId);
+        // Open the full workspace detail modal (same as clicking Manage)
+        if (window.workspacesManager && typeof window.workspacesManager.showWorkspaceDetails === 'function') {
+          window.workspacesManager.showWorkspaceDetails(workspaceId);
+        } else {
+          // Fallback to old settings modal
+          this.openWorkspaceSettingsForId(workspaceId);
+        }
         this.closeModal();
       });
     });
@@ -180,6 +186,7 @@ class WorkspaceSwitcher {
     const createAction = document.getElementById('create-workspace-action');
     if (createAction) {
       createAction.addEventListener('click', () => {
+        this.closeModal(); // Close switcher modal first
         this.openCreateWorkspaceModal();
       });
     }

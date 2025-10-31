@@ -478,8 +478,14 @@ class WorkspacesManager {
     // Store workspace ID in session storage
     sessionStorage.setItem('currentWorkspaceId', workspaceId);
     
-    // Navigate to main app
-    window.location.href = '/app';
+    // Check if we're already in the integrated app
+    if (window.appManager && typeof window.appManager.switchTab === 'function') {
+      // We're in the integrated app - just switch to viewing tab
+      window.appManager.switchTab('viewing');
+    } else {
+      // We're on standalone workspaces page - navigate to app
+      window.location.href = '/';
+    }
   }
 
   openWorkspaceSettings(workspaceId) {
@@ -956,13 +962,8 @@ class WorkspacesManager {
     });
 
     // Settings tab buttons
-    const saveSettingsBtn = document.getElementById('detail-save-settings-btn');
     const deleteWorkspaceBtn = document.getElementById('detail-delete-workspace-btn');
     const inviteCollaboratorBtn = document.getElementById('detail-invite-collaborator-btn');
-
-    if (saveSettingsBtn) {
-      saveSettingsBtn.addEventListener('click', () => this.saveDetailSettings());
-    }
 
     if (deleteWorkspaceBtn) {
       deleteWorkspaceBtn.addEventListener('click', () => this.deleteWorkspace());
@@ -971,6 +972,9 @@ class WorkspacesManager {
     if (inviteCollaboratorBtn) {
       inviteCollaboratorBtn.addEventListener('click', () => this.openInviteCollaboratorModal());
     }
+
+    // Track changes in Settings tab to enable/disable Save button
+    this.setupSettingsChangeTracking();
   }
 
   async saveDetailSettings() {
@@ -994,9 +998,10 @@ class WorkspacesManager {
 
     try {
       await API.put(`/api/workspaces/${encodeURIComponent(this.currentDetailWorkspaceId)}`, payload);
-      alert('Settings saved successfully!');
-      this.closeDetailModal();
+      this.settingsChanged = false;
       await this.loadWorkspaces();
+      this.closeDetailModal();
+      alert('Settings saved successfully!');
     } catch (e) {
       console.error('Failed to save settings', e);
       alert('Failed to save workspace settings: ' + (e.message || 'Unknown error'));
@@ -1039,15 +1044,72 @@ class WorkspacesManager {
     }
   }
 
+  setupSettingsChangeTracking() {
+    this.settingsChanged = false;
+    
+    // Track changes in all settings inputs
+    const nameInput = document.getElementById('detail-ws-name');
+    const descInput = document.getElementById('detail-ws-description');
+    
+    [nameInput, descInput].forEach(input => {
+      if (input) {
+        input.addEventListener('input', () => {
+          this.settingsChanged = true;
+          this.updateModalFooterButton('settings');
+        });
+      }
+    });
+
+    // Track icon/color changes (will be set when icons are clicked)
+    const iconSelector = document.getElementById('detail-ws-icon-selector');
+    const colorSelector = document.getElementById('detail-ws-color-selector');
+    
+    if (iconSelector) {
+      iconSelector.addEventListener('click', (e) => {
+        if (e.target.classList.contains('icon-option')) {
+          this.settingsChanged = true;
+          this.updateModalFooterButton('settings');
+        }
+      });
+    }
+    
+    if (colorSelector) {
+      colorSelector.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-option')) {
+          this.settingsChanged = true;
+          this.updateModalFooterButton('settings');
+        }
+      });
+    }
+
+    // Track privacy radio changes
+    document.querySelectorAll('input[name="detail-ws-privacy"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        this.settingsChanged = true;
+        this.updateModalFooterButton('settings');
+      });
+    });
+  }
+
   updateModalFooterButton(activeTab) {
     const footerBtn = document.getElementById('ws-detail-open');
     if (!footerBtn) return;
 
     if (activeTab === 'settings') {
       footerBtn.textContent = 'Save Changes';
-      footerBtn.onclick = () => this.saveDetailSettings();
+      footerBtn.disabled = !this.settingsChanged;
+      footerBtn.style.opacity = this.settingsChanged ? '1' : '0.5';
+      footerBtn.style.cursor = this.settingsChanged ? 'pointer' : 'not-allowed';
+      footerBtn.onclick = () => {
+        if (this.settingsChanged) {
+          this.saveDetailSettings();
+        }
+      };
     } else {
       footerBtn.textContent = '👁️ View';
+      footerBtn.disabled = false;
+      footerBtn.style.opacity = '1';
+      footerBtn.style.cursor = 'pointer';
       footerBtn.onclick = () => {
         if (this.currentDetailWorkspaceId) {
           this.openWorkspace(this.currentDetailWorkspaceId);
